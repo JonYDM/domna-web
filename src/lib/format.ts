@@ -1,0 +1,68 @@
+import { ahora, diasHasta } from "./reloj";
+
+/** Formato con Intl nativo, es-MX y MXN. */
+
+const mxnEntero = new Intl.NumberFormat("es-MX", {
+  style: "currency",
+  currency: "MXN",
+  maximumFractionDigits: 0,
+});
+const mxnDecimal = new Intl.NumberFormat("es-MX", {
+  style: "currency",
+  currency: "MXN",
+  minimumFractionDigits: 2,
+});
+
+/** "$689" o "$294.50" (solo muestra centavos si los hay). */
+export function formatMXN(n: number): string {
+  return Number.isInteger(n) ? mxnEntero.format(n) : mxnDecimal.format(n);
+}
+
+const fechaFmt = new Intl.DateTimeFormat("es-MX", {
+  day: "numeric",
+  month: "short",
+  timeZone: "America/Mexico_City",
+});
+const fechaLargaFmt = new Intl.DateTimeFormat("es-MX", {
+  weekday: "long",
+  day: "numeric",
+  month: "long",
+  timeZone: "America/Mexico_City",
+});
+const fechaHoraFmt = new Intl.DateTimeFormat("es-MX", {
+  day: "numeric",
+  month: "short",
+  hour: "2-digit",
+  minute: "2-digit",
+  timeZone: "America/Mexico_City",
+});
+
+/** "12 oct" */
+export function formatFecha(iso: string): string {
+  return fechaFmt.format(new Date(iso)).replace(".", "");
+}
+
+/** "12 oct, 14:30" */
+export function formatFechaHora(iso: string): string {
+  return fechaHoraFmt.format(new Date(iso)).replace(".", "");
+}
+
+/** "Jueves, 1 de octubre" (fecha de la demo). */
+export function fechaHoyLarga(): string {
+  const t = fechaLargaFmt.format(ahora());
+  return t.charAt(0).toUpperCase() + t.slice(1);
+}
+
+/** "Vence hoy", "Vence mañana", "Vence en 5 días", "Venció hace 2 días". */
+export function textoVencimiento(iso: string): string {
+  const d = diasHasta(iso);
+  if (d < -1) return `Venció hace ${-d} días`;
+  if (d === -1) return "Venció ayer";
+  if (d === 0) return "Vence hoy";
+  if (d === 1) return "Vence mañana";
+  return `Vence en ${d} días`;
+}
+
+export function plural(n: number, uno: string, varios: string): string {
+  return `${n} ${n === 1 ? uno : varios}`;
+}

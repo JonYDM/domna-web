@@ -1,0 +1,64 @@
+import { createBrowserRouter } from "react-router-dom";
+import { BienvenidaPage } from "@/features/auth/pages/BienvenidaPage";
+import { PaginaError } from "@/components/organisms/PaginaError";
+import {
+  ApartadoClientaPage,
+  ApartadoDuenaPage,
+  ApartadosPage,
+  CatalogoPage,
+  DashboardPage,
+  DemoPage,
+  DuenaLayout,
+  InventarioPage,
+  MisApartadosPage,
+  ProductoDuenaPage,
+  ProductoPage,
+  S,
+  SoloDuena,
+  TiendaLayout,
+} from "./rutas";
+
+/**
+ * Rutas por rol:
+ * - /          bienvenida (elegir rol en la demo)
+ * - /tienda/*  portal de la clienta (catálogo público + apartados)
+ * - /app/*     panel de la dueña
+ */
+export const router = createBrowserRouter([
+  { path: "/", element: <BienvenidaPage />, errorElement: <PaginaError tipo="error" /> },
+  {
+    path: "/tienda",
+    element: (
+      <S>
+        <TiendaLayout />
+      </S>
+    ),
+    errorElement: <PaginaError tipo="error" />,
+    children: [
+      { index: true, element: <S><CatalogoPage /></S> },
+      { path: "producto/:id", element: <S><ProductoPage /></S> },
+      { path: "apartados", element: <S><MisApartadosPage /></S> },
+      { path: "apartados/:id", element: <S><ApartadoClientaPage /></S> },
+    ],
+  },
+  {
+    path: "/app",
+    element: (
+      <SoloDuena>
+        <S>
+          <DuenaLayout />
+        </S>
+      </SoloDuena>
+    ),
+    errorElement: <PaginaError tipo="error" />,
+    children: [
+      { index: true, element: <S><DashboardPage /></S> },
+      { path: "apartados", element: <S><ApartadosPage /></S> },
+      { path: "apartados/:id", element: <S><ApartadoDuenaPage /></S> },
+      { path: "inventario", element: <S><InventarioPage /></S> },
+      { path: "inventario/:id", element: <S><ProductoDuenaPage /></S> },
+      { path: "demo", element: <S><DemoPage /></S> },
+    ],
+  },
+  { path: "*", element: <PaginaError tipo="404" /> },
+]);
