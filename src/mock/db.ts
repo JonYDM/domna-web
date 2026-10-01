@@ -2,6 +2,7 @@ import type {
   Apartado,
   Categoria,
   Clienta,
+  ColorCatalogo,
   ConfigBoutique,
   MovimientoInventario,
   Producto,
@@ -13,10 +14,15 @@ export type ApartadoEntidad = Omit<Apartado, "pagado" | "saldo"> & {
   penalizado: boolean;
 };
 
+/** Entidad interna de categoría (el conteo de prendas se calcula al consultar). */
+export type CategoriaEntidad = Omit<Categoria, "productos">;
+
 export interface DbState {
   version: number;
   config: ConfigBoutique;
-  categorias: Categoria[];
+  categorias: CategoriaEntidad[];
+  /** Colores del catálogo de la boutique. */
+  colores: ColorCatalogo[];
   productos: Producto[];
   clientas: Clienta[];
   apartados: ApartadoEntidad[];
@@ -28,7 +34,7 @@ export interface DbState {
 }
 
 /** Subir al cambiar la forma de los datos: la demo se reinicia con el seed nuevo. */
-export const DB_VERSION = 6;
+export const DB_VERSION = 7;
 const KEY = "domna.demo.db";
 
 export function cargar(): DbState | null {

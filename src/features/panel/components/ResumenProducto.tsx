@@ -75,7 +75,7 @@ export function ResumenProducto(p: ResumenProductoProps) {
         <div className="flex flex-wrap gap-1.5">
           {p.colores.map((c, i) => (
             <button
-              key={c.familia}
+              key={c.nombre}
               type="button"
               onClick={() => setColorIdx(i)}
               aria-pressed={i === colorIdx}

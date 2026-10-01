@@ -24,7 +24,11 @@ export function useProducto(id: string, opciones: { incluirInactivo?: boolean } 
 }
 
 export function useCategorias() {
-  return useQuery({ queryKey: qk.categorias(), queryFn: api.obtenerCategorias, staleTime: Infinity });
+  return useQuery({ queryKey: qk.categorias(), queryFn: api.obtenerCategorias, staleTime: 5 * 60_000 });
+}
+
+export function useColores() {
+  return useQuery({ queryKey: qk.colores(), queryFn: api.obtenerColores, staleTime: 5 * 60_000 });
 }
 
 export function useConfig() {

@@ -89,7 +89,7 @@ export default function CatalogoPage() {
         <Chip activo={!filtros.categoria} onClick={() => cambiar({ categoria: undefined })}>
           Todo
         </Chip>
-        {categorias.data?.map((c) => (
+        {categorias.data?.filter((c) => c.productos > 0).map((c) => (
           <Chip
             key={c.id}
             activo={filtros.categoria === c.id}
@@ -210,6 +210,7 @@ export default function CatalogoPage() {
         filtros={filtros}
         cambiar={cambiar}
         total={productos.data?.length}
+        tallas={[...new Set((categorias.data ?? []).filter((c) => c.productos > 0).flatMap((c) => c.tallas))]}
       />
     </div>
   );

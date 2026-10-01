@@ -4,6 +4,7 @@ import type { FiltroEstadoApartado, FiltrosCatalogo, TipoPedido } from "@/types/
 export const qk = {
   config: () => ["config"] as const,
   categorias: () => ["categorias"] as const,
+  colores: () => ["colores"] as const,
   productos: (f: FiltrosCatalogo) => ["productos", f] as const,
   productosTodos: () => ["productos"] as const,
   producto: (id: string) => ["producto", id] as const,

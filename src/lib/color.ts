@@ -1,3 +1,5 @@
+import type { FamiliaColor } from "@/types/api";
+
 /** Utilidades de color para las ilustraciones de prenda (no para la UI: la UI usa tokens). */
 
 function aRgb(hex: string): [number, number, number] {
@@ -28,4 +30,30 @@ export function luminancia(hex: string): number {
 
 export function esClaro(hex: string): boolean {
   return luminancia(hex) > 0.6;
+}
+
+/**
+ * Grupo del color para el filtro de la tienda, a partir del tono (HSL). Así un "Azul marino" cae
+ * en Azul y un "Marfil" en Blanco, sin que la dueña tenga que clasificarlos. Espera "#RRGGBB".
+ */
+export function familiaDeHex(hex: string): FamiliaColor {
+  const [r, g, b] = aRgb(hex).map((v) => v / 255);
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const l = (max + min) / 2;
+  const croma = max - min;
+  if (l < 0.18) return "negro";
+  if (l > 0.86) return "blanco";
+  if (croma < 0.12) return l > 0.75 ? "blanco" : "gris";
+  let h = 0;
+  if (max === r) h = ((g - b) / croma) % 6;
+  else if (max === g) h = (b - r) / croma + 2;
+  else h = (r - g) / croma + 4;
+  h = (h * 60 + 360) % 360;
+  if (h >= 345 || h < 15) return l > 0.68 ? "rosa" : "rojo";
+  if (h < 50) return l < 0.6 ? "cafe" : "beige";
+  if (h < 62) return "beige";
+  if (h < 170) return "verde";
+  if (h < 260) return "azul";
+  return l > 0.55 ? "rosa" : "rojo"; // morados y fucsias
 }

@@ -39,6 +39,29 @@ export interface ConfigBoutique {
 export interface Categoria {
   id: string;
   nombre: string;
+  /** Juego de tallas que se propone al dar de alta una prenda de esta categoría. */
+  tallas: string[];
+  /** Prendas que la usan (para saber si se puede borrar y para ocultar vacías en la tienda). */
+  productos: number;
+}
+
+/** Color del catálogo de la boutique (se copia a cada prenda al darla de alta). */
+export interface ColorCatalogo {
+  id: string;
+  nombre: string;
+  hex: string;
+  /** Grupo para el filtro de la tienda; se calcula del hex. */
+  familia: FamiliaColor;
+}
+
+export interface CategoriaInput {
+  nombre: string;
+  tallas: string[];
+}
+
+export interface ColorInput {
+  nombre: string;
+  hex: string;
 }
 
 export type Silueta = "vestido" | "blusa" | "pantalon" | "falda" | "chamarra" | "bolsa" | "conjunto";

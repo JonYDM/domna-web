@@ -1,7 +1,7 @@
 import type { FiltrosCatalogo, OrdenCatalogo } from "@/types/api";
 import { Button, Chip, Drawer } from "@/components/ui";
 import { cn } from "@/lib/cn";
-import { FAMILIAS_COLOR, ORDEN_CATALOGO, TALLAS_NUMERICAS, TALLAS_ROPA } from "@/lib/enums";
+import { FAMILIAS_COLOR, ORDEN_CATALOGO } from "@/lib/enums";
 import { esClaro } from "@/lib/color";
 import { formatMXN } from "@/lib/format";
 import { Check } from "lucide-react";
@@ -14,10 +14,12 @@ interface FiltrosDrawerProps {
   filtros: FiltrosCatalogo;
   cambiar: (c: Record<string, string | number | undefined>) => void;
   total?: number;
+  /** Tallas que existen en las categorías de la boutique. */
+  tallas: string[];
 }
 
 /** Filtros del catálogo (talla, color, precio, orden). Escriben directo en la URL. */
-export function FiltrosDrawer({ open, onClose, filtros, cambiar, total }: FiltrosDrawerProps) {
+export function FiltrosDrawer({ open, onClose, filtros, cambiar, total, tallas }: FiltrosDrawerProps) {
   const toggle = (k: string, v: string | number, actual?: string | number) =>
     cambiar({ [k]: actual === v ? undefined : v });
 
@@ -59,7 +61,7 @@ export function FiltrosDrawer({ open, onClose, filtros, cambiar, total }: Filtro
         <section>
           <h3 className="mb-2.5 text-label-lg">Talla</h3>
           <div className="flex flex-wrap gap-2">
-            {[...TALLAS_ROPA, ...TALLAS_NUMERICAS].map((t) => (
+            {tallas.map((t) => (
               <Chip key={t} activo={filtros.talla === t} onClick={() => toggle("talla", t, filtros.talla)} className="min-w-12 justify-center">
                 {t}
               </Chip>

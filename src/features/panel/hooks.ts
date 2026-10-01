@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { CambioStock, FiltroClientas, MotivoAjuste, NuevaClientaInput, NuevoProductoInput, SucursalId } from "@/types/api";
+import type { CambioStock, CategoriaInput, ColorInput, FiltroClientas, MotivoAjuste, NuevaClientaInput, NuevoProductoInput, SucursalId } from "@/types/api";
 import { qk } from "@/lib/queryKeys";
 import * as api from "@/mock/server";
 
@@ -13,6 +13,7 @@ export function useCrearProducto() {
     mutationFn: (input: NuevoProductoInput) => api.crearProducto(input),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: qk.productosTodos() });
+      qc.invalidateQueries({ queryKey: qk.categorias() }); // cambia el conteo de prendas
       qc.invalidateQueries({ queryKey: qk.metricas() });
     },
   });
@@ -109,4 +110,38 @@ export function useControlesDemo() {
     reiniciar: useMutation({ mutationFn: api.demoReiniciar, onSuccess: todo }),
     catalogoPublico: useMutation({ mutationFn: (p: boolean) => api.demoCatalogoPublico(p), onSuccess: todo }),
   };
+}
+
+// ── Catálogo de atributos (categorías y colores) ──
+
+export function useGuardarCategoria() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, input }: { id: string | null; input: CategoriaInput }) => api.guardarCategoria(id, input),
+    onSuccess: () => qc.invalidateQueries({ queryKey: qk.categorias() }),
+  });
+}
+
+export function useEliminarCategoria() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.eliminarCategoria(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: qk.categorias() }),
+  });
+}
+
+export function useGuardarColor() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, input }: { id: string | null; input: ColorInput }) => api.guardarColor(id, input),
+    onSuccess: () => qc.invalidateQueries({ queryKey: qk.colores() }),
+  });
+}
+
+export function useEliminarColor() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.eliminarColor(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: qk.colores() }),
+  });
 }

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, Outlet, useNavigate } from "react-router-dom";
-import { AlertTriangle, ClipboardList, FlaskConical, LayoutDashboard, Package, Store, Users } from "lucide-react";
+import { AlertTriangle, ClipboardList, FlaskConical, LayoutDashboard, Menu, Package, Palette, Store, Tags, Users } from "lucide-react";
 import { DomiImagen } from "@/components/ilustraciones/DomiImagen";
 import { Logo } from "@/components/ilustraciones/Logo";
 import { BottomNav, TopNav, type ItemNav } from "@/components/organisms/Navegacion";
@@ -22,9 +22,18 @@ export default function DuenaLayout() {
   const pedidos: ItemNav = { to: "/app/apartados", label: "Pedidos", icono: ClipboardList, contador: metricas.data?.porVencer };
   const inventario: ItemNav = { to: "/app/inventario", label: "Inventario", icono: Package };
   const clientas: ItemNav = { to: "/app/clientas", label: "Clientas", icono: Users };
-  const demo: ItemNav = { to: "/app/demo", label: "Demo", icono: FlaskConical };
-  const items: ItemNav[] = [inicio, pedidos, inventario, clientas, demo];
-  const itemsMovil: ItemNav[] = [pedidos, inventario, { ...inicio, destacado: true }, clientas, demo];
+  const mas: ItemNav = {
+    to: "/app/mas",
+    label: "Más",
+    icono: Menu,
+    menu: [
+      { to: "/app/categorias", label: "Categorías", descripcion: "Y sus tallas", icono: Tags },
+      { to: "/app/colores", label: "Colores", descripcion: "Tu catálogo de colores", icono: Palette },
+      { to: "/app/demo", label: "Controles de la demo", descripcion: "Reloj, pausa y reinicio", icono: FlaskConical },
+    ],
+  };
+  const items: ItemNav[] = [inicio, pedidos, inventario, clientas, mas];
+  const itemsMovil: ItemNav[] = [pedidos, inventario, { ...inicio, destacado: true }, clientas, mas];
 
   return (
     <div className="min-h-dvh bg-surface">

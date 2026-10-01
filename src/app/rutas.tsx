@@ -21,6 +21,8 @@ export const ApartadoDuenaPage = lazy(() => import("@/features/panel/pages/Apart
 export const InventarioPage = lazy(() => import("@/features/panel/pages/InventarioPage"));
 export const ProductoDuenaPage = lazy(() => import("@/features/panel/pages/ProductoDuenaPage"));
 export const DemoPage = lazy(() => import("@/features/panel/pages/DemoPage"));
+export const CategoriasPage = lazy(() => import("@/features/panel/pages/CategoriasPage"));
+export const ColoresPage = lazy(() => import("@/features/panel/pages/ColoresPage"));
 
 /** Suspense con la carga de Domi. */
 export function S({ children }: { children: ReactNode }) {

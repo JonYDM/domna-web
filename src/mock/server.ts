@@ -5,6 +5,9 @@ import type {
   MotivoAjuste,
   SucursalId,
   Categoria,
+  CategoriaInput,
+  ColorCatalogo,
+  ColorInput,
   Clienta,
   ClientaResumen,
   CuentaGoogle,
@@ -36,9 +39,10 @@ import {
   reiniciarReloj,
   sumarDias,
 } from "@/lib/reloj";
-import { borrar, cargar, guardar, type DbState } from "./db";
+import { borrar, cargar, guardar, type CategoriaEntidad, type DbState } from "./db";
 import * as dom from "./dominio";
 import * as cli from "./clientas";
+import * as atr from "./atributos";
 import { crearSeed } from "./seed";
 
 /**
@@ -81,7 +85,52 @@ export function obtenerConfig(): Promise<ConfigBoutique> {
 }
 
 export function obtenerCategorias(): Promise<Categoria[]> {
-  return responder(() => estado().categorias);
+  return responder(() => {
+    const s = estado();
+    return s.categorias.map((c) => ({ ...c, productos: atr.productosEnCategoria(s, c.id) }));
+  });
+}
+
+export function obtenerColores(): Promise<ColorCatalogo[]> {
+  return responder(() => estado().colores);
+}
+
+// ── Catálogo de atributos (dueña) ──
+
+function categoriaDto(s: DbState, c: CategoriaEntidad): Categoria {
+  return { ...c, productos: atr.productosEnCategoria(s, c.id) };
+}
+
+export function guardarCategoria(id: string | null, input: CategoriaInput): Promise<Categoria> {
+  return responder(() => {
+    const s = estado();
+    const c = id ? atr.actualizarCategoria(s, id, input) : atr.crearCategoria(s, input);
+    persistir();
+    return categoriaDto(s, c);
+  });
+}
+
+export function eliminarCategoria(id: string): Promise<void> {
+  return responder(() => {
+    atr.eliminarCategoria(estado(), id);
+    persistir();
+  });
+}
+
+export function guardarColor(id: string | null, input: ColorInput): Promise<ColorCatalogo> {
+  return responder(() => {
+    const s = estado();
+    const c = id ? atr.actualizarColor(s, id, input) : atr.crearColor(s, input);
+    persistir();
+    return c;
+  });
+}
+
+export function eliminarColor(id: string): Promise<void> {
+  return responder(() => {
+    atr.eliminarColor(estado(), id);
+    persistir();
+  });
 }
 
 // ── Catálogo ──

@@ -1,6 +1,6 @@
 import type {
-  Categoria,
   Clienta,
+  ColorCatalogo,
   ColorProducto,
   ConfigBoutique,
   FamiliaColor,
@@ -12,7 +12,7 @@ import type {
 } from "@/types/api";
 import { TALLAS_NUMERICAS, TALLAS_ROPA, TALLA_UNICA } from "@/lib/enums";
 import { sumarDias } from "@/lib/reloj";
-import { DB_VERSION, type DbState } from "./db";
+import { DB_VERSION, type CategoriaEntidad, type DbState } from "./db";
 import { abonar, crearApartado, disponiblePorSucursal } from "./dominio";
 
 /** Datos de la demo: Jesly Boutique (Temixco / La Azteca). Determinístico (misma semilla). */
@@ -84,15 +84,23 @@ const DEFS: Def[] = [
   { nombre: "Bolsa tote Lunares", descripcion: "Tote de lona con estampado de lunares. Cabe todo.", categoriaId: "accesorios", silueta: "bolsa", precio: 359, nuevo: true, colores: ["marfil", "negro"], tallas: TALLA_UNICA },
 ];
 
-export const CATEGORIAS: Categoria[] = [
-  { id: "vestidos", nombre: "Vestidos" },
-  { id: "blusas", nombre: "Blusas y tops" },
-  { id: "pantalones", nombre: "Pantalones" },
-  { id: "faldas", nombre: "Faldas" },
-  { id: "conjuntos", nombre: "Conjuntos" },
-  { id: "abrigos", nombre: "Blazers y chamarras" },
-  { id: "accesorios", nombre: "Accesorios" },
+export const CATEGORIAS: CategoriaEntidad[] = [
+  { id: "vestidos", nombre: "Vestidos", tallas: TALLAS_ROPA },
+  { id: "blusas", nombre: "Blusas y tops", tallas: TALLAS_ROPA },
+  { id: "pantalones", nombre: "Pantalones", tallas: [...TALLAS_ROPA, ...TALLAS_NUMERICAS] },
+  { id: "faldas", nombre: "Faldas", tallas: TALLAS_ROPA },
+  { id: "conjuntos", nombre: "Conjuntos", tallas: TALLAS_ROPA },
+  { id: "abrigos", nombre: "Blazers y chamarras", tallas: TALLAS_ROPA },
+  { id: "accesorios", nombre: "Accesorios", tallas: TALLA_UNICA },
 ];
+
+/** Catálogo inicial de colores (la dueña agrega, edita o quita los suyos). */
+export const COLORES_INICIALES: ColorCatalogo[] = Object.entries(C).map(([id, [nombre, hex, familia]]) => ({
+  id,
+  nombre,
+  hex,
+  familia,
+}));
 
 export const CONFIG_INICIAL: ConfigBoutique = {
   nombre: "Jesly Boutique",
@@ -215,7 +223,8 @@ export function crearSeed(hoy: Date): DbState {
   const db: DbState = {
     version: DB_VERSION,
     config: structuredClone(CONFIG_INICIAL),
-    categorias: CATEGORIAS,
+    categorias: structuredClone(CATEGORIAS),
+    colores: structuredClone(COLORES_INICIALES),
     productos: crearProductos(hoy),
     clientas: [
       { id: "c-maria", nombre: "María López", telefono: "777 123 4567", email: "maria.lopez@gmail.com", origen: "google", creada: sumarDias(hoy, -40).toISOString(), ultimoAcceso: sumarDias(hoy, -1).toISOString(), penalizacionPendiente: 0 },
