@@ -1,15 +1,19 @@
-import { Link, Outlet } from "react-router-dom";
-import { ClipboardList, FlaskConical, LayoutDashboard, LogOut, Package, Store, Users } from "lucide-react";
+import { useState } from "react";
+import { Link, Outlet, useNavigate } from "react-router-dom";
+import { AlertTriangle, ClipboardList, FlaskConical, LayoutDashboard, Package, Store, Users } from "lucide-react";
 import { Domi } from "@/components/ilustraciones/Domi";
 import { Logo } from "@/components/ilustraciones/Logo";
 import { BottomNav, TopNav, type ItemNav } from "@/components/organisms/Navegacion";
+import { PerfilMenu } from "@/components/organisms/PerfilMenu";
 import { useMetricas } from "@/features/panel/hooks";
 import { useSesion } from "@/features/auth/sesion";
 import { useConfig } from "@/features/catalogo/hooks";
 
 /** Panel de la dueña. */
 export default function DuenaLayout() {
-  const { salir } = useSesion();
+  const { sesion, salir } = useSesion();
+  const navigate = useNavigate();
+  const [perfilAbierto, setPerfilAbierto] = useState(false);
   const metricas = useMetricas();
   const config = useConfig();
 
@@ -38,25 +42,46 @@ export default function DuenaLayout() {
             </span>
           </Link>
           <TopNav items={items} />
-          <div className="flex items-center gap-1">
-            <Link
-              to="/tienda"
-              className="grid h-11 w-11 place-items-center rounded-full text-on-surface-variant hover:bg-surface-container"
-              aria-label="Ver la tienda como clienta"
-              title="Ver la tienda"
-            >
-              <Store className="h-5 w-5" aria-hidden />
-            </Link>
-            <Link
-              to="/"
-              onClick={salir}
-              className="grid h-11 w-11 place-items-center rounded-full text-on-surface-variant hover:bg-surface-container"
-              aria-label="Salir"
-              title="Salir"
-            >
-              <LogOut className="h-5 w-5" aria-hidden />
-            </Link>
-          </div>
+          <PerfilMenu
+            nombre={sesion?.nombre ?? "Jesly"}
+            subtitulo={`Dueña · ${config.data?.nombre ?? "Jesly Boutique"}`}
+            pendientes={metricas.data?.porVencer}
+            open={perfilAbierto}
+            onOpenChange={setPerfilAbierto}
+            onSalir={() => {
+              setPerfilAbierto(false);
+              salir();
+              navigate("/");
+            }}
+          >
+            <nav aria-label="Accesos" className="flex flex-col p-2">
+              {!!metricas.data?.porVencer && (
+                <Link
+                  to="/app/apartados?tipo=apartados&estado=por_vencer"
+                  onClick={() => setPerfilAbierto(false)}
+                  className="flex items-center gap-3 rounded-xl px-3 py-2.5 hover:bg-warning-container"
+                >
+                  <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-warning-container text-warning">
+                    <AlertTriangle className="h-4 w-4" aria-hidden />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-label-lg">
+                      {metricas.data.porVencer} {metricas.data.porVencer === 1 ? "apartado vence" : "apartados vencen"} pronto
+                    </span>
+                    <span className="block text-body-sm text-on-surface-variant">En los próximos 3 días</span>
+                  </span>
+                </Link>
+              )}
+              <Link
+                to="/tienda"
+                onClick={() => setPerfilAbierto(false)}
+                className="flex h-11 items-center gap-3 rounded-xl px-3 text-label-lg hover:bg-surface-container-low"
+              >
+                <Store className="h-4 w-4 text-on-surface-variant" aria-hidden />
+                Ver la tienda como clienta
+              </Link>
+            </nav>
+          </PerfilMenu>
         </div>
       </header>
       <main className="mx-auto max-w-6xl px-4 pb-28 pt-5 md:pb-12">

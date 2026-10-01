@@ -1,19 +1,25 @@
-import { Link, Navigate, Outlet, useLocation } from "react-router-dom";
-import { ArrowLeftRight, Bell, ShoppingBag, Store } from "lucide-react";
+import { useState } from "react";
+import { Link, Navigate, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { ArrowLeftRight, ShoppingBag, Store } from "lucide-react";
 import { Logo } from "@/components/ilustraciones/Logo";
 import { BottomNav, TopNav, type ItemNav } from "@/components/organisms/Navegacion";
+import { PerfilMenu } from "@/components/organisms/PerfilMenu";
 import { EmptyState } from "@/components/molecules/EmptyState";
 import { ButtonLink } from "@/components/ui";
 import { useConfig } from "@/features/catalogo/hooks";
-import { useMisApartados } from "@/features/apartados/hooks";
+import { useClienta, useMisApartados } from "@/features/apartados/hooks";
 import { useAvisos } from "@/features/avisos/hooks";
+import { AvisosPopover } from "@/features/avisos/components/AvisosPopover";
 import { useSesion } from "@/features/auth/sesion";
 import { enCurso } from "@/lib/enums";
 
 /** Portal de la clienta: header sólido (sin blur), nav inferior en móvil. */
 export default function TiendaLayout() {
-  const { sesion } = useSesion();
+  const { sesion, salir } = useSesion();
+  const navigate = useNavigate();
+  const [perfilAbierto, setPerfilAbierto] = useState(false);
   const config = useConfig();
+  const clienta = useClienta(sesion?.rol === "clienta" ? sesion.clientaId : undefined);
   const apartados = useMisApartados(sesion?.clientaId);
   const activos = apartados.data?.filter(enCurso).length ?? 0;
   const avisos = useAvisos(sesion?.rol === "clienta" ? sesion.clientaId : undefined);
@@ -56,19 +62,21 @@ export default function TiendaLayout() {
             </span>
           </Link>
           <TopNav items={items} />
-          {sesion?.rol === "clienta" && (
-            <Link
-              to="/tienda/avisos"
-              className="relative grid h-11 w-11 place-items-center rounded-full text-on-surface hover:bg-surface-container"
-              aria-label={sinLeer ? `Avisos, ${sinLeer} sin leer` : "Avisos"}
+          {sesion?.rol === "clienta" && sesion.clientaId && (
+            <PerfilMenu
+              nombre={clienta.data?.nombre ?? sesion.nombre}
+              subtitulo={clienta.data?.email ?? clienta.data?.telefono}
+              pendientes={sinLeer}
+              open={perfilAbierto}
+              onOpenChange={setPerfilAbierto}
+              onSalir={() => {
+                setPerfilAbierto(false);
+                salir();
+                navigate("/");
+              }}
             >
-              <Bell className="h-6 w-6" strokeWidth={1.8} aria-hidden />
-              {sinLeer > 0 && (
-                <span className="tabular absolute right-1 top-1 grid h-[18px] min-w-[18px] place-items-center rounded-full bg-primary px-1 text-[10px] font-bold text-on-primary">
-                  {sinLeer}
-                </span>
-              )}
-            </Link>
+              <AvisosPopover clientaId={sesion.clientaId} onNavegar={() => setPerfilAbierto(false)} />
+            </PerfilMenu>
           )}
           {!sesion && (
             <ButtonLink to={`/entrar?volver=${volver}`} size="sm" variant="tinta">
