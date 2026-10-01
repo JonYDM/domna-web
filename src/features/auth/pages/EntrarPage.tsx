@@ -3,7 +3,7 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import { ChevronLeft, MessageCircle, Phone } from "lucide-react";
 import type { Clienta, CuentaGoogle } from "@/types/api";
-import { Domi } from "@/components/ilustraciones/Domi";
+import { DomiImagen } from "@/components/ilustraciones/DomiImagen";
 import { GoogleLogo } from "@/components/ilustraciones/GoogleLogo";
 import { Logo } from "@/components/ilustraciones/Logo";
 import { Button, Input } from "@/components/ui";
@@ -94,7 +94,7 @@ export default function EntrarPage() {
         </Link>
 
         <div className="anim-sube mt-6 flex flex-col items-center text-center">
-          <Domi size={112} expresion={fase === "whatsapp" ? "enamorada" : "feliz"} />
+          <DomiImagen ancho={132} prioridad animar alt="Domi, la catarina de Domna" />
           <Logo className="mt-4 text-[40px]" />
         </div>
 

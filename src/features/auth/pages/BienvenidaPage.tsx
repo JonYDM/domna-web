@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { ShoppingBag, Store } from "lucide-react";
-import { Domi } from "@/components/ilustraciones/Domi";
+import { DomiImagen } from "@/components/ilustraciones/DomiImagen";
 import { Logo } from "@/components/ilustraciones/Logo";
 import { Button, ButtonLink } from "@/components/ui";
 import { useSesion } from "../sesion";
@@ -13,7 +13,7 @@ export function BienvenidaPage() {
   return (
     <main className="lunares flex min-h-dvh flex-col items-center justify-center bg-surface px-5 py-10">
       <div className="anim-sube flex w-full max-w-sm flex-col items-center text-center">
-        <Domi size={168} expresion="feliz" titulo="Domi, la catarina de Domna, te saluda" />
+        <DomiImagen ancho={196} prioridad animar alt="Domi, la catarina de Domna" />
         <Logo className="mt-6 text-[56px]" conLema />
 
         <div className="mt-10 w-full rounded-3xl bg-surface-container-lowest p-5 shadow-soft">

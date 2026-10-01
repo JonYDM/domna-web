@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { AlertTriangle, ChevronRight, ClipboardList, PackageCheck, Plus, TrendingUp, Users, Wallet } from "lucide-react";
 import type { ReactNode } from "react";
-import { Domi } from "@/components/ilustraciones/Domi";
+import { DomiImagen } from "@/components/ilustraciones/DomiImagen";
 import { PrendaImagen } from "@/components/ilustraciones/PrendaImagen";
 import { EmptyState } from "@/components/molecules/EmptyState";
 import { Button, ButtonLink, Skeleton } from "@/components/ui";
@@ -22,7 +22,7 @@ export default function DashboardPage() {
   return (
     <div className="flex flex-col gap-5">
       <section className="flex items-center gap-4">
-        <Domi size={64} expresion="feliz" />
+        <DomiImagen ancho={76} prioridad />
         <div>
           <p className="text-body-sm text-on-surface-variant">{fechaHoyLarga()}</p>
           <h1 className="font-marca text-headline-lg">
