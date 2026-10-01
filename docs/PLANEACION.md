@@ -60,3 +60,21 @@
 - Fotos reales (R2 + WebP 400/800/1600), alta de fotos en el wizard.
 - Job de vencimientos, SuperAdmin y suscripciones, despliegue Netlify + Railway.
 - Pruebas de dominio (apartar sin stock, vencer libera, liquidar descuenta, precio congelado).
+
+## Features anotadas (backlog)
+- **Registro controlado de clientas:** la clienta pide su alta (nombre + WhatsApp) y la dueña la **aprueba** desde
+  Clientas; al aprobarla se le genera un **PIN** (o un código de acceso) para entrar. Así solo las clientas
+  aprobadas ven la tienda. Encaja con "catálogo privado" (`catalogoPublico = false`). Requiere: estado de la
+  clienta (`pendiente | aprobada | bloqueada`), PIN hasheado con BCrypt y bloqueo tras N intentos (playbook §4.8).
+
+## Imágenes del catálogo (Cloudflare R2)
+Estimado para ~400 productos (≈ 4 fotos c/u, algunas por color ≈ 1,600 fotos):
+- Se guardan solo **WebP optimizados** en 3 tamaños (400 / 800 / 1600 px ≈ 30 + 90 + 250 KB) ≈ **0.6 GB**.
+  Aunque se duplicaran las fotos (más colores), queda **muy por debajo de los 10 GB gratis**.
+- **No** guardar los originales del celular (3–5 MB c/u ≈ 6 GB): el backend los redimensiona y los descarta.
+- Lecturas (Class B): 10 M gratis al mes. Con ~1,000 visitas/día × 30 imágenes ≈ 0.9 M/mes, y con la caché de
+  Cloudflare delante (dominio propio) la mayoría ni siquiera llega a R2. Subidas (Class A): ~5,000, de 1 M gratis.
+- Salida de datos (egress): gratis en R2.
+- Usar **dominio propio** conectado a Cloudflare (p. ej. `img.domna.mx`), no `r2.dev` (tiene límite de
+  velocidad y no es para producción). URLs inmutables por versión → `Cache-Control: max-age=31536000, immutable`.
+- Fotos repetidas por color: una imagen se liga a un `colorId`; si dos colores comparten foto, se reutiliza la URL.
