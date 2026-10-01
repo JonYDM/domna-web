@@ -34,7 +34,7 @@ export function Interruptor({ checked, onChange, label, descripcion, disabled }:
       >
         <span
           className={cn(
-            "absolute top-1 h-5 w-5 rounded-full bg-surface-container-lowest shadow-xs transition-transform",
+            "absolute left-0 top-1 h-5 w-5 rounded-full bg-surface-container-lowest shadow-xs transition-transform",
             checked ? "translate-x-6" : "translate-x-1",
           )}
         />
