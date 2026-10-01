@@ -1,23 +1,27 @@
 import { Link, Outlet } from "react-router-dom";
-import { ArrowLeftRight, ShoppingBag, Store } from "lucide-react";
+import { ArrowLeftRight, Bell, ShoppingBag, Store } from "lucide-react";
 import { Logo } from "@/components/ilustraciones/Logo";
 import { BottomNav, TopNav, type ItemNav } from "@/components/organisms/Navegacion";
 import { EmptyState } from "@/components/molecules/EmptyState";
 import { ButtonLink } from "@/components/ui";
 import { useConfig } from "@/features/catalogo/hooks";
 import { useMisApartados } from "@/features/apartados/hooks";
+import { useAvisos } from "@/features/avisos/hooks";
 import { useSesion } from "@/features/auth/sesion";
+import { enCurso } from "@/lib/enums";
 
 /** Portal de la clienta: header sólido (sin blur), nav inferior en móvil. */
 export default function TiendaLayout() {
   const { sesion } = useSesion();
   const config = useConfig();
   const apartados = useMisApartados(sesion?.clientaId);
-  const activos = apartados.data?.filter((a) => a.estado === "activo").length ?? 0;
+  const activos = apartados.data?.filter(enCurso).length ?? 0;
+  const avisos = useAvisos(sesion?.rol === "clienta" ? sesion.clientaId : undefined);
+  const sinLeer = avisos.data?.filter((a) => !a.leido).length ?? 0;
 
   const items: ItemNav[] = [
     { to: "/tienda", label: "Catálogo", icono: Store, end: true },
-    { to: "/tienda/apartados", label: "Mis apartados", icono: ShoppingBag, contador: activos },
+    { to: "/tienda/apartados", label: "Mis pedidos", icono: ShoppingBag, contador: activos },
     { to: "/", label: "Cambiar rol", icono: ArrowLeftRight, end: true },
   ];
 
@@ -46,7 +50,18 @@ export default function TiendaLayout() {
           </Link>
           <TopNav items={items} />
           {sesion?.rol === "clienta" && (
-            <span className="text-body-sm text-on-surface-variant md:hidden">Hola, {sesion.nombre}</span>
+            <Link
+              to="/tienda/avisos"
+              className="relative grid h-11 w-11 place-items-center rounded-full text-on-surface hover:bg-surface-container"
+              aria-label={sinLeer ? `Avisos, ${sinLeer} sin leer` : "Avisos"}
+            >
+              <Bell className="h-6 w-6" strokeWidth={1.8} aria-hidden />
+              {sinLeer > 0 && (
+                <span className="tabular absolute right-1 top-1 grid h-[18px] min-w-[18px] place-items-center rounded-full bg-primary px-1 text-[10px] font-bold text-on-primary">
+                  {sinLeer}
+                </span>
+              )}
+            </Link>
           )}
         </div>
       </header>

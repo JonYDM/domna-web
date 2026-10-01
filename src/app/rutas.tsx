@@ -8,6 +8,7 @@ export const TiendaLayout = lazy(() => import("./layouts/TiendaLayout"));
 export const CatalogoPage = lazy(() => import("@/features/catalogo/pages/CatalogoPage"));
 export const ProductoPage = lazy(() => import("@/features/catalogo/pages/ProductoPage"));
 export const MisApartadosPage = lazy(() => import("@/features/apartados/pages/MisApartadosPage"));
+export const AvisosPage = lazy(() => import("@/features/avisos/pages/AvisosPage"));
 export const ApartadoClientaPage = lazy(() => import("@/features/apartados/pages/ApartadoClientaPage"));
 
 export const DuenaLayout = lazy(() => import("./layouts/DuenaLayout"));

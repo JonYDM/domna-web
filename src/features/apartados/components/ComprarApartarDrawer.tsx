@@ -20,31 +20,46 @@ import { useSesion } from "@/features/auth/sesion";
 import { useConfig } from "@/features/catalogo/hooks";
 import { useCotizacion, useCrearApartado } from "../hooks";
 
-interface ApartarDrawerProps {
+interface ComprarApartarDrawerProps {
   open: boolean;
   onClose: () => void;
   producto: ProductoDetalle;
   variante: VarianteDisponible;
   color: ColorProducto;
+  /** Con qué opción abre (según el botón que tocó la clienta). */
+  modalidadInicial: ModalidadApartado;
 }
 
-/** Apartar: modalidad, sucursal de entrega y resumen con lo que se paga hoy. */
-export function ApartarDrawer({ open, onClose, producto, variante, color }: ApartarDrawerProps) {
+/**
+ * Comprar de contado o apartar (con anticipo o sin él), sucursal de entrega y resumen de lo que
+ * se paga hoy. Si la prenda no permite apartado (p. ej. oferta), solo ofrece la compra.
+ */
+export function ComprarApartarDrawer({
+  open,
+  onClose,
+  producto,
+  variante,
+  color,
+  modalidadInicial,
+}: ComprarApartarDrawerProps) {
   const { sesion, entrar } = useSesion();
   const navigate = useNavigate();
   const config = useConfig();
-  const [modalidad, setModalidad] = useState<ModalidadApartado>("anticipo");
+  const [modalidad, setModalidad] = useState<ModalidadApartado>(
+    producto.permiteApartado ? modalidadInicial : "compra",
+  );
   const [entrega, setEntrega] = useState<SucursalId>(
     variante.disponiblePorSucursal.temixco > 0 ? "temixco" : "azteca",
   );
   const [metodo, setMetodo] = useState<MetodoPago>("transferencia");
 
   const esClienta = sesion?.rol === "clienta";
+  const compra = modalidad === "compra";
   const input = { varianteId: variante.id, cantidad: 1, modalidad, entrega, metodoAnticipo: metodo };
   const cot = useCotizacion(esClienta && open ? sesion.clientaId : undefined, input);
   const crear = useCrearApartado(sesion?.clientaId);
 
-  function apartar() {
+  function confirmar() {
     crear.mutate(input, {
       onSuccess: (a) => {
         onClose();
@@ -59,7 +74,7 @@ export function ApartarDrawer({ open, onClose, producto, variante, color }: Apar
 
   if (!esClienta) {
     return (
-      <Drawer open={open} onClose={onClose} title="Para apartar, entra como clienta">
+      <Drawer open={open} onClose={onClose} title="Para comprar o apartar, entra como clienta">
         <p className="text-body-md text-on-surface-variant">
           En la app real la clienta entra con su teléfono. En la demo, entra como María.
         </p>
@@ -70,18 +85,33 @@ export function ApartarDrawer({ open, onClose, producto, variante, color }: Apar
     );
   }
 
+  const textoBoton = crear.isPending
+    ? compra
+      ? "Comprando…"
+      : "Apartando…"
+    : !c
+      ? "Calculando…"
+      : compra
+        ? `Comprar y pagar ${formatMXN(c.anticipo)}`
+        : c.anticipo > 0
+          ? `Apartar y pagar ${formatMXN(c.anticipo)}`
+          : "Apartar sin anticipo";
+
   return (
     <Drawer
       open={open}
       onClose={onClose}
-      title="Apartar prenda"
+      title={compra ? "Comprar prenda" : "Apartar prenda"}
       pie={
-        <Button size="lg" fullWidth loading={crear.isPending} disabled={!c || !c.sucursalOrigen} onClick={apartar}>
-          {crear.isPending
-            ? "Apartando…"
-            : c && c.anticipo > 0
-              ? `Apartar y pagar ${formatMXN(c.anticipo)}`
-              : "Apartar sin anticipo"}
+        <Button
+          size="lg"
+          fullWidth
+          variant={compra ? "tinta" : "primary"}
+          loading={crear.isPending}
+          disabled={!c || !c.sucursalOrigen}
+          onClick={confirmar}
+        >
+          {textoBoton}
         </Button>
       }
     >
@@ -98,27 +128,41 @@ export function ApartarDrawer({ open, onClose, producto, variante, color }: Apar
         </div>
 
         <fieldset>
-          <legend className="mb-2 text-label-lg">¿Cómo quieres apartar?</legend>
+          <legend className="mb-2 text-label-lg">¿Cómo la quieres?</legend>
           <div role="radiogroup" className="grid gap-2">
             <OpcionRadio
-              activo={modalidad === "anticipo"}
-              onClick={() => setModalidad("anticipo")}
-              titulo={`Con ${cfg?.anticipoPct ?? 50}% de anticipo`}
-              detalle={`Te la guardamos ${cfg?.vigenciaConAnticipoDias ?? 15} días`}
-              extra={<Badge tono="primary">Recomendado</Badge>}
+              activo={compra}
+              onClick={() => setModalidad("compra")}
+              titulo="Comprar de contado"
+              detalle={`Pagas ${formatMXN(producto.precio)} y es tuya`}
             />
-            <OpcionRadio
-              activo={modalidad === "sin_anticipo"}
-              onClick={() => setModalidad("sin_anticipo")}
-              titulo="Sin anticipo"
-              detalle={`Te la guardamos ${cfg?.vigenciaSinAnticipoDias ?? 2} días`}
-            />
+            {producto.permiteApartado ? (
+              <>
+                <OpcionRadio
+                  activo={modalidad === "anticipo"}
+                  onClick={() => setModalidad("anticipo")}
+                  titulo={`Apartar con ${cfg?.anticipoPct ?? 50}%`}
+                  detalle={`Te la guardamos ${cfg?.vigenciaConAnticipoDias ?? 15} días`}
+                  extra={<Badge tono="primary">Popular</Badge>}
+                />
+                <OpcionRadio
+                  activo={modalidad === "sin_anticipo"}
+                  onClick={() => setModalidad("sin_anticipo")}
+                  titulo="Apartar sin anticipo"
+                  detalle={`Te la guardamos ${cfg?.vigenciaSinAnticipoDias ?? 2} días`}
+                />
+              </>
+            ) : (
+              <p className="rounded-xl bg-surface-container-low px-3 py-2.5 text-body-sm text-on-surface-variant">
+                Esta prenda está en oferta: solo se vende de contado.
+              </p>
+            )}
           </div>
         </fieldset>
 
-        {modalidad === "anticipo" && (
+        {modalidad !== "sin_anticipo" && (
           <fieldset>
-            <legend className="mb-2 text-label-lg">Pago del anticipo</legend>
+            <legend className="mb-2 text-label-lg">{compra ? "Forma de pago" : "Pago del anticipo"}</legend>
             <div className="flex flex-wrap gap-2">
               {(Object.keys(METODO_PAGO) as MetodoPago[]).map((m) => (
                 <Chip key={m} activo={metodo === m} onClick={() => setMetodo(m)}>
@@ -175,16 +219,24 @@ export function ApartarDrawer({ open, onClose, producto, variante, color }: Apar
               <Fila t="Total" v={formatMXN(c.total)} fuerte />
               <div className="my-1 border-t border-outline-variant/70" />
               <Fila t="Pagas hoy" v={formatMXN(c.anticipo)} fuerte />
-              <Fila t="Restante" v={formatMXN(c.total - c.anticipo)} />
-              <Fila t="Te la guardamos hasta" v={formatFecha(c.venceEl)} />
+              {compra ? (
+                <Fila t="Lista para recoger" v={c.requiereTraslado ? formatFecha(c.listoEstimado) : "Hoy mismo"} />
+              ) : (
+                <>
+                  <Fila t="Restante" v={formatMXN(c.total - c.anticipo)} />
+                  <Fila t="Te la guardamos hasta" v={formatFecha(c.venceEl)} />
+                </>
+              )}
             </dl>
           )}
         </section>
 
-        <p className="text-body-sm text-on-surface-variant">
-          Si el apartado vence sin liquidarse, la prenda regresa a la tienda y se suma un cargo de{" "}
-          {formatMXN(cfg?.penalizacion ?? 30)} a tu siguiente apartado.
-        </p>
+        {!compra && (
+          <p className="text-body-sm text-on-surface-variant">
+            Si el apartado vence sin liquidarse, la prenda regresa a la tienda y se suma un cargo de{" "}
+            {formatMXN(cfg?.penalizacion ?? 30)} a tu siguiente compra o apartado.
+          </p>
+        )}
       </div>
     </Drawer>
   );

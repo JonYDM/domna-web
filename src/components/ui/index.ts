@@ -6,3 +6,4 @@ export { Chip } from "./Chip";
 export { Skeleton } from "./Skeleton";
 export { Drawer } from "./Drawer";
 export { Pasos, type Paso } from "./Pasos";
+export { Interruptor } from "./Interruptor";

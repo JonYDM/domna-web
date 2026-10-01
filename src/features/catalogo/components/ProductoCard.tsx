@@ -48,6 +48,7 @@ export const ProductoCard = memo(function ProductoCard({
         <div className="absolute left-2.5 top-2.5 flex flex-col items-start gap-1.5">
           {descuento > 0 && <Badge tono="primary">-{descuento}%</Badge>}
           {p.nuevo && !descuento && <Badge className="bg-surface-container-lowest text-on-surface">Nuevo</Badge>}
+          {p.reabastecido && !descuento && <Badge tono="success">De vuelta</Badge>}
         </div>
         {agotado ? (
           <div className="absolute inset-0 grid place-items-center bg-surface/60">

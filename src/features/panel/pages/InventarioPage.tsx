@@ -96,6 +96,8 @@ export default function InventarioPage() {
                     ) : p.disponibleTotal <= STOCK_BAJO ? (
                       <Badge tono="warning">Stock bajo</Badge>
                     ) : null}
+                    {p.activo && p.nuevo && <Badge tono="primary">Nuevo</Badge>}
+                    {p.activo && p.reabastecido && <Badge tono="success">De vuelta</Badge>}
                   </div>
                 </div>
                 <div className="text-right">

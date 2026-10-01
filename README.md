@@ -20,8 +20,10 @@ npm run dev        # http://localhost:5173
 
 ## Qué incluye la demo
 - **Clienta** (`/tienda`): catálogo con búsqueda y filtros en la URL, detalle con galería, color, talla y stock
-  por sucursal, apartar (50% → 15 días, o sin anticipo → 2 días), traslado entre sucursales, "¡Apartado listo!"
-  con folio, Mis apartados con saldo y vigencia, cargo de $30 por apartado vencido.
+  por sucursal. En cada prenda elige **comprar de contado** (paga el total, se descuenta el stock al momento) o
+  **apartar** (50% → 15 días, o sin anticipo → 2 días); las prendas que la dueña marca "solo de contado" (las
+  ofertas, en la demo) no se apartan. Traslado entre sucursales, pantalla de éxito con folio, "Mis pedidos" (en
+  curso / historial) y cargo de $30 por apartado vencido.
 - **Dueña** (`/app`): dashboard (activos, por vencer, ventas del mes, por cobrar, stock bajo, top), apartados con
   chips y búsqueda, registrar abono / liquidar / cancelar / entrega, recordatorio por WhatsApp, inventario con
   ajuste de stock y alta de producto en 4 pasos.

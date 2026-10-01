@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { SlidersHorizontal, X } from "lucide-react";
+import { RefreshCw, SlidersHorizontal, Sparkles, X } from "lucide-react";
 import { Domi } from "@/components/ilustraciones/Domi";
 import { BarraBusqueda } from "@/components/molecules/BarraBusqueda";
 import { EmptyState } from "@/components/molecules/EmptyState";
@@ -13,6 +13,8 @@ import { useFiltrosUrl } from "../useFiltrosUrl";
 import { ProductoCard } from "../components/ProductoCard";
 import { ProductoCardSkeleton } from "../components/ProductoCardSkeleton";
 import { FiltrosDrawer } from "../components/FiltrosDrawer";
+import { CarruselProductos } from "../components/CarruselProductos";
+import { AvisoUrgente } from "@/features/avisos/components/AvisoUrgente";
 
 export default function CatalogoPage() {
   const { sesion } = useSesion();
@@ -35,6 +37,9 @@ export default function CatalogoPage() {
   }
 
   const productos = useProductos(filtros);
+  // Carruseles de la portada (solo sin filtros). Se invalidan con "productos" al subir stock.
+  const nuevos = useProductos({ seccion: "nuevos" });
+  const reabastecidos = useProductos({ seccion: "reabastecidos" });
   const categorias = useCategorias();
   const config = useConfig();
   const prefetch = usePrefetchProducto();
@@ -50,18 +55,26 @@ export default function CatalogoPage() {
   if (filtros.precioMax)
     pills.push({ key: "precio", label: `Hasta ${formatMXN(filtros.precioMax)}`, quitar: () => cambiar({ precioMax: undefined }) });
   if (filtros.orden) pills.push({ key: "orden", label: ORDEN_CATALOGO[filtros.orden], quitar: () => cambiar({ orden: undefined }) });
+  if (filtros.seccion)
+    pills.push({
+      key: "seccion",
+      label: filtros.seccion === "nuevos" ? "Recién llegados" : "De vuelta en stock",
+      quitar: () => cambiar({ seccion: undefined }),
+    });
 
   const lista = productos.data ?? [];
+  const dias = config.data?.diasNovedad ?? 7;
 
   return (
     <div className="flex flex-col gap-4">
+      <AvisoUrgente />
       {!hayFiltros && (
         <section className="lunares relative overflow-hidden rounded-3xl bg-primary-soft px-5 py-5">
           <p className="text-label-sm uppercase text-primary-on-soft">
             {sesion?.rol === "clienta" ? `Hola, ${sesion.nombre}` : config.data?.nombre}
           </p>
           <h1 className="mt-1 max-w-[15rem] font-marca text-headline-lg text-on-surface sm:max-w-md">
-            Aparta hoy, paga a tu ritmo
+            Cómprala hoy o apártala
           </h1>
           <p className="mt-1.5 max-w-[11rem] text-body-md text-on-surface-variant sm:max-w-md">
             Con el {config.data?.anticipoPct ?? 50}% te la guardamos {config.data?.vigenciaConAnticipoDias ?? 15} días.
@@ -86,6 +99,36 @@ export default function CatalogoPage() {
           </Chip>
         ))}
       </div>
+
+      {!hayFiltros && (
+        <>
+          <CarruselProductos
+            titulo="Recién llegados"
+            subtitulo={`Lo que entró en los últimos ${dias} días`}
+            icono={<Sparkles className="h-5 w-5 text-primary" aria-hidden />}
+            productos={nuevos.data}
+            cargando={nuevos.isPending}
+            verTodo="?seccion=nuevos"
+            onPrefetch={prefetch}
+          />
+          <CarruselProductos
+            titulo="De vuelta en stock"
+            subtitulo="Se habían agotado y ya regresaron"
+            icono={<RefreshCw className="h-5 w-5 text-primary" aria-hidden />}
+            productos={reabastecidos.data}
+            cargando={reabastecidos.isPending}
+            verTodo="?seccion=reabastecidos"
+            onPrefetch={prefetch}
+          />
+          <h2 className="-mb-1 mt-2 font-marca text-headline-md text-on-surface">Todo el catálogo</h2>
+        </>
+      )}
+
+      {filtros.seccion && (
+        <h1 className="font-marca text-headline-lg text-on-surface">
+          {filtros.seccion === "nuevos" ? "Recién llegados" : "De vuelta en stock"}
+        </h1>
+      )}
 
       <div className="flex flex-wrap items-center gap-2">
         <Button variant="outline" size="sm" onClick={() => setAbierto(true)} className="rounded-full">

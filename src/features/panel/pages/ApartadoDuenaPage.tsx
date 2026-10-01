@@ -1,13 +1,14 @@
 import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import toast from "react-hot-toast";
-import { ChevronLeft, MessageCircle, Phone, Wallet } from "lucide-react";
+import { Bell, ChevronLeft, MessageCircle, Phone, Wallet } from "lucide-react";
 import type { Apartado, MetodoPago } from "@/types/api";
 import { EmptyState } from "@/components/molecules/EmptyState";
 import { Button, ButtonLink, Chip, Drawer, Input, Skeleton } from "@/components/ui";
 import { METODO_PAGO, SIGUIENTE_ENTREGA } from "@/lib/enums";
 import { formatFecha, formatMXN } from "@/lib/format";
 import { mensajeError } from "@/lib/errores";
+import { diasHasta } from "@/lib/reloj";
 import { useConfig } from "@/features/catalogo/hooks";
 import { useApartado, useAvanzarEntrega, useCancelarApartado, useRegistrarAbono } from "@/features/apartados/hooks";
 import { DetalleApartado } from "@/features/apartados/components/DetalleApartado";
@@ -60,9 +61,11 @@ export default function ApartadoDuenaPage() {
             className="-ml-2 mb-2 inline-flex h-10 items-center gap-1 rounded-full pl-1 pr-3 text-label-lg text-on-surface-variant hover:bg-surface-container"
           >
             <ChevronLeft className="h-5 w-5" aria-hidden />
-            Apartados
+            Pedidos
           </Link>
-          <h1 className="tabular font-marca text-headline-lg">{a.folio}</h1>
+          <h1 className="tabular font-marca text-headline-lg">
+            {a.modalidad === "compra" ? "Compra" : "Apartado"} {a.folio}
+          </h1>
         </div>
         <DetalleApartado apartado={a} config={config.data} />
       </div>
@@ -76,15 +79,23 @@ export default function ApartadoDuenaPage() {
             {a.clientaTelefono}
           </p>
           {activo && (
-            <a
-              href={`https://wa.me/52${telefono}?text=${mensaje}`}
-              target="_blank"
-              rel="noreferrer noopener"
-              className="mt-3 inline-flex h-10 items-center gap-2 rounded-xl bg-success-container px-3.5 text-label-lg text-success hover:brightness-95"
-            >
-              <MessageCircle className="h-4 w-4" aria-hidden />
-              Mandar recordatorio
-            </a>
+            <>
+              <p className="mt-3 flex items-start gap-2 rounded-xl bg-surface-container-low px-3 py-2.5 text-body-sm text-on-surface-variant">
+                <Bell className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden />
+                {diasHasta(a.venceEl) <= 3
+                  ? "La clienta ya ve el aviso de vencimiento en su app."
+                  : `Le avisaremos en su app 3 días antes de que venza (${formatFecha(a.venceEl)}).`}
+              </p>
+              <a
+                href={`https://wa.me/52${telefono}?text=${mensaje}`}
+                target="_blank"
+                rel="noreferrer noopener"
+                className="mt-2 inline-flex h-10 items-center gap-2 rounded-xl px-1 text-label-lg text-success hover:underline"
+              >
+                <MessageCircle className="h-4 w-4" aria-hidden />
+                Escribirle por WhatsApp (opcional)
+              </a>
+            </>
           )}
         </section>
 

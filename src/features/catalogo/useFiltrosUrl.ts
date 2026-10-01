@@ -1,8 +1,8 @@
 import { useCallback, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
-import type { FamiliaColor, FiltrosCatalogo, OrdenCatalogo } from "@/types/api";
+import type { FamiliaColor, FiltrosCatalogo, OrdenCatalogo, SeccionCatalogo } from "@/types/api";
 
-type Clave = "q" | "categoria" | "talla" | "color" | "precioMax" | "orden";
+type Clave = "q" | "categoria" | "talla" | "color" | "precioMax" | "orden" | "seccion";
 
 /**
  * Filtros del catálogo en la URL (?categoria=vestidos&talla=M&orden=precio-asc):
@@ -19,6 +19,7 @@ export function useFiltrosUrl() {
       color: (params.get("color") as FamiliaColor | null) ?? undefined,
       precioMax: params.get("precioMax") ? Number(params.get("precioMax")) : undefined,
       orden: (params.get("orden") as OrdenCatalogo | null) ?? undefined,
+      seccion: (params.get("seccion") as SeccionCatalogo | null) ?? undefined,
     }),
     [params],
   );
@@ -44,7 +45,7 @@ export function useFiltrosUrl() {
 
   /** Filtros del drawer activos (talla, color, precio, orden). */
   const activosDrawer = [filtros.talla, filtros.color, filtros.precioMax, filtros.orden].filter(Boolean).length;
-  const hayFiltros = activosDrawer > 0 || !!filtros.categoria || !!filtros.texto;
+  const hayFiltros = activosDrawer > 0 || !!filtros.categoria || !!filtros.texto || !!filtros.seccion;
 
   return { filtros, cambiar, limpiar, activosDrawer, hayFiltros };
 }

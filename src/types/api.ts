@@ -26,6 +26,8 @@ export interface ConfigBoutique {
   diasTraslado: number;
   /** Kill switch del SaaS: si la boutique no pagó la renta. */
   suspendida: boolean;
+  /** Días que una prenda se muestra como "Nuevo" o "De vuelta" (default 7). */
+  diasNovedad: number;
   sucursales: Sucursal[];
 }
 
@@ -86,24 +88,36 @@ export interface Producto {
   /** Precio tachado (oferta). */
   precioAntes?: number;
   activo: boolean;
-  nuevo: boolean;
+  /** false = solo se vende de contado (p. ej. ofertas). */
+  permiteApartado: boolean;
   colores: ColorProducto[];
   tallas: string[];
   variantes: Variante[];
   imagenes: ImagenProducto[];
+  /** Fecha de alta (UTC). "Nuevo" se DERIVA de aquí, no se guarda. */
   creado: string;
+  /** Última vez que una variante agotada volvió a tener stock (UTC). */
+  reabastecidoEl?: string;
+}
+
+/** Banderas derivadas por el servidor con la fecha actual (no se guardan). */
+export interface Novedad {
+  /** Creado hace menos de `diasNovedad` días. */
+  nuevo: boolean;
+  /** Reabastecido hace menos de `diasNovedad` días (y no es nuevo). */
+  reabastecido: boolean;
 }
 
 /** Item del grid del catálogo. */
-export interface ProductoResumen {
+export interface ProductoResumen extends Novedad {
   id: string;
   nombre: string;
   categoriaId: string;
   silueta: Silueta;
   precio: number;
   precioAntes?: number;
-  nuevo: boolean;
   activo: boolean;
+  permiteApartado: boolean;
   colores: ColorProducto[];
   tallas: string[];
   imagenes: ImagenProducto[];
@@ -111,11 +125,14 @@ export interface ProductoResumen {
   stockFisicoTotal: number;
 }
 
-export interface ProductoDetalle extends Omit<Producto, "variantes"> {
+export interface ProductoDetalle extends Omit<Producto, "variantes">, Novedad {
   variantes: VarianteDisponible[];
 }
 
 export type OrdenCatalogo = "nuevos" | "precio-asc" | "precio-desc";
+
+/** Secciones del catálogo: recién llegados o de vuelta en stock. */
+export type SeccionCatalogo = "nuevos" | "reabastecidos";
 
 export interface FiltrosCatalogo {
   texto?: string;
@@ -124,6 +141,7 @@ export interface FiltrosCatalogo {
   color?: FamiliaColor;
   precioMax?: number;
   orden?: OrdenCatalogo;
+  seccion?: SeccionCatalogo;
   /** Solo para el panel de la dueña: incluir inactivos. */
   incluirInactivos?: boolean;
 }
@@ -131,7 +149,8 @@ export interface FiltrosCatalogo {
 // ── Apartados ──
 
 export type EstadoApartado = "activo" | "liquidado" | "vencido" | "cancelado";
-export type ModalidadApartado = "sin_anticipo" | "anticipo";
+/** "compra" = pago completo al momento (venta directa); las otras dos son apartados. */
+export type ModalidadApartado = "sin_anticipo" | "anticipo" | "compra";
 export type EstadoEntrega = "en_origen" | "en_traslado" | "listo" | "entregado";
 export type MetodoPago = "efectivo" | "transferencia" | "tarjeta";
 
@@ -154,7 +173,7 @@ export interface Abono {
   monto: number;
   fecha: string;
   metodo: MetodoPago;
-  concepto: "anticipo" | "abono" | "liquidacion";
+  concepto: "anticipo" | "abono" | "liquidacion" | "compra";
 }
 
 export interface Apartado {
@@ -202,6 +221,7 @@ export interface CotizacionApartado {
   subtotal: number;
   penalizacion: number;
   total: number;
+  /** Lo que se paga hoy (anticipo o el total si es compra). */
   anticipo: number;
   venceEl: string;
   requiereTraslado: boolean;
@@ -215,7 +235,8 @@ export interface RegistrarAbonoInput {
   metodo: MetodoPago;
 }
 
-export type FiltroEstadoApartado = EstadoApartado | "por_vencer";
+/** por_entregar = pagado (liquidado) y aún no entregado. */
+export type FiltroEstadoApartado = EstadoApartado | "por_vencer" | "por_entregar";
 
 // ── Panel de la dueña ──
 
@@ -235,7 +256,10 @@ export interface Metricas {
   porVencer: number;
   ventasMes: number;
   piezasVendidasMes: number;
+  /** % de apartados cerrados que se liquidaron. */
   conversion: number;
+  porEntregar: number;
+  comprasMes: number;
   penalizacionesMes: number;
   stockBajo: StockBajoItem[];
   topProductos: { productoId: string; nombre: string; silueta: Silueta; colorHex: string; unidades: number }[];
@@ -253,4 +277,23 @@ export interface NuevoProductoInput {
   /** stock[talla][colorIndex] en la sucursal elegida. */
   stock: Record<string, number[]>;
   sucursal: SucursalId;
+  permiteApartado: boolean;
+}
+
+// ── Avisos in-app (notificaciones de la clienta) ──
+
+export type TipoAviso = "por_vencer" | "vencido" | "abono" | "traslado" | "lista";
+
+export interface Aviso {
+  /** Estable: tipo + pedido (+ abono). Sirve para marcarlo como leído. */
+  id: string;
+  tipo: TipoAviso;
+  titulo: string;
+  texto: string;
+  /** Cuándo se volvió relevante (UTC). */
+  fecha: string;
+  leido: boolean;
+  /** Requiere acción pronto (vence en ≤ 3 días). */
+  urgente: boolean;
+  apartadoId: string;
 }

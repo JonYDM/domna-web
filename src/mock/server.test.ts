@@ -44,11 +44,18 @@ describe("flujo de la demo a través del mock service layer", () => {
 
     // Sin anticipo + avanzar 3 días → vence y penaliza
     const b = await api.crearApartado("c-maria", { varianteId: v.id, cantidad: 1, modalidad: "sin_anticipo", entrega: "temixco" });
+    // Cuántos apartados activos de María vencerán en 3 días (el nuevo + los del seed).
+    const vencenPronto = (await api.misApartados("c-maria")).filter(
+      (x) => x.estado === "activo" && new Date(x.venceEl).getTime() - Date.now() <= 3 * 86_400_000,
+    ).length;
     await api.demoAvanzarDias(3);
     expect((await api.obtenerApartado(b.id)).estado).toBe("vencido");
-    expect((await api.obtenerClienta("c-maria")).penalizacionPendiente).toBe(30);
+    const pendiente = (await api.obtenerClienta("c-maria")).penalizacionPendiente;
+    expect(pendiente).toBe(30 * vencenPronto);
     const cot = await api.cotizarApartado("c-maria", { varianteId: v.id, cantidad: 1, modalidad: "anticipo", entrega: "temixco" });
-    expect(cot.penalizacion).toBe(30);
+    expect(cot.penalizacion).toBe(pendiente);
+    // La clienta ve el aviso de vencido en su app.
+    expect((await api.misAvisos("c-maria")).some((a) => a.tipo === "vencido" && a.apartadoId === b.id)).toBe(true);
 
     // Métricas coherentes
     const m = await api.obtenerMetricas();

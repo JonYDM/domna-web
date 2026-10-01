@@ -33,9 +33,21 @@ export const SIGUIENTE_ENTREGA: Partial<Record<EstadoEntrega, { estado: EstadoEn
 };
 
 export const MODALIDAD: Record<ModalidadApartado, string> = {
-  sin_anticipo: "Sin anticipo",
-  anticipo: "Con anticipo",
+  sin_anticipo: "Apartado sin anticipo",
+  anticipo: "Apartado con anticipo",
+  compra: "Compra de contado",
 };
+
+/** Estado visible: una compra pagada se muestra como "Pagada" (no "Liquidado"). */
+export function estadoVisible(a: { estado: EstadoApartado; modalidad: ModalidadApartado }) {
+  if (a.modalidad === "compra" && a.estado === "liquidado") return { label: "Pagada", tono: "success" as Tono };
+  return ESTADO_APARTADO[a.estado];
+}
+
+/** Sigue "en curso" para la clienta: apartado activo o pagado sin entregar. */
+export function enCurso(a: { estado: EstadoApartado; estadoEntrega: EstadoEntrega }): boolean {
+  return a.estado === "activo" || (a.estado === "liquidado" && a.estadoEntrega !== "entregado");
+}
 
 export const METODO_PAGO: Record<MetodoPago, string> = {
   efectivo: "Efectivo",

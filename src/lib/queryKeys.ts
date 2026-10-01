@@ -15,6 +15,8 @@ export const qk = {
   apartadoTodos: () => ["apartado"] as const,
   misApartados: (clientaId: string) => ["tienda", "apartados", clientaId] as const,
   misApartadosTodos: () => ["tienda"] as const,
+  /** Bajo "tienda": se invalida junto con mis apartados en cada mutación de pedidos. */
+  avisos: (clientaId: string) => ["tienda", "avisos", clientaId] as const,
   clienta: (id: string) => ["clienta", id] as const,
   clientaTodos: () => ["clienta"] as const,
   metricas: () => ["metricas"] as const,

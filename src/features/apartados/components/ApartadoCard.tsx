@@ -1,16 +1,16 @@
 import { memo } from "react";
 import { Link } from "react-router-dom";
-import { ChevronRight, Clock } from "lucide-react";
+import { ChevronRight, Clock, MapPin } from "lucide-react";
 import type { Apartado } from "@/types/api";
 import { PrendaImagen } from "@/components/ilustraciones/PrendaImagen";
 import { Badge } from "@/components/ui";
 import { cn } from "@/lib/cn";
-import { ESTADO_APARTADO } from "@/lib/enums";
+import { ESTADO_ENTREGA, estadoVisible } from "@/lib/enums";
 import { formatFecha, formatMXN, textoVencimiento } from "@/lib/format";
 import { diasHasta } from "@/lib/reloj";
 import { ProgresoPago } from "./ProgresoPago";
 
-/** Card de apartado (clienta y dueña). Imagen, folio, prenda, estado, vigencia y saldo. */
+/** Card de compra o apartado (clienta y dueña). Imagen, folio, prenda, estado y lo que sigue. */
 export const ApartadoCard = memo(function ApartadoCard({
   apartado: a,
   to,
@@ -21,9 +21,11 @@ export const ApartadoCard = memo(function ApartadoCard({
   mostrarClienta?: boolean;
 }) {
   const l = a.lineas[0];
-  const estado = ESTADO_APARTADO[a.estado];
+  const estado = estadoVisible(a);
   const activo = a.estado === "activo";
+  const porEntregar = a.estado === "liquidado" && a.estadoEntrega !== "entregado";
   const urgente = activo && diasHasta(a.venceEl) <= 3;
+  const sucursal = a.entrega === "temixco" ? "Temixco" : "La Azteca";
 
   return (
     <Link
@@ -34,7 +36,9 @@ export const ApartadoCard = memo(function ApartadoCard({
         <PrendaImagen silueta={l.silueta} hex={l.colorHex} alt="" className="w-16 shrink-0 rounded-xl" />
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-2">
-            <p className="tabular text-label-md text-on-surface-variant">{a.folio}</p>
+            <p className="tabular text-label-md text-on-surface-variant">
+              {a.folio} · {a.modalidad === "compra" ? "Compra" : "Apartado"}
+            </p>
             <Badge tono={estado.tono}>{estado.label}</Badge>
           </div>
           {mostrarClienta && <p className="mt-0.5 truncate text-label-lg">{a.clientaNombre}</p>}
@@ -58,9 +62,27 @@ export const ApartadoCard = memo(function ApartadoCard({
             <span className="tabular font-semibold">Saldo {formatMXN(a.saldo)}</span>
           </div>
         </>
+      ) : porEntregar ? (
+        <div className="flex items-center justify-between gap-2 border-t border-outline-variant/50 pt-2.5 text-body-sm">
+          <span className="inline-flex items-center gap-1.5 text-on-surface-variant">
+            <MapPin className="h-4 w-4 text-primary" aria-hidden />
+            {sucursal}
+          </span>
+          <Badge tono={ESTADO_ENTREGA[a.estadoEntrega].tono}>
+            {a.estadoEntrega === "listo"
+              ? "Lista para recoger"
+              : `${ESTADO_ENTREGA[a.estadoEntrega].label} · ${formatFecha(a.listoEstimado)}`}
+          </Badge>
+        </div>
       ) : (
         <p className="tabular flex justify-between border-t border-outline-variant/50 pt-2.5 text-body-sm text-on-surface-variant">
-          <span>{a.cerradoEl ? `${estado.label} el ${formatFecha(a.cerradoEl)}` : estado.label}</span>
+          <span>
+            {a.estadoEntrega === "entregado" && a.estado === "liquidado"
+              ? "Entregada"
+              : a.cerradoEl
+                ? `${estado.label} el ${formatFecha(a.cerradoEl)}`
+                : estado.label}
+          </span>
           <span>{formatMXN(a.total)}</span>
         </p>
       )}

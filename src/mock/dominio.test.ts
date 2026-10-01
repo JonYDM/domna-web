@@ -120,7 +120,164 @@ describe("apartados (reglas de dominio)", () => {
     expect(db.clientas.find((c) => c.id === "c-maria")!.penalizacionPendiente).toBe(0);
   });
 
-  it("el seed es consistente: ningún disponible negativo", () => {
+describe("compra de contado (venta directa)", () => {
+  it("cobra el total, queda pagada y descuenta el stock físico al momento", () => {
+    const db = nuevaDb();
+    const v = varianteCon(db, 2);
+    const a = dom.crearApartado(db, "c-maria", { varianteId: v.id, cantidad: 1, modalidad: "compra", entrega: "temixco" }, HOY);
+    expect(a.estado).toBe("liquidado");
+    expect(dom.pagado(a)).toBe(a.total);
+    expect(a.abonos[0].concepto).toBe("compra");
+    expect(v.stock.temixco).toBe(1);
+    expect(dom.disponibleTotal(db, v)).toBe(1);
+    expect(a.estadoEntrega).toBe("listo");
+  });
+
+  it("no la afecta el reloj (no vence) ni el límite de 3 apartados", () => {
+    const db = nuevaDb();
+    const v = varianteCon(db, 6);
+    for (let i = 0; i < 3; i++) {
+      dom.crearApartado(db, "c-maria", { varianteId: v.id, cantidad: 1, modalidad: "anticipo", entrega: "temixco" }, HOY);
+    }
+    const c = dom.crearApartado(db, "c-maria", { varianteId: v.id, cantidad: 1, modalidad: "compra", entrega: "temixco" }, HOY);
+    dom.procesarVencimientos(db, sumarDias(HOY, 30));
+    expect(c.estado).toBe("liquidado");
+  });
+
+  it("una prenda que no permite apartado solo se puede comprar", () => {
+    const db = nuevaDb();
+    const v = varianteCon(db, 2);
+    db.productos[0].permiteApartado = false;
+    expect(() =>
+      dom.crearApartado(db, "c-maria", { varianteId: v.id, cantidad: 1, modalidad: "anticipo", entrega: "temixco" }, HOY),
+    ).toThrowError(/contado/);
+    const c = dom.crearApartado(db, "c-maria", { varianteId: v.id, cantidad: 1, modalidad: "compra", entrega: "temixco" }, HOY);
+    expect(c.estado).toBe("liquidado");
+  });
+
+  it("la penalización pendiente también se cobra en una compra", () => {
+    const db = nuevaDb();
+    db.clientas.find((c) => c.id === "c-maria")!.penalizacionPendiente = 30;
+    const v = varianteCon(db, 1);
+    const c = dom.crearApartado(db, "c-maria", { varianteId: v.id, cantidad: 1, modalidad: "compra", entrega: "temixco" }, HOY);
+    expect(c.total).toBe(db.productos[0].precio + 30);
+    expect(dom.pagado(c)).toBe(c.total);
+  });
+
+  it("sin stock en la sucursal elegida: se compra igual con traslado", () => {
+    const db = nuevaDb();
+    const v = varianteCon(db, 1);
+    const c = dom.crearApartado(db, "c-maria", { varianteId: v.id, cantidad: 1, modalidad: "compra", entrega: "azteca" }, HOY);
+    expect(c.requiereTraslado).toBe(true);
+    expect(c.estadoEntrega).toBe("en_origen");
+    expect(v.stock.temixco).toBe(0);
+  });
+});
+
+describe("novedades: nuevos y de vuelta en stock", () => {
+  it("un producto es nuevo durante 7 días desde su alta y luego deja de serlo solo", () => {
+    const db = nuevaDb();
+    const p = db.productos[0];
+    p.creado = HOY.toISOString();
+    expect(dom.novedad(db, p, sumarDias(HOY, 6)).nuevo).toBe(true);
+    expect(dom.novedad(db, p, sumarDias(HOY, 7)).nuevo).toBe(false);
+  });
+
+  it("subir stock de una variante agotada marca el producto como reabastecido", () => {
+    const db = nuevaDb();
+    const p = db.productos[0];
+    p.creado = sumarDias(HOY, -30).toISOString();
+    const v = varianteCon(db, 0);
+    dom.ajustarStock(db, v.id, "azteca", 3, HOY);
+    expect(p.reabastecidoEl).toBe(HOY.toISOString());
+    expect(dom.novedad(db, p, sumarDias(HOY, 2)).reabastecido).toBe(true);
+    expect(dom.novedad(db, p, sumarDias(HOY, 8)).reabastecido).toBe(false);
+  });
+
+  it("subir stock de una variante que NO estaba agotada no cuenta como reabastecido", () => {
+    const db = nuevaDb();
+    const p = db.productos[0];
+    p.reabastecidoEl = undefined;
+    const v = varianteCon(db, 2);
+    dom.ajustarStock(db, v.id, "temixco", 1, HOY);
+    expect(p.reabastecidoEl).toBeUndefined();
+  });
+
+  it("si vuelve a agotarse, sale de 'De vuelta en stock'; y un nuevo no se duplica ahí", () => {
+    const db = nuevaDb();
+    const p = db.productos[0];
+    p.creado = sumarDias(HOY, -30).toISOString();
+    p.variantes.forEach((v) => (v.stock = { temixco: 0, azteca: 0 }));
+    p.reabastecidoEl = HOY.toISOString();
+    expect(dom.novedad(db, p, HOY).reabastecido).toBe(false); // sin stock
+    p.variantes[0].stock.temixco = 2;
+    p.creado = HOY.toISOString();
+    expect(dom.novedad(db, p, HOY)).toEqual({ nuevo: true, reabastecido: false });
+  });
+
+  it("no deja bajar el stock por debajo de lo apartado", () => {
+    const db = nuevaDb();
+    const v = varianteCon(db, 1);
+    dom.crearApartado(db, "c-maria", { varianteId: v.id, cantidad: 1, modalidad: "anticipo", entrega: "temixco" }, HOY);
+    expect(() => dom.ajustarStock(db, v.id, "temixco", -1, HOY)).toThrowError(/apartado/);
+  });
+});
+
+describe("avisos in-app", () => {
+  const tipos = (db: DbState, hoy: Date) => dom.avisosDe(db, "c-maria", hoy).map((a) => a.tipo);
+
+  it("el aviso de vencimiento aparece a 3 días, no antes, y es urgente", () => {
+    const db = nuevaDb();
+    const v = varianteCon(db, 2);
+    dom.crearApartado(db, "c-maria", { varianteId: v.id, cantidad: 1, modalidad: "anticipo", entrega: "temixco" }, HOY);
+    expect(tipos(db, sumarDias(HOY, 11))).not.toContain("por_vencer"); // faltan 4 días
+    const avisos = dom.avisosDe(db, "c-maria", sumarDias(HOY, 12)); // faltan 3
+    expect(avisos[0]).toMatchObject({ tipo: "por_vencer", urgente: true, leido: false });
+    expect(avisos[0].titulo).toMatch(/en 3 días/);
+    expect(dom.avisosDe(db, "c-maria", sumarDias(HOY, 14))[0].titulo).toMatch(/mañana/);
+  });
+
+  it("al vencer cambia a aviso de vencido con el cargo", () => {
+    const db = nuevaDb();
+    const v = varianteCon(db, 1);
+    dom.crearApartado(db, "c-maria", { varianteId: v.id, cantidad: 1, modalidad: "sin_anticipo", entrega: "temixco" }, HOY);
+    const despues = sumarDias(HOY, 3);
+    dom.procesarVencimientos(db, despues);
+    const t = tipos(db, despues);
+    expect(t).toContain("vencido");
+    expect(t).not.toContain("por_vencer");
+  });
+
+  it("abono registrado por la tienda y prenda lista generan avisos; el anticipo propio no", () => {
+    const db = nuevaDb();
+    const v = varianteCon(db, 2);
+    const a = dom.crearApartado(db, "c-maria", { varianteId: v.id, cantidad: 1, modalidad: "anticipo", entrega: "temixco" }, HOY);
+    expect(tipos(db, HOY)).toEqual([]);
+    dom.abonar(db, { apartadoId: a.id, monto: a.total - dom.pagado(a), metodo: "efectivo" }, HOY);
+    expect(tipos(db, HOY).sort()).toEqual(["abono", "lista"]);
+  });
+
+  it("marcar como leído persiste por clienta y no afecta a otras", () => {
+    const db = nuevaDb();
+    const v = varianteCon(db, 1);
+    dom.crearApartado(db, "c-maria", { varianteId: v.id, cantidad: 1, modalidad: "sin_anticipo", entrega: "temixco" }, HOY);
+    const [aviso] = dom.avisosDe(db, "c-maria", HOY);
+    dom.marcarAvisosLeidos(db, "c-maria", [aviso.id]);
+    expect(dom.avisosDe(db, "c-maria", HOY)[0].leido).toBe(true);
+    expect(db.avisosLeidos["c-ana"]).toBeUndefined();
+  });
+
+  it("el traslado avisa que va en camino", () => {
+    const db = nuevaDb();
+    const v = varianteCon(db, 1);
+    const a = dom.crearApartado(db, "c-maria", { varianteId: v.id, cantidad: 1, modalidad: "compra", entrega: "azteca" }, HOY);
+    dom.avanzarEntrega(db, a.id, "en_traslado");
+    expect(tipos(db, HOY)).toContain("traslado");
+  });
+});
+
+describe("seed", () => {
+  it("es consistente: ningún disponible negativo", () => {
     const db = crearSeed(HOY);
     for (const p of db.productos) {
       for (const v of p.variantes) {
@@ -130,4 +287,5 @@ describe("apartados (reglas de dominio)", () => {
     }
     expect(db.apartados.length).toBeGreaterThan(10);
   });
+});
 });

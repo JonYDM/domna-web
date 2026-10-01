@@ -3,12 +3,12 @@ import type { Apartado, ConfigBoutique } from "@/types/api";
 import { PrendaImagen } from "@/components/ilustraciones/PrendaImagen";
 import { Badge } from "@/components/ui";
 import { cn } from "@/lib/cn";
-import { ESTADO_APARTADO, ESTADO_ENTREGA, METODO_PAGO, MODALIDAD } from "@/lib/enums";
+import { ESTADO_ENTREGA, METODO_PAGO, MODALIDAD, estadoVisible } from "@/lib/enums";
 import { formatFecha, formatFechaHora, formatMXN, textoVencimiento } from "@/lib/format";
 import { diasHasta } from "@/lib/reloj";
 import { ProgresoPago } from "./ProgresoPago";
 
-const CONCEPTO = { anticipo: "Anticipo", abono: "Abono", liquidacion: "Liquidación" } as const;
+const CONCEPTO = { anticipo: "Anticipo", abono: "Abono", liquidacion: "Liquidación", compra: "Pago completo" } as const;
 
 /** Detalle de un apartado: prenda, pago, vigencia, entrega y abonos. Compartido clienta/dueña. */
 export function DetalleApartado({ apartado: a, config }: { apartado: Apartado; config?: ConfigBoutique }) {
@@ -30,7 +30,7 @@ export function DetalleApartado({ apartado: a, config }: { apartado: Apartado; c
               </p>
               <p className="tabular mt-1 text-body-md font-semibold">{formatMXN(l.precio)}</p>
               <div className="mt-2 flex flex-wrap gap-1.5">
-                <Badge tono={ESTADO_APARTADO[a.estado].tono}>{ESTADO_APARTADO[a.estado].label}</Badge>
+                <Badge tono={estadoVisible(a).tono}>{estadoVisible(a).label}</Badge>
                 <Badge>{MODALIDAD[a.modalidad]}</Badge>
               </div>
             </div>

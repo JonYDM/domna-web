@@ -20,9 +20,12 @@ export interface DbState {
   clientas: Clienta[];
   apartados: ApartadoEntidad[];
   folioSeq: number;
+  /** Avisos leídos por clienta (ids). Los avisos en sí se derivan del estado. */
+  avisosLeidos: Record<string, string[]>;
 }
 
-export const DB_VERSION = 1;
+/** Subir al cambiar la forma de los datos: la demo se reinicia con el seed nuevo. */
+export const DB_VERSION = 4;
 const KEY = "domna.demo.db";
 
 export function cargar(): DbState | null {

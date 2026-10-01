@@ -1,15 +1,16 @@
 import { useMemo, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { ChevronLeft, Clock, MapPin, ShieldCheck, Truck } from "lucide-react";
+import { ChevronLeft, Clock, MapPin, ShieldCheck, ShoppingBag, Truck } from "lucide-react";
+import type { ModalidadApartado } from "@/types/api";
 import { EmptyState } from "@/components/molecules/EmptyState";
 import { PrecioTag } from "@/components/molecules/PrecioTag";
 import { SelectorColor } from "@/components/molecules/SelectorColor";
 import { SelectorTalla } from "@/components/molecules/SelectorTalla";
 import { StockBadge } from "@/components/molecules/StockBadge";
-import { Button, ButtonLink, Skeleton } from "@/components/ui";
+import { Badge, Button, ButtonLink, Skeleton } from "@/components/ui";
 import { formatMXN } from "@/lib/format";
 import { mensajeError } from "@/lib/errores";
-import { ApartarDrawer } from "@/features/apartados/components/ApartarDrawer";
+import { ComprarApartarDrawer } from "@/features/apartados/components/ComprarApartarDrawer";
 import { useCategorias, useConfig, useProducto } from "../hooks";
 import { GaleriaProducto } from "../components/GaleriaProducto";
 
@@ -23,7 +24,8 @@ export default function ProductoPage() {
 
   const [colorElegido, setColorElegido] = useState<string | null>(params.get("color"));
   const [tallaElegida, setTallaElegida] = useState<string | null>(null);
-  const [apartando, setApartando] = useState(false);
+  /** Drawer abierto con la opción elegida (null = cerrado). */
+  const [accion, setAccion] = useState<ModalidadApartado | null>(null);
 
   const p = producto.data;
 
@@ -108,6 +110,7 @@ export default function ProductoPage() {
             <div className="mt-2 flex items-center gap-3">
               <PrecioTag precio={p.precio} precioAntes={p.precioAntes} tamano="lg" />
               {variante && <StockBadge disponible={variante.disponible} />}
+              {!p.permiteApartado && <Badge>Solo de contado</Badge>}
             </div>
           </div>
 
@@ -136,16 +139,31 @@ export default function ProductoPage() {
 
           <ul className="flex flex-col gap-3 rounded-2xl bg-surface-container-lowest p-4 shadow-soft">
             <li className="flex gap-3 text-body-md">
-              <ShieldCheck className="h-5 w-5 shrink-0 text-primary" aria-hidden />
+              <ShoppingBag className="h-5 w-5 shrink-0 text-primary" aria-hidden />
               <span>
-                Apártala con <strong>{formatMXN(anticipo)}</strong> ({config.data?.anticipoPct}%) y te la guardamos{" "}
-                {config.data?.vigenciaConAnticipoDias} días.
+                Cómprala de contado por <strong>{formatMXN(p.precio)}</strong> y recógela hoy.
               </span>
             </li>
-            <li className="flex gap-3 text-body-md">
-              <Clock className="h-5 w-5 shrink-0 text-primary" aria-hidden />
-              <span>O sin anticipo: te la guardamos {config.data?.vigenciaSinAnticipoDias} días.</span>
-            </li>
+            {p.permiteApartado ? (
+              <>
+                <li className="flex gap-3 text-body-md">
+                  <ShieldCheck className="h-5 w-5 shrink-0 text-primary" aria-hidden />
+                  <span>
+                    O apártala con <strong>{formatMXN(anticipo)}</strong> ({config.data?.anticipoPct}%) y te la
+                    guardamos {config.data?.vigenciaConAnticipoDias} días.
+                  </span>
+                </li>
+                <li className="flex gap-3 text-body-md">
+                  <Clock className="h-5 w-5 shrink-0 text-primary" aria-hidden />
+                  <span>Sin anticipo: te la guardamos {config.data?.vigenciaSinAnticipoDias} días.</span>
+                </li>
+              </>
+            ) : (
+              <li className="flex gap-3 text-body-md text-on-surface-variant">
+                <Clock className="h-5 w-5 shrink-0 text-outline" aria-hidden />
+                <span>Las prendas en oferta no se apartan.</span>
+              </li>
+            )}
             <li className="flex gap-3 text-body-md">
               <Truck className="h-5 w-5 shrink-0 text-primary" aria-hidden />
               <span>Recoge en Temixco o La Azteca. Si está en la otra sucursal, te la llevamos en 2 días hábiles.</span>
@@ -153,43 +171,63 @@ export default function ProductoPage() {
           </ul>
 
           <div className="hidden md:block">
-            <BotonApartar talla={talla} agotada={tallaAgotada} anticipo={anticipo} onClick={() => setApartando(true)} />
+            <Acciones talla={talla} agotada={tallaAgotada} precio={p.precio} anticipo={anticipo} permiteApartado={p.permiteApartado} onAccion={setAccion} />
           </div>
         </div>
       </div>
 
       {/* CTA fijo abajo en móvil (sobre la nav inferior) */}
       <div className="fixed inset-x-0 bottom-16 z-30 border-t border-outline-variant/60 bg-surface-container-lowest px-4 py-3 md:hidden">
-        <BotonApartar talla={talla} agotada={tallaAgotada} anticipo={anticipo} onClick={() => setApartando(true)} />
+        <Acciones talla={talla} agotada={tallaAgotada} precio={p.precio} anticipo={anticipo} permiteApartado={p.permiteApartado} onAccion={setAccion} />
       </div>
 
-      {variante && (
-        <ApartarDrawer
-          open={apartando}
-          onClose={() => setApartando(false)}
+      {variante && accion && (
+        <ComprarApartarDrawer
+          key={`${variante.id}-${accion}`}
+          open
+          onClose={() => setAccion(null)}
           producto={p}
           variante={variante}
           color={color}
+          modalidadInicial={accion}
         />
       )}
     </div>
   );
 }
 
-function BotonApartar({
+function Acciones({
   talla,
   agotada,
+  precio,
   anticipo,
-  onClick,
+  permiteApartado,
+  onAccion,
 }: {
   talla: string | null;
   agotada: boolean;
+  precio: number;
   anticipo: number;
-  onClick: () => void;
+  permiteApartado: boolean;
+  onAccion: (m: ModalidadApartado) => void;
 }) {
+  if (!talla || agotada) {
+    return (
+      <Button size="lg" fullWidth disabled>
+        {!talla ? "Elige tu talla" : "Talla agotada"}
+      </Button>
+    );
+  }
   return (
-    <Button size="lg" fullWidth disabled={!talla || agotada} onClick={onClick}>
-      {!talla ? "Elige tu talla" : agotada ? "Talla agotada" : `Apartar con ${formatMXN(anticipo)}`}
-    </Button>
+    <div className="flex gap-2">
+      <Button size="lg" variant="tinta" fullWidth className="px-3" onClick={() => onAccion("compra")}>
+        Comprar · {formatMXN(precio)}
+      </Button>
+      {permiteApartado && (
+        <Button size="lg" fullWidth className="px-3" onClick={() => onAccion("anticipo")}>
+          Apartar · {formatMXN(anticipo)}
+        </Button>
+      )}
+    </div>
   );
 }

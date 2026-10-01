@@ -66,3 +66,16 @@ export function textoVencimiento(iso: string): string {
 export function plural(n: number, uno: string, varios: string): string {
   return `${n} ${n === 1 ? uno : varios}`;
 }
+
+/** Tiempo relativo: "Ahora", "Hace 3 h", "Ayer", "Hace 4 días", o la fecha si es antiguo. */
+export function formatHace(iso: string): string {
+  const min = Math.floor((ahora().getTime() - new Date(iso).getTime()) / 60_000);
+  if (min < 1) return "Ahora";
+  if (min < 60) return `Hace ${min} min`;
+  const h = Math.floor(min / 60);
+  if (h < 24) return `Hace ${h} h`;
+  const d = Math.floor(h / 24);
+  if (d === 1) return "Ayer";
+  if (d < 7) return `Hace ${d} días`;
+  return formatFecha(iso);
+}

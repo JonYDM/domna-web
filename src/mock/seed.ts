@@ -103,6 +103,7 @@ export const CONFIG_INICIAL: ConfigBoutique = {
   limiteApartadosActivos: 3,
   diasTraslado: 2,
   suspendida: false,
+  diasNovedad: 7,
   sucursales: [
     { id: "temixco", nombre: "Boutique Temixco", direccion: "Av. Emiliano Zapata 120, Temixco, Mor." },
     { id: "azteca", nombre: "Boutique La Azteca", direccion: "Calle Azteca 45, Col. La Azteca, Temixco, Mor." },
@@ -117,6 +118,17 @@ function slug(s: string): string {
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/(^-|-$)/g, "");
 }
+
+/** Índices de DEFS marcados como nuevos, en orden de llegada (el primero, hoy). */
+const NUEVOS = DEFS.flatMap((d, i) => (d.nuevo ? [i] : []));
+
+/** "De vuelta en stock" de ejemplo: [índice en DEFS, días desde que se reabasteció]. */
+const REABASTECIDOS: [number, number][] = [
+  [2, 0], // Vestido camisero Elena: hoy
+  [8, 1], // Pantalón palazzo Sofía
+  [14, 3], // Blazer oversize Mónica
+  [10, 5], // Pantalón sastre Regina
+];
 
 function crearProductos(hoy: Date): Producto[] {
   const r = rng(20261001);
@@ -153,13 +165,15 @@ function crearProductos(hoy: Date): Producto[] {
       precio: d.precio,
       precioAntes: d.precioAntes,
       activo: true,
-      nuevo: d.nuevo ?? false,
+      // Regla de ejemplo de la boutique: lo que está en oferta se vende solo de contado.
+      permiteApartado: !d.precioAntes,
       colores,
       tallas: d.tallas,
       variantes,
       imagenes: [],
-      // Los "nuevos" tienen fecha reciente para ordenar por "Lo más nuevo".
-      creado: sumarDias(hoy, -(d.nuevo ? i % 4 : 10 + i)).toISOString(),
+      // "Nuevo" = creado hace menos de 7 días. Los de la demo: 0, 2, 4 y 6 días (el último
+      // deja de ser nuevo al adelantar el reloj 1 día). El resto, hace semanas.
+      creado: sumarDias(hoy, -(d.nuevo ? NUEVOS.indexOf(i) * 2 : 15 + i)).toISOString(),
     };
   });
 }
@@ -180,7 +194,9 @@ export function crearSeed(hoy: Date): DbState {
     ],
     apartados: [],
     folioSeq: 0,
+    avisosLeidos: {},
   };
+  for (const [idx, dias] of REABASTECIDOS) db.productos[idx].reabastecidoEl = sumarDias(hoy, -dias).toISOString();
 
   /** Crea un apartado "en el pasado" usando las mismas reglas del dominio. */
   function sembrar(
@@ -225,9 +241,16 @@ export function crearSeed(hoy: Date): DbState {
   sembrar("c-vale", 2, 3, "anticipo", "azteca");
   sembrar("c-sofia", 12, 5, "anticipo", "temixco");
   sembrar("c-maria", 14, 4, "anticipo", "temixco", [{ dias: 1, monto: 150, metodo: "transferencia" }]);
+  // María: un apartado que vence en 2 días (genera el aviso urgente de la demo).
+  sembrar("c-maria", 15, 13, "anticipo", "azteca", [{ dias: 5, monto: 100, metodo: "efectivo" }]);
+
+  // Compras de contado: una de María lista para recoger y una con traslado pendiente.
+  sembrar("c-maria", 5, 1, "compra", "azteca");
+  sembrar("c-sofia", 17, 0, "compra", "azteca");
+  sembrar("c-fer", 3, 0, "compra", "temixco");
 
   // Historial cerrado: un vencido (ya penalizado y cobrado) y un cancelado.
-  sembrar("c-dani", 3, 20, "sin_anticipo", "temixco");
+  sembrar("c-dani", 10, 20, "sin_anticipo", "temixco");
   const vencido = db.apartados[0];
   vencido.estado = "vencido";
   vencido.cerradoEl = vencido.venceEl;

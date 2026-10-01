@@ -26,6 +26,18 @@
 | I3 | Panel de la dueña | Dashboard (activos, por vencer, ventas del mes, stock bajo), apartados con chips y búsqueda, registrar abono / liquidar / cancelar / entrega, inventario y alta de producto en pasos | ✅ |
 | I4 | Controles de demo | Avanzar el reloj (+1 día) para mostrar vencimientos y penalización, suspender boutique (kill switch), reiniciar datos | ✅ |
 | I5 | Pulido | Vacío / cargando / error con Domi, 360 px, manifest PWA, docs | ✅ |
+| I6 | Comprar o apartar | Compra de contado (pago completo, descuenta stock al momento) además de apartar; por prenda la dueña decide si se puede apartar (ofertas solo de contado); "Mis pedidos" con En curso / Historial; filtro "Por entregar" | ✅ |
+| I7 | Novedades | Carruseles "Recién llegados" (alta < 7 días) y "De vuelta en stock" (una talla agotada volvió a tener piezas hace < 7 días) con "Ver todo" (`?seccion=`). Se derivan de fechas: caducan solas | ✅ |
+| I8 | Avisos in-app | Campana con contador y centro de avisos de la clienta: vence en ≤ 3 días (urgente, banda en el catálogo), venció + cargo, abono recibido, va en camino, lista para recoger. Sin WhatsApp automático ni costo por mensaje | ✅ |
+
+## Avisos: cómo crece en el backend
+1. **In-app (hecho en la demo):** los avisos se derivan del estado de los pedidos; solo se guarda cuáles leyó
+   la clienta (`AvisoLeido`). Endpoint `GET /api/tienda/avisos` + `POST /api/tienda/avisos/leidos`.
+2. **Web Push (siguiente paso, gratis):** para que el aviso llegue **con la app cerrada**. La PWA pide permiso, se
+   guarda la suscripción (`PushSubscription`) y un `BackgroundService` diario envía "vence en 3 días / mañana"
+   con el paquete `WebPush` (llaves VAPID, sin costo por mensaje). Android y escritorio: sí. iPhone: solo si
+   instaló la app en la pantalla de inicio (iOS 16.4+). Por eso el aviso in-app sigue siendo la base.
+3. **WhatsApp manual:** se queda el botón opcional de la dueña (`wa.me`, gratis). Sin API de Meta.
 
 ## Guion sugerido de la demo (10 min)
 1. Bienvenida → **Soy clienta**. Navegar el catálogo, filtrar "Vestidos" talla M.

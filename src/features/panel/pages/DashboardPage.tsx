@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { AlertTriangle, ChevronRight, ClipboardList, Plus, TrendingUp, Wallet } from "lucide-react";
+import { AlertTriangle, ChevronRight, ClipboardList, PackageCheck, Plus, TrendingUp, Wallet } from "lucide-react";
 import type { ReactNode } from "react";
 import { Domi } from "@/components/ilustraciones/Domi";
 import { PrendaImagen } from "@/components/ilustraciones/PrendaImagen";
@@ -61,7 +61,7 @@ export default function DashboardPage() {
               to="/app/apartados?estado=activo"
               titulo="Apartados activos"
               valor={String(m.data.apartadosActivos)}
-              detalle={`${formatMXN(m.data.montoActivos)} apartado`}
+              detalle={`${formatMXN(m.data.saldoPorCobrar)} por cobrar`}
               icono={<ClipboardList className="h-5 w-5" aria-hidden />}
               destacada
             />
@@ -69,7 +69,7 @@ export default function DashboardPage() {
               to="/app/apartados?estado=por_vencer"
               titulo="Por vencer (3 días)"
               valor={String(m.data.porVencer)}
-              detalle={m.data.porVencer ? "Mándales un recordatorio" : "Todo en orden"}
+              detalle={m.data.porVencer ? "Ya les llegó el aviso en la app" : "Todo en orden"}
               icono={<AlertTriangle className="h-5 w-5" aria-hidden />}
               tono={m.data.porVencer ? "warning" : "neutral"}
             />
@@ -77,16 +77,16 @@ export default function DashboardPage() {
               to="/app/apartados?estado=liquidado"
               titulo="Ventas del mes"
               valor={formatMXN(m.data.ventasMes)}
-              detalle={`${m.data.piezasVendidasMes} piezas`}
+              detalle={`${m.data.piezasVendidasMes} piezas · ${m.data.comprasMes} de contado`}
               icono={<TrendingUp className="h-5 w-5" aria-hidden />}
               tono="success"
             />
             <Metrica
-              to="/app/apartados?estado=activo"
-              titulo="Por cobrar"
-              valor={formatMXN(m.data.saldoPorCobrar)}
-              detalle={`Conversión ${m.data.conversion}% · cargos ${formatMXN(m.data.penalizacionesMes)}`}
-              icono={<Wallet className="h-5 w-5" aria-hidden />}
+              to="/app/apartados?estado=por_entregar"
+              titulo="Por entregar"
+              valor={String(m.data.porEntregar)}
+              detalle={`Conversión de apartados ${m.data.conversion}%`}
+              icono={<PackageCheck className="h-5 w-5" aria-hidden />}
             />
           </div>
 

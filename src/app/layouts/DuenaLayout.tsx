@@ -15,7 +15,7 @@ export default function DuenaLayout() {
 
   const items: ItemNav[] = [
     { to: "/app", label: "Inicio", icono: LayoutDashboard, end: true },
-    { to: "/app/apartados", label: "Apartados", icono: ClipboardList, contador: metricas.data?.porVencer },
+    { to: "/app/apartados", label: "Pedidos", icono: ClipboardList, contador: metricas.data?.porVencer },
     { to: "/app/inventario", label: "Inventario", icono: Package },
     { to: "/app/demo", label: "Demo", icono: FlaskConical },
   ];

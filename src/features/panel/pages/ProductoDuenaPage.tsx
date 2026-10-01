@@ -5,11 +5,11 @@ import type { SucursalId } from "@/types/api";
 import { PrendaImagen } from "@/components/ilustraciones/PrendaImagen";
 import { EmptyState } from "@/components/molecules/EmptyState";
 import { PrecioTag } from "@/components/molecules/PrecioTag";
-import { Badge, Button, ButtonLink, Skeleton } from "@/components/ui";
+import { Badge, Button, ButtonLink, Interruptor, Skeleton } from "@/components/ui";
 import { cn } from "@/lib/cn";
 import { mensajeError } from "@/lib/errores";
 import { useProducto } from "@/features/catalogo/hooks";
-import { useAjustarStock, useCambiarEstadoProducto } from "../hooks";
+import { useAjustarStock, useCambiarEstadoProducto, useCambiarPermiteApartado } from "../hooks";
 
 const SUCURSALES: { id: SucursalId; nombre: string }[] = [
   { id: "temixco", nombre: "Temixco" },
@@ -21,6 +21,7 @@ export default function ProductoDuenaPage() {
   const producto = useProducto(id, { incluirInactivo: true });
   const estado = useCambiarEstadoProducto();
   const ajustar = useAjustarStock(id);
+  const permite = useCambiarPermiteApartado();
 
   if (producto.isPending) return <Skeleton className="h-64 w-full rounded-2xl" />;
   if (producto.isError) {
@@ -58,6 +59,8 @@ export default function ProductoDuenaPage() {
           <div className="flex flex-wrap gap-1.5">
             <Badge tono={p.activo ? "success" : "neutral"}>{p.activo ? "Publicado" : "Inactivo"}</Badge>
             {p.nuevo && <Badge tono="primary">Nuevo</Badge>}
+            {p.reabastecido && <Badge tono="success">De vuelta en stock</Badge>}
+            {!p.permiteApartado && <Badge>Solo de contado</Badge>}
           </div>
           <div className="mt-2 flex flex-wrap gap-2">
             <Button
@@ -84,9 +87,29 @@ export default function ProductoDuenaPage() {
       </section>
 
       <section className="rounded-2xl bg-surface-container-lowest p-4 shadow-soft">
+        <Interruptor
+          checked={p.permiteApartado}
+          disabled={permite.isPending}
+          onChange={(v) =>
+            permite.mutate(
+              { id: p.id, permite: v },
+              { onSuccess: () => toast.success(v ? "Ahora se puede apartar" : "Solo de contado") },
+            )
+          }
+          label="Se puede apartar"
+          descripcion={
+            p.permiteApartado
+              ? "La clienta puede comprarla o apartarla."
+              : "Solo se vende de contado (no se aparta)."
+          }
+        />
+      </section>
+
+      <section className="rounded-2xl bg-surface-container-lowest p-4 shadow-soft">
         <h2 className="text-label-lg">Stock por variante</h2>
         <p className="mb-3 text-body-sm text-on-surface-variant">
-          Disponible = físico − apartado. No puedes bajar el físico por debajo de lo apartado.
+          Disponible = físico − apartado. No puedes bajar el físico por debajo de lo apartado. Si subes stock de
+          una talla agotada, la prenda aparece 7 días en “De vuelta en stock” de la tienda.
         </p>
         <div className="flex flex-col gap-4">
           {p.colores.map((c) => (

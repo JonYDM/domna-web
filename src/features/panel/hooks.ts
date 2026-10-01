@@ -30,6 +30,17 @@ export function useCambiarEstadoProducto() {
   });
 }
 
+export function useCambiarPermiteApartado() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, permite }: { id: string; permite: boolean }) => api.cambiarPermiteApartado(id, permite),
+    onSuccess: (_d, v) => {
+      qc.invalidateQueries({ queryKey: qk.productosTodos() });
+      qc.invalidateQueries({ queryKey: qk.producto(v.id) });
+    },
+  });
+}
+
 export function useAjustarStock(productoId: string) {
   const qc = useQueryClient();
   return useMutation({

@@ -1,10 +1,10 @@
-﻿import { useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { ImagePlus, Minus, Plus } from "lucide-react";
 import toast from "react-hot-toast";
 import type { FamiliaColor, Silueta, SucursalId } from "@/types/api";
 import { PrendaImagen } from "@/components/ilustraciones/PrendaImagen";
 import { PrecioTag } from "@/components/molecules/PrecioTag";
-import { Chip, Drawer, Input, Pasos, Select, Textarea } from "@/components/ui";
+import { Chip, Drawer, Input, Interruptor, Pasos, Select, Textarea } from "@/components/ui";
 import { cn } from "@/lib/cn";
 import { FAMILIAS_COLOR, SILUETAS, TALLAS_NUMERICAS, TALLAS_ROPA, TALLA_UNICA } from "@/lib/enums";
 import { mensajeError } from "@/lib/errores";
@@ -12,9 +12,9 @@ import { useCategorias } from "@/features/catalogo/hooks";
 import { useCrearProducto } from "../hooks";
 
 const JUEGOS_TALLAS = [
-  { id: "ropa", label: "CH Â· M Â· G Â· XG", tallas: TALLAS_ROPA },
-  { id: "num", label: "3 Â· 5 Â· 7 Â· 9 Â· 11", tallas: TALLAS_NUMERICAS },
-  { id: "unica", label: "Ãšnica", tallas: TALLA_UNICA },
+  { id: "ropa", label: "CH · M · G · XG", tallas: TALLAS_ROPA },
+  { id: "num", label: "3 · 5 · 7 · 9 · 11", tallas: TALLAS_NUMERICAS },
+  { id: "unica", label: "Única", tallas: TALLA_UNICA },
 ];
 
 interface ColorNuevo {
@@ -23,7 +23,7 @@ interface ColorNuevo {
   familia: FamiliaColor;
 }
 
-/** Alta de producto en pasos: datos â†’ colores y tallas â†’ stock (matriz) â†’ precio y publicar. */
+/** Alta de producto en pasos: datos → colores y tallas → stock (matriz) → precio y publicar. */
 export function NuevoProductoDrawer({ open, onClose, onCreado }: { open: boolean; onClose: () => void; onCreado: (id: string) => void }) {
   const categorias = useCategorias();
   const crear = useCrearProducto();
@@ -37,6 +37,7 @@ export function NuevoProductoDrawer({ open, onClose, onCreado }: { open: boolean
   const [sucursal, setSucursal] = useState<SucursalId>("temixco");
   const [stock, setStock] = useState<Record<string, number[]>>({});
   const [precio, setPrecio] = useState("");
+  const [permiteApartado, setPermiteApartado] = useState(true);
 
   const tallas = JUEGOS_TALLAS.find((j) => j.id === juego)!.tallas;
   const totalPiezas = useMemo(
@@ -71,10 +72,11 @@ export function NuevoProductoDrawer({ open, onClose, onCreado }: { open: boolean
         tallas,
         stock,
         sucursal,
+        permiteApartado,
       },
       {
         onSuccess: (p) => {
-          toast.success("Â¡Prenda publicada!");
+          toast.success("¡Prenda publicada!");
           onCreado(p.id);
         },
         onError: (e) => toast.error(mensajeError(e)),
@@ -96,20 +98,20 @@ export function NuevoProductoDrawer({ open, onClose, onCreado }: { open: boolean
             valido: nombre.trim().length >= 3,
             contenido: (
               <div className="flex flex-col gap-4">
-                <Input label="Nombre" value={nombre} onChange={(e) => setNombre(e.target.value)} placeholder="Vestido midi LucÃ­a" autoFocus />
+                <Input label="Nombre" value={nombre} onChange={(e) => setNombre(e.target.value)} placeholder="Vestido midi Lucía" autoFocus />
                 <Select
-                  label="CategorÃ­a"
+                  label="Categoría"
                   value={categoriaId}
                   onChange={(e) => setCategoriaId(e.target.value)}
                   opciones={(categorias.data ?? []).map((c) => ({ value: c.id, label: c.nombre }))}
                 />
                 <Select
-                  label="Tipo de prenda (para la ilustraciÃ³n)"
+                  label="Tipo de prenda (para la ilustración)"
                   value={silueta}
                   onChange={(e) => setSilueta(e.target.value as Silueta)}
                   opciones={SILUETAS.map((s) => ({ value: s.id, label: s.nombre }))}
                 />
-                <Textarea label="DescripciÃ³n (opcional)" value={descripcion} onChange={(e) => setDescripcion(e.target.value)} placeholder="Tela, corte, ocasiÃ³nâ€¦" />
+                <Textarea label="Descripción (opcional)" value={descripcion} onChange={(e) => setDescripcion(e.target.value)} placeholder="Tela, corte, ocasión…" />
               </div>
             ),
           },
@@ -246,10 +248,16 @@ export function NuevoProductoDrawer({ open, onClose, onCreado }: { open: boolean
                   placeholder="589"
                   autoFocus
                 />
+                <Interruptor
+                  checked={permiteApartado}
+                  onChange={setPermiteApartado}
+                  label="Se puede apartar"
+                  descripcion="Apágalo para venderla solo de contado (p. ej. ofertas)."
+                />
                 <div className="flex gap-3 rounded-2xl bg-surface-container-low p-3">
                   <PrendaImagen silueta={silueta} hex={muestra} alt="" className="w-20 shrink-0 rounded-xl" />
                   <div className="min-w-0">
-                    <p className="text-label-sm uppercase text-on-surface-variant">AsÃ­ se verÃ¡</p>
+                    <p className="text-label-sm uppercase text-on-surface-variant">Así se verá</p>
                     <p className="truncate text-label-lg">{nombre || "Sin nombre"}</p>
                     {Number(precio) > 0 && <PrecioTag precio={Number(precio)} tamano="sm" />}
                     <div className="mt-1.5 flex gap-1">
@@ -261,7 +269,7 @@ export function NuevoProductoDrawer({ open, onClose, onCreado }: { open: boolean
                 </div>
                 <p className="flex items-start gap-2 text-body-sm text-on-surface-variant">
                   <ImagePlus className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
-                  Las fotos reales se suben en la siguiente versiÃ³n; mientras tanto se muestra la ilustraciÃ³n en cada color.
+                  Las fotos reales se suben en la siguiente versión; mientras tanto se muestra la ilustración en cada color.
                 </p>
               </div>
             ),

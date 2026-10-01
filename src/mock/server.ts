@@ -1,5 +1,6 @@
 import type {
   Apartado,
+  Aviso,
   Categoria,
   Clienta,
   ConfigBoutique,
@@ -83,8 +84,9 @@ function resumen(s: DbState, p: Producto): ProductoResumen {
     silueta: p.silueta,
     precio: p.precio,
     precioAntes: p.precioAntes,
-    nuevo: p.nuevo,
+    ...dom.novedad(s, p, ahora()),
     activo: p.activo,
+    permiteApartado: p.permiteApartado,
     colores: p.colores,
     tallas: p.tallas,
     imagenes: p.imagenes,
@@ -105,6 +107,10 @@ export function listarProductos(f: FiltrosCatalogo): Promise<ProductoResumen[]> 
       if (!f.incluirInactivos && !p.activo) return false;
       if (f.categoria && p.categoriaId !== f.categoria) return false;
       if (f.precioMax && p.precio > f.precioMax) return false;
+      if (f.seccion) {
+        const n = dom.novedad(s, p, ahora());
+        if (f.seccion === "nuevos" ? !n.nuevo : !n.reabastecido) return false;
+      }
       if (texto) {
         const cat = s.categorias.find((c) => c.id === p.categoriaId)?.nombre ?? "";
         const hay = normalizar(`${p.nombre} ${cat} ${p.colores.map((c) => c.nombre).join(" ")}`);
@@ -122,6 +128,12 @@ export function listarProductos(f: FiltrosCatalogo): Promise<ProductoResumen[]> 
       return true;
     });
     const orden = f.orden ?? "nuevos";
+    // "De vuelta en stock": lo reabastecido más reciente primero.
+    if (f.seccion === "reabastecidos" && !f.orden) {
+      return [...lista]
+        .sort((a, b) => (b.reabastecidoEl ?? "").localeCompare(a.reabastecidoEl ?? ""))
+        .map((p) => resumen(s, p));
+    }
     lista = [...lista].sort((a, b) => {
       if (orden === "precio-asc") return a.precio - b.precio || a.nombre.localeCompare(b.nombre);
       if (orden === "precio-desc") return b.precio - a.precio || a.nombre.localeCompare(b.nombre);
@@ -138,6 +150,7 @@ export function obtenerProducto(id: string, { incluirInactivo = false } = {}): P
     if (!p || (!p.activo && !incluirInactivo)) throw new ApiError(404, "No encontramos esa prenda.");
     return {
       ...p,
+      ...dom.novedad(s, p, ahora()),
       variantes: p.variantes.map((v) => {
         const porSuc = dom.disponiblePorSucursal(s, v);
         return { ...v, disponiblePorSucursal: porSuc, disponible: porSuc.temixco + porSuc.azteca };
@@ -174,6 +187,19 @@ export async function crearApartado(clientaId: string, input: CrearApartadoInput
   }, true);
 }
 
+// ── Avisos in-app (clienta) ──
+
+export function misAvisos(clientaId: string): Promise<Aviso[]> {
+  return responder(() => dom.avisosDe(estado(), clientaId, ahora()));
+}
+
+export function marcarAvisosLeidos(clientaId: string, ids: string[]): Promise<void> {
+  return responder(() => {
+    dom.marcarAvisosLeidos(estado(), clientaId, ids);
+    persistir();
+  });
+}
+
 export function misApartados(clientaId: string): Promise<Apartado[]> {
   return responder(() =>
     estado()
@@ -188,13 +214,18 @@ function porVencer(a: { estado: string; venceEl: string }): boolean {
   return a.estado === "activo" && diasHasta(a.venceEl) <= 3;
 }
 
+function porEntregar(a: { estado: string; estadoEntrega: string }): boolean {
+  return a.estado === "liquidado" && a.estadoEntrega !== "entregado";
+}
+
 export function listarApartados(filtro?: FiltroEstadoApartado, texto?: string): Promise<Apartado[]> {
   return responder(() => {
     const t = texto ? normalizar(texto.trim()) : "";
     return estado()
       .apartados.filter((a) => {
         if (filtro === "por_vencer" && !porVencer(a)) return false;
-        if (filtro && filtro !== "por_vencer" && a.estado !== filtro) return false;
+        if (filtro === "por_entregar" && !porEntregar(a)) return false;
+        if (filtro && filtro !== "por_vencer" && filtro !== "por_entregar" && a.estado !== filtro) return false;
         if (t) {
           const hay = normalizar(`${a.folio} ${a.clientaNombre} ${a.clientaTelefono} ${a.lineas.map((l) => l.nombre).join(" ")}`);
           if (!hay.includes(t)) return false;
@@ -247,7 +278,9 @@ export function obtenerMetricas(): Promise<Metricas> {
     const activos = s.apartados.filter((a) => a.estado === "activo");
     const liquidados = s.apartados.filter((a) => a.estado === "liquidado");
     const delMes = liquidados.filter((a) => a.cerradoEl && esMismoMesMx(new Date(a.cerradoEl), hoy));
-    const cerrados = s.apartados.filter((a) => a.estado !== "activo");
+    // Conversión de APARTADOS (las compras de contado no cuentan: siempre se concretan).
+    const cerrados = s.apartados.filter((a) => a.estado !== "activo" && a.modalidad !== "compra");
+    const apartadosLiquidados = cerrados.filter((a) => a.estado === "liquidado");
 
     const stockBajo = s.productos
       .filter((p) => p.activo)
@@ -297,7 +330,9 @@ export function obtenerMetricas(): Promise<Metricas> {
       porVencer: activos.filter(porVencer).length,
       ventasMes: delMes.reduce((n, a) => n + a.total, 0),
       piezasVendidasMes: delMes.reduce((n, a) => n + a.lineas.reduce((m, l) => m + l.cantidad, 0), 0),
-      conversion: cerrados.length ? Math.round((liquidados.length / cerrados.length) * 100) : 0,
+      conversion: cerrados.length ? Math.round((apartadosLiquidados.length / cerrados.length) * 100) : 0,
+      porEntregar: s.apartados.filter(porEntregar).length,
+      comprasMes: delMes.filter((a) => a.modalidad === "compra").length,
       penalizacionesMes:
         s.apartados.filter(
           (a) => a.estado === "vencido" && a.cerradoEl && esMismoMesMx(new Date(a.cerradoEl), hoy),
@@ -331,7 +366,7 @@ export function crearProducto(input: NuevoProductoInput): Promise<Producto> {
       silueta: input.silueta,
       precio: input.precio,
       activo: true,
-      nuevo: true,
+      permiteApartado: input.permiteApartado,
       colores,
       tallas: input.tallas,
       variantes: colores.flatMap((c, ci) =>
@@ -365,16 +400,18 @@ export function cambiarEstadoProducto(id: string, activo: boolean): Promise<void
   });
 }
 
+export function cambiarPermiteApartado(id: string, permite: boolean): Promise<void> {
+  return responder(() => {
+    const p = estado().productos.find((x) => x.id === id);
+    if (!p) throw new ApiError(404, "Producto no encontrado.");
+    p.permiteApartado = permite;
+    persistir();
+  });
+}
+
 export function ajustarStock(varianteId: string, sucursal: "temixco" | "azteca", delta: number): Promise<void> {
   return responder(() => {
-    const s = estado();
-    const enc = dom.buscarVariante(s, varianteId);
-    if (!enc) throw new ApiError(404, "Variante no encontrada.");
-    const nuevo = enc.variante.stock[sucursal] + delta;
-    if (nuevo < dom.reservado(s, varianteId, sucursal)) {
-      throw new ApiError(409, "No puedes bajar el stock por debajo de lo apartado.");
-    }
-    enc.variante.stock[sucursal] = nuevo;
+    dom.ajustarStock(estado(), varianteId, sucursal, delta, ahora());
     persistir();
   });
 }

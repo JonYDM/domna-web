@@ -10,9 +10,10 @@ import { ApartadoCard } from "@/features/apartados/components/ApartadoCard";
 import { ApartadoCardSkeleton } from "@/features/apartados/components/ApartadoCardSkeleton";
 
 const FILTROS: { id: FiltroEstadoApartado | "todos"; label: string }[] = [
-  { id: "activo", label: "Activos" },
+  { id: "activo", label: "Apartados activos" },
   { id: "por_vencer", label: "Por vencer" },
-  { id: "liquidado", label: "Liquidados" },
+  { id: "por_entregar", label: "Por entregar" },
+  { id: "liquidado", label: "Pagados" },
   { id: "vencido", label: "Vencidos" },
   { id: "cancelado", label: "Cancelados" },
   { id: "todos", label: "Todos" },
@@ -45,7 +46,7 @@ export default function ApartadosPage() {
 
   return (
     <div className="flex flex-col gap-4">
-      <h1 className="font-marca text-headline-lg">Apartados</h1>
+      <h1 className="font-marca text-headline-lg">Pedidos</h1>
       <BarraBusqueda valor={texto} onChange={onTexto} placeholder="Buscar por folio, clienta o prenda" />
       <div className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4" role="toolbar" aria-label="Filtrar por estado">
         {FILTROS.map((f) => (
@@ -72,7 +73,7 @@ export default function ApartadosPage() {
         <EmptyState
           expresion={busqueda ? "curiosa" : "dormida"}
           titulo={busqueda ? "Sin resultados" : "Nada por aquí"}
-          texto={busqueda ? `No hay apartados que coincidan con "${busqueda}".` : "No hay apartados en este estado."}
+          texto={busqueda ? `No hay pedidos que coincidan con "${busqueda}".` : "No hay pedidos en este estado."}
         />
       ) : (
         <div

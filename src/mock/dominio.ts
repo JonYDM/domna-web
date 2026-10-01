@@ -1,15 +1,19 @@
 import type {
   Apartado,
+  Aviso,
   Clienta,
   CotizacionApartado,
   CrearApartadoInput,
   EstadoEntrega,
   LineaApartado,
+  Novedad,
+  Producto,
   RegistrarAbonoInput,
   SucursalId,
   Variante,
 } from "@/types/api";
 import { ApiError } from "@/lib/errores";
+import { formatFecha, formatMXN } from "@/lib/format";
 import { sumarDias, sumarDiasHabiles } from "@/lib/reloj";
 import type { ApartadoEntidad, DbState } from "./db";
 
@@ -47,6 +51,41 @@ export function disponiblePorSucursal(db: DbState, v: Variante): Record<Sucursal
 export function disponibleTotal(db: DbState, v: Variante): number {
   const d = disponiblePorSucursal(db, v);
   return d.temixco + d.azteca;
+}
+
+// ── Novedades: "Nuevo" y "De vuelta en stock" se DERIVAN de fechas; caducan solas. ──
+
+const DIA_MS = 86_400_000;
+
+function dentroDe(fechaIso: string | undefined, dias: number, hoy: Date): boolean {
+  if (!fechaIso) return false;
+  const t = hoy.getTime() - new Date(fechaIso).getTime();
+  return t >= 0 && t < dias * DIA_MS;
+}
+
+export function novedad(db: DbState, p: Producto, hoy: Date): Novedad {
+  const dias = db.config.diasNovedad;
+  const nuevo = dentroDe(p.creado, dias, hoy);
+  const hayStock = p.variantes.some((v) => disponibleTotal(db, v) > 0);
+  // Si es nuevo, ya sale en "Nuevos": no se duplica en "De vuelta".
+  return { nuevo, reabastecido: !nuevo && hayStock && dentroDe(p.reabastecidoEl, dias, hoy) };
+}
+
+/**
+ * Ajusta el stock físico. Si la variante estaba AGOTADA (disponible 0) y vuelve a tener piezas,
+ * el producto queda "reabastecido" hoy. No se puede bajar por debajo de lo apartado.
+ */
+export function ajustarStock(db: DbState, varianteId: string, sucursal: SucursalId, delta: number, hoy: Date) {
+  const enc = buscarVariante(db, varianteId);
+  if (!enc) throw new ApiError(404, "Variante no encontrada.");
+  const antes = disponibleTotal(db, enc.variante);
+  const nuevo = enc.variante.stock[sucursal] + delta;
+  if (nuevo < reservado(db, varianteId, sucursal)) {
+    throw new ApiError(409, "No puedes bajar el stock por debajo de lo apartado.");
+  }
+  enc.variante.stock[sucursal] = nuevo;
+  if (antes === 0 && disponibleTotal(db, enc.variante) > 0) enc.producto.reabastecidoEl = hoy.toISOString();
+  return enc;
 }
 
 export function buscarVariante(db: DbState, varianteId: string) {
@@ -110,17 +149,20 @@ export function cotizar(
   const subtotal = enc.producto.precio * input.cantidad;
   const penalizacion = clienta.penalizacionPendiente;
   const total = subtotal + penalizacion;
+  const compra = input.modalidad === "compra";
   const conAnticipo = input.modalidad === "anticipo";
-  const vigencia = conAnticipo
-    ? db.config.vigenciaConAnticipoDias
-    : db.config.vigenciaSinAnticipoDias;
+  const vigencia = compra
+    ? 0
+    : conAnticipo
+      ? db.config.vigenciaConAnticipoDias
+      : db.config.vigenciaSinAnticipoDias;
   const requiereTraslado = origen !== null && origen !== input.entrega;
 
   return {
     subtotal,
     penalizacion,
     total,
-    anticipo: conAnticipo ? anticipoDe(total, db.config.anticipoPct) : 0,
+    anticipo: compra ? total : conAnticipo ? anticipoDe(total, db.config.anticipoPct) : 0,
     venceEl: sumarDias(hoy, vigencia).toISOString(),
     requiereTraslado,
     listoEstimado: (requiereTraslado
@@ -141,20 +183,29 @@ export function crearApartado(
   const clienta = db.clientas.find((c) => c.id === clientaId);
   if (!clienta) throw new ApiError(404, "Clienta no encontrada.");
 
-  const activos = db.apartados.filter(
-    (a) => a.clientaId === clientaId && a.estado === "activo",
-  ).length;
-  if (activos >= db.config.limiteApartadosActivos) {
-    throw new ApiError(
-      400,
-      `Ya tienes ${activos} apartados activos. Liquida uno para apartar otra prenda.`,
-    );
+  const compra = input.modalidad === "compra";
+  const enc = buscarVariante(db, input.varianteId);
+  if (!compra && enc && !enc.producto.permiteApartado) {
+    throw new ApiError(400, "Esta prenda solo se vende de contado.");
+  }
+
+  // El límite de apartados activos no aplica a compras (no reservan: se venden al momento).
+  if (!compra) {
+    const activos = db.apartados.filter(
+      (a) => a.clientaId === clientaId && a.estado === "activo",
+    ).length;
+    if (activos >= db.config.limiteApartadosActivos) {
+      throw new ApiError(
+        400,
+        `Ya tienes ${activos} apartados activos. Liquida uno para apartar otra prenda.`,
+      );
+    }
   }
 
   const cot = cotizar(db, clienta, input, hoy);
   if (!cot.sucursalOrigen) throw new ApiError(409, "Ya no hay stock de esa talla. Elige otra.");
 
-  const { producto, variante } = buscarVariante(db, input.varianteId)!;
+  const { producto, variante } = enc!;
   const color = producto.colores.find((c) => c.id === variante.colorId)!;
   const linea: LineaApartado = {
     varianteId: variante.id,
@@ -197,10 +248,12 @@ export function crearApartado(
       monto: cot.anticipo,
       fecha: hoy.toISOString(),
       metodo: input.metodoAnticipo ?? "transferencia",
-      concepto: "anticipo",
+      concepto: compra ? "compra" : "anticipo",
     });
   }
-  // La penalización pendiente se cobra en este apartado.
+  // Compra: pago completo → venta directa, descuenta stock físico al confirmarse.
+  if (compra) liquidar(db, a, hoy);
+  // La penalización pendiente se cobra en esta compra o apartado.
   clienta.penalizacionPendiente = 0;
   db.apartados.unshift(a);
   return a;
@@ -264,4 +317,111 @@ export function avanzarEntrega(db: DbState, id: string, siguiente: EstadoEntrega
   }
   a.estadoEntrega = siguiente;
   return a;
+}
+
+// ── Avisos in-app: se DERIVAN del estado de los pedidos (no hay que "programar" envíos). ──
+
+/** Días antes del vencimiento en que la clienta empieza a ver el aviso. */
+export const DIAS_AVISO_VENCE = 3;
+
+function nombreSucursal(s: SucursalId): string {
+  return s === "temixco" ? "Temixco" : "La Azteca";
+}
+
+function diasCalendario(desde: Date, hastaIso: string): number {
+  return Math.round((new Date(hastaIso).getTime() - desde.getTime()) / DIA_MS);
+}
+
+export function avisosDe(db: DbState, clientaId: string, hoy: Date): Aviso[] {
+  const leidos = new Set(db.avisosLeidos[clientaId] ?? []);
+  const avisos: Omit<Aviso, "leido">[] = [];
+
+  for (const a of db.apartados) {
+    if (a.clientaId !== clientaId || new Date(a.creado) > hoy) continue;
+    const prenda = a.lineas[0]?.nombre ?? "tu prenda";
+    const saldo = a.total - pagado(a);
+
+    if (a.estado === "activo") {
+      const dias = diasCalendario(hoy, a.venceEl);
+      if (dias <= DIAS_AVISO_VENCE) {
+        const cuando = dias <= 0 ? "hoy" : dias === 1 ? "mañana" : `en ${dias} días`;
+        const desde = new Date(new Date(a.venceEl).getTime() - DIAS_AVISO_VENCE * DIA_MS);
+        avisos.push({
+          id: `por_vencer:${a.id}`,
+          tipo: "por_vencer",
+          titulo: `Tu apartado vence ${cuando}`,
+          texto: `${prenda} · saldo ${formatMXN(saldo)}. Abona en tienda o por transferencia con tu folio ${a.folio}.`,
+          fecha: (desde > new Date(a.creado) ? desde : new Date(a.creado)).toISOString(),
+          urgente: true,
+          apartadoId: a.id,
+        });
+      }
+    }
+
+    if (a.estado === "vencido" && a.cerradoEl) {
+      avisos.push({
+        id: `vencido:${a.id}`,
+        tipo: "vencido",
+        titulo: "Tu apartado venció",
+        texto: `${prenda} regresó a la tienda. Se sumará un cargo de ${formatMXN(db.config.penalizacion)} a tu siguiente compra o apartado.`,
+        fecha: a.cerradoEl,
+        urgente: false,
+        apartadoId: a.id,
+      });
+    }
+
+    // Abonos que registró la tienda (el anticipo o la compra los hizo ella misma).
+    for (const ab of a.abonos) {
+      if (ab.concepto !== "abono" && ab.concepto !== "liquidacion") continue;
+      if (new Date(ab.fecha) > hoy) continue;
+      avisos.push({
+        id: `abono:${a.id}:${ab.id}`,
+        tipo: "abono",
+        titulo: ab.concepto === "liquidacion" ? "¡Liquidaste tu apartado!" : `Recibimos tu abono de ${formatMXN(ab.monto)}`,
+        texto:
+          ab.concepto === "liquidacion"
+            ? `${prenda} ya es tuya. Folio ${a.folio}.`
+            : `${prenda} · te quedan ${formatMXN(Math.max(0, saldo))} por pagar.`,
+        fecha: ab.fecha,
+        urgente: false,
+        apartadoId: a.id,
+      });
+    }
+
+    if (a.estadoEntrega === "en_traslado" && a.estado !== "cancelado" && a.estado !== "vencido") {
+      avisos.push({
+        id: `traslado:${a.id}`,
+        tipo: "traslado",
+        titulo: `Tu prenda va en camino a ${nombreSucursal(a.entrega)}`,
+        texto: `${prenda} · llega aprox. el ${formatFecha(a.listoEstimado)}.`,
+        fecha: a.creado,
+        urgente: false,
+        apartadoId: a.id,
+      });
+    }
+
+    if (a.estado === "liquidado" && a.estadoEntrega === "listo") {
+      const fecha = [a.cerradoEl ?? a.creado, a.listoEstimado].sort().at(-1)!;
+      avisos.push({
+        id: `lista:${a.id}`,
+        tipo: "lista",
+        titulo: "¡Tu prenda está lista para recoger!",
+        texto: `${prenda} te espera en ${nombreSucursal(a.entrega)}. Muestra tu folio ${a.folio}.`,
+        fecha,
+        urgente: false,
+        apartadoId: a.id,
+      });
+    }
+  }
+
+  return avisos
+    .filter((x) => new Date(x.fecha) <= hoy)
+    .map((x) => ({ ...x, leido: leidos.has(x.id) }))
+    .sort((x, y) => Number(y.urgente && !y.leido) - Number(x.urgente && !x.leido) || y.fecha.localeCompare(x.fecha));
+}
+
+export function marcarAvisosLeidos(db: DbState, clientaId: string, ids: string[]): void {
+  const s = new Set(db.avisosLeidos[clientaId] ?? []);
+  ids.forEach((id) => s.add(id));
+  db.avisosLeidos[clientaId] = [...s];
 }
