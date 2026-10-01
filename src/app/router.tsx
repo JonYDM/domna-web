@@ -17,6 +17,7 @@ import {
   EntrarPage,
   InventarioPage,
   MisApartadosPage,
+  PresentacionPage,
   ProductoDuenaPage,
   ProductoPage,
   S,
@@ -32,6 +33,15 @@ import {
  */
 export const router = createBrowserRouter([
   { path: "/", element: <BienvenidaPage />, errorElement: <PaginaError tipo="error" /> },
+  {
+    path: "/presentacion",
+    element: (
+      <S>
+        <PresentacionPage />
+      </S>
+    ),
+    errorElement: <PaginaError tipo="error" />,
+  },
   {
     path: "/entrar",
     element: (

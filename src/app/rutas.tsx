@@ -9,6 +9,7 @@ export const CatalogoPage = lazy(() => import("@/features/catalogo/pages/Catalog
 export const ProductoPage = lazy(() => import("@/features/catalogo/pages/ProductoPage"));
 export const MisApartadosPage = lazy(() => import("@/features/apartados/pages/MisApartadosPage"));
 export const EntrarPage = lazy(() => import("@/features/auth/pages/EntrarPage"));
+export const PresentacionPage = lazy(() => import("@/features/presentacion/pages/PresentacionPage"));
 export const ClientasPage = lazy(() => import("@/features/panel/pages/ClientasPage"));
 export const ClientaPage = lazy(() => import("@/features/panel/pages/ClientaPage"));
 export const AvisosPage = lazy(() => import("@/features/avisos/pages/AvisosPage"));

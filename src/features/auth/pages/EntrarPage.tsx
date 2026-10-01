@@ -12,6 +12,7 @@ import { formatTelefonoInput } from "@/lib/format";
 import { useSesion } from "../sesion";
 import { useEntrarConGoogle, useEntrarConTelefono, useGuardarTelefono } from "../hooks";
 import { SelectorCuentaGoogle } from "../components/SelectorCuentaGoogle";
+import { BotonPresentacion } from "@/features/presentacion/BotonPresentacion";
 
 type Fase = "inicio" | "telefono" | "whatsapp";
 
@@ -86,13 +87,16 @@ export default function EntrarPage() {
   return (
     <main className="lunares flex min-h-dvh flex-col items-center bg-surface px-5 py-6">
       <div className="flex w-full max-w-sm flex-1 flex-col">
-        <Link
-          to="/"
-          className="-ml-2 inline-flex h-10 w-fit items-center gap-1 rounded-full pl-1 pr-3 text-label-lg text-on-surface-variant hover:bg-surface-container"
-        >
-          <ChevronLeft className="h-5 w-5" aria-hidden />
-          Inicio
-        </Link>
+        <div className="flex items-center justify-between gap-2">
+          <Link
+            to="/"
+            className="-ml-2 inline-flex h-10 w-fit items-center gap-1 rounded-full pl-1 pr-3 text-label-lg text-on-surface-variant hover:bg-surface-container"
+          >
+            <ChevronLeft className="h-5 w-5" aria-hidden />
+            Inicio
+          </Link>
+          <BotonPresentacion />
+        </div>
 
         <div className="anim-sube mt-6 flex flex-col items-center text-center">
           <DomiImagen ancho={132} prioridad animar alt="Domi, la catarina de Domna" />
