@@ -2,14 +2,13 @@ import { useMemo, useState } from "react";
 import { ImagePlus, Minus, Plus } from "lucide-react";
 import toast from "react-hot-toast";
 import type { FamiliaColor, Silueta, SucursalId } from "@/types/api";
-import { PrendaImagen } from "@/components/ilustraciones/PrendaImagen";
-import { PrecioTag } from "@/components/molecules/PrecioTag";
 import { Chip, Drawer, Input, Interruptor, Pasos, Select, Textarea } from "@/components/ui";
 import { cn } from "@/lib/cn";
 import { FAMILIAS_COLOR, SILUETAS, TALLAS_NUMERICAS, TALLAS_ROPA, TALLA_UNICA } from "@/lib/enums";
 import { mensajeError } from "@/lib/errores";
-import { useCategorias } from "@/features/catalogo/hooks";
+import { useCategorias, useConfig } from "@/features/catalogo/hooks";
 import { useCrearProducto } from "../hooks";
+import { ResumenProducto } from "./ResumenProducto";
 
 const JUEGOS_TALLAS = [
   { id: "ropa", label: "CH · M · G · XG", tallas: TALLAS_ROPA },
@@ -26,6 +25,7 @@ interface ColorNuevo {
 /** Alta de producto en pasos: datos → colores y tallas → stock (matriz) → precio y publicar. */
 export function NuevoProductoDrawer({ open, onClose, onCreado }: { open: boolean; onClose: () => void; onCreado: (id: string) => void }) {
   const categorias = useCategorias();
+  const config = useConfig();
   const crear = useCrearProducto();
 
   const [nombre, setNombre] = useState("");
@@ -84,7 +84,6 @@ export function NuevoProductoDrawer({ open, onClose, onCreado }: { open: boolean
     );
   }
 
-  const muestra = colores[0]?.hex ?? "#D9C4A5";
 
   return (
     <Drawer open={open} onClose={onClose} title="Nuevo producto">
@@ -254,19 +253,20 @@ export function NuevoProductoDrawer({ open, onClose, onCreado }: { open: boolean
                   label="Se puede apartar"
                   descripcion="Apágalo para venderla solo de contado (p. ej. ofertas)."
                 />
-                <div className="flex gap-3 rounded-2xl bg-surface-container-low p-3">
-                  <PrendaImagen silueta={silueta} hex={muestra} alt="" className="w-20 shrink-0 rounded-xl" />
-                  <div className="min-w-0">
-                    <p className="text-label-sm uppercase text-on-surface-variant">Así se verá</p>
-                    <p className="truncate text-label-lg">{nombre || "Sin nombre"}</p>
-                    {Number(precio) > 0 && <PrecioTag precio={Number(precio)} tamano="sm" />}
-                    <div className="mt-1.5 flex gap-1">
-                      {colores.map((c) => (
-                        <span key={c.familia} className="h-3.5 w-3.5 rounded-full border border-on-surface/15" style={{ backgroundColor: c.hex }} aria-hidden />
-                      ))}
-                    </div>
-                  </div>
-                </div>
+                <ResumenProducto
+                  nombre={nombre}
+                  descripcion={descripcion}
+                  categoria={categorias.data?.find((c) => c.id === categoriaId)?.nombre ?? "—"}
+                  silueta={silueta}
+                  precio={Number(precio)}
+                  colores={colores}
+                  tallas={tallas}
+                  stock={stock}
+                  totalPiezas={totalPiezas}
+                  sucursal={sucursal}
+                  permiteApartado={permiteApartado}
+                  anticipoPct={config.data?.anticipoPct ?? 50}
+                />
                 <p className="flex items-start gap-2 text-body-sm text-on-surface-variant">
                   <ImagePlus className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
                   Las fotos reales se suben en la siguiente versión; mientras tanto se muestra la ilustración en cada color.

@@ -1,13 +1,24 @@
 import { useMemo, useState } from "react";
-import { useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { ChevronLeft, Clock, MapPin, ShieldCheck, ShoppingBag, Truck } from "lucide-react";
+import { Link, useParams, useSearchParams } from "react-router-dom";
+import { Clock, MapPin, ShieldCheck, ShoppingBag, Truck } from "lucide-react";
 import type { ModalidadApartado } from "@/types/api";
 import { EmptyState } from "@/components/molecules/EmptyState";
 import { PrecioTag } from "@/components/molecules/PrecioTag";
 import { SelectorColor } from "@/components/molecules/SelectorColor";
 import { SelectorTalla } from "@/components/molecules/SelectorTalla";
 import { StockBadge } from "@/components/molecules/StockBadge";
-import { Badge, Button, ButtonLink, Skeleton } from "@/components/ui";
+import {
+  Badge,
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+  Button,
+  ButtonLink,
+  Skeleton,
+} from "@/components/ui";
 import { formatMXN } from "@/lib/format";
 import { mensajeError } from "@/lib/errores";
 import { ComprarApartarDrawer } from "@/features/apartados/components/ComprarApartarDrawer";
@@ -17,7 +28,6 @@ import { GaleriaProducto } from "../components/GaleriaProducto";
 export default function ProductoPage() {
   const { id = "" } = useParams();
   const [params] = useSearchParams();
-  const navigate = useNavigate();
   const producto = useProducto(id);
   const config = useConfig();
   const categorias = useCategorias();
@@ -84,14 +94,21 @@ export default function ProductoPage() {
 
   return (
     <div className="pb-24 md:pb-0">
-      <button
-        type="button"
-        onClick={() => (window.history.length > 1 ? navigate(-1) : navigate("/tienda"))}
-        className="-ml-2 mb-3 inline-flex h-10 items-center gap-1 rounded-full pl-1 pr-3 text-label-lg text-on-surface-variant hover:bg-surface-container"
-      >
-        <ChevronLeft className="h-5 w-5" aria-hidden />
-        Catálogo
-      </button>
+      <Breadcrumb className="mb-2">
+        <BreadcrumbList>
+          <BreadcrumbItem>
+            <BreadcrumbLink render={<Link to="/tienda" />}>Catálogo</BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbLink render={<Link to={`/tienda?categoria=${p.categoriaId}`} />}>{categoria ?? "Categoría"}</BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem className="min-w-0 flex-1">
+            <BreadcrumbPage>{p.nombre}</BreadcrumbPage>
+          </BreadcrumbItem>
+        </BreadcrumbList>
+      </Breadcrumb>
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 md:gap-10">
         <GaleriaProducto

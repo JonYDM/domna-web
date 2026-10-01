@@ -1,14 +1,26 @@
 import { Link, useParams } from "react-router-dom";
 import toast from "react-hot-toast";
-import { ChevronLeft, ExternalLink, Minus, Plus } from "lucide-react";
+import { ExternalLink, Minus, Plus } from "lucide-react";
 import type { SucursalId } from "@/types/api";
 import { PrendaImagen } from "@/components/ilustraciones/PrendaImagen";
 import { EmptyState } from "@/components/molecules/EmptyState";
 import { PrecioTag } from "@/components/molecules/PrecioTag";
-import { Badge, Button, ButtonLink, Interruptor, Skeleton } from "@/components/ui";
+import {
+  Badge,
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+  Button,
+  ButtonLink,
+  Interruptor,
+  Skeleton,
+} from "@/components/ui";
 import { cn } from "@/lib/cn";
 import { mensajeError } from "@/lib/errores";
-import { useProducto } from "@/features/catalogo/hooks";
+import { useCategorias, useProducto } from "@/features/catalogo/hooks";
 import { useAjustarStock, useCambiarEstadoProducto, useCambiarPermiteApartado } from "../hooks";
 
 const SUCURSALES: { id: SucursalId; nombre: string }[] = [
@@ -19,6 +31,7 @@ const SUCURSALES: { id: SucursalId; nombre: string }[] = [
 export default function ProductoDuenaPage() {
   const { id = "" } = useParams();
   const producto = useProducto(id, { incluirInactivo: true });
+  const categorias = useCategorias();
   const estado = useCambiarEstadoProducto();
   const ajustar = useAjustarStock(id);
   const permite = useCambiarPermiteApartado();
@@ -43,13 +56,23 @@ export default function ProductoDuenaPage() {
 
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-5">
-      <Link
-        to="/app/inventario"
-        className="-ml-2 inline-flex h-10 w-fit items-center gap-1 rounded-full pl-1 pr-3 text-label-lg text-on-surface-variant hover:bg-surface-container"
-      >
-        <ChevronLeft className="h-5 w-5" aria-hidden />
-        Inventario
-      </Link>
+      <Breadcrumb>
+        <BreadcrumbList>
+          <BreadcrumbItem>
+            <BreadcrumbLink render={<Link to="/app/inventario" />}>Inventario</BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbLink render={<Link to={`/app/inventario?categoria=${p.categoriaId}`} />}>
+              {categorias.data?.find((c) => c.id === p.categoriaId)?.nombre ?? "Categoría"}
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem className="min-w-0 flex-1">
+            <BreadcrumbPage>{p.nombre}</BreadcrumbPage>
+          </BreadcrumbItem>
+        </BreadcrumbList>
+      </Breadcrumb>
 
       <section className="flex gap-4 rounded-2xl bg-surface-container-lowest p-4 shadow-soft">
         <PrendaImagen silueta={p.silueta} hex={p.colores[0].hex} alt="" className="w-24 shrink-0 rounded-xl" />
