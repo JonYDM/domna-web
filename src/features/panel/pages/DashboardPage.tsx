@@ -58,7 +58,7 @@ export default function DashboardPage() {
         <>
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
             <Metrica
-              to="/app/apartados?estado=activo"
+              to="/app/apartados?tipo=apartados&estado=activo"
               titulo="Apartados activos"
               valor={String(m.data.apartadosActivos)}
               detalle={`${formatMXN(m.data.saldoPorCobrar)} por cobrar`}
@@ -66,7 +66,7 @@ export default function DashboardPage() {
               destacada
             />
             <Metrica
-              to="/app/apartados?estado=por_vencer"
+              to="/app/apartados?tipo=apartados&estado=por_vencer"
               titulo="Por vencer (3 días)"
               valor={String(m.data.porVencer)}
               detalle={m.data.porVencer ? "Ya les llegó el aviso en la app" : "Todo en orden"}
@@ -74,7 +74,7 @@ export default function DashboardPage() {
               tono={m.data.porVencer ? "warning" : "neutral"}
             />
             <Metrica
-              to="/app/apartados?estado=liquidado"
+              to="/app/apartados?tipo=todo&estado=liquidado"
               titulo="Ventas del mes"
               valor={formatMXN(m.data.ventasMes)}
               detalle={`${m.data.piezasVendidasMes} piezas · ${m.data.comprasMes} de contado`}
@@ -82,7 +82,7 @@ export default function DashboardPage() {
               tono="success"
             />
             <Metrica
-              to="/app/apartados?estado=por_entregar"
+              to="/app/apartados?tipo=todo&estado=por_entregar"
               titulo="Por entregar"
               valor={String(m.data.porEntregar)}
               detalle={`Conversión de apartados ${m.data.conversion}%`}

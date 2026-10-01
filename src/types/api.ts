@@ -236,7 +236,11 @@ export interface RegistrarAbonoInput {
 }
 
 /** por_entregar = pagado (liquidado) y aún no entregado. */
-export type FiltroEstadoApartado = EstadoApartado | "por_vencer" | "por_entregar";
+/** por_entregar = pagado y aún no entregado · entregado = pagado y ya entregado. */
+export type FiltroEstadoApartado = EstadoApartado | "por_vencer" | "por_entregar" | "entregado";
+
+/** Tipo de pedido: apartados (con o sin anticipo) o compras de contado. */
+export type TipoPedido = "apartados" | "compras";
 
 // ── Panel de la dueña ──
 

@@ -57,7 +57,7 @@ export default function ApartadoDuenaPage() {
       <div className="flex flex-col gap-4">
         <div>
           <Link
-            to="/app/apartados"
+            to={`/app/apartados?tipo=${a.modalidad === "compra" ? "compras" : "apartados"}`}
             className="-ml-2 mb-2 inline-flex h-10 items-center gap-1 rounded-full pl-1 pr-3 text-label-lg text-on-surface-variant hover:bg-surface-container"
           >
             <ChevronLeft className="h-5 w-5" aria-hidden />

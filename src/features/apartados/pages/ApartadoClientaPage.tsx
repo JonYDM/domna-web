@@ -38,6 +38,7 @@ export default function ApartadoClientaPage() {
 
   const a = apartado.data;
   const compra = a.modalidad === "compra";
+  const volver = `/tienda/apartados?tipo=${compra ? "compras" : "apartados"}`;
   const sucursal = config.data?.sucursales.find((s) => s.id === a.entrega)?.nombre ?? "la boutique";
 
   return (
@@ -79,7 +80,7 @@ export default function ApartadoClientaPage() {
       ) : (
         <div>
           <Link
-            to="/tienda/apartados"
+            to={volver}
             className="-ml-2 mb-2 inline-flex h-10 items-center gap-1 rounded-full pl-1 pr-3 text-label-lg text-on-surface-variant hover:bg-surface-container"
           >
             <ChevronLeft className="h-5 w-5" aria-hidden />
@@ -95,7 +96,7 @@ export default function ApartadoClientaPage() {
 
       {nuevo && (
         <div className="flex flex-col gap-2 sm:flex-row">
-          <ButtonLink to="/tienda/apartados" variant="tinta" fullWidth>
+          <ButtonLink to={volver} variant="tinta" fullWidth>
             Ver mis pedidos
           </ButtonLink>
           <ButtonLink to="/tienda" variant="outline" fullWidth>

@@ -15,6 +15,7 @@ import type {
   ProductoDetalle,
   ProductoResumen,
   RegistrarAbonoInput,
+  TipoPedido,
 } from "@/types/api";
 import { ApiError } from "@/lib/errores";
 import { STOCK_BAJO } from "@/lib/enums";
@@ -218,14 +219,18 @@ function porEntregar(a: { estado: string; estadoEntrega: string }): boolean {
   return a.estado === "liquidado" && a.estadoEntrega !== "entregado";
 }
 
-export function listarApartados(filtro?: FiltroEstadoApartado, texto?: string): Promise<Apartado[]> {
+export function listarApartados(filtro?: FiltroEstadoApartado, texto?: string, tipo?: TipoPedido): Promise<Apartado[]> {
   return responder(() => {
     const t = texto ? normalizar(texto.trim()) : "";
+    const especiales = ["por_vencer", "por_entregar", "entregado"];
     return estado()
       .apartados.filter((a) => {
+        if (tipo === "compras" && a.modalidad !== "compra") return false;
+        if (tipo === "apartados" && a.modalidad === "compra") return false;
         if (filtro === "por_vencer" && !porVencer(a)) return false;
         if (filtro === "por_entregar" && !porEntregar(a)) return false;
-        if (filtro && filtro !== "por_vencer" && filtro !== "por_entregar" && a.estado !== filtro) return false;
+        if (filtro === "entregado" && !(a.estado === "liquidado" && a.estadoEntrega === "entregado")) return false;
+        if (filtro && !especiales.includes(filtro) && a.estado !== filtro) return false;
         if (t) {
           const hay = normalizar(`${a.folio} ${a.clientaNombre} ${a.clientaTelefono} ${a.lineas.map((l) => l.nombre).join(" ")}`);
           if (!hay.includes(t)) return false;

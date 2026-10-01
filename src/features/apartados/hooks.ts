@@ -4,6 +4,7 @@ import type {
   EstadoEntrega,
   FiltroEstadoApartado,
   RegistrarAbonoInput,
+  TipoPedido,
 } from "@/types/api";
 import { qk } from "@/lib/queryKeys";
 import * as api from "@/mock/server";
@@ -70,10 +71,10 @@ export function useApartado(id: string) {
 
 // ── Dueña ──
 
-export function useApartados(estado?: FiltroEstadoApartado, texto?: string) {
+export function useApartados(estado?: FiltroEstadoApartado, texto?: string, tipo?: TipoPedido) {
   return useQuery({
-    queryKey: qk.apartados(estado, texto),
-    queryFn: () => api.listarApartados(estado, texto),
+    queryKey: qk.apartados(estado, texto, tipo),
+    queryFn: () => api.listarApartados(estado, texto, tipo),
     staleTime: 15_000,
     placeholderData: (prev) => prev,
   });
