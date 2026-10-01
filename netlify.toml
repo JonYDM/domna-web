@@ -2,7 +2,22 @@
   command = "npm run build"
   publish = "dist"
 
+[build.environment]
+  NODE_VERSION = "22"
+
+# SPA: cualquier ruta sirve index.html (React Router se encarga).
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
+
+# Archivos con hash en el nombre: caché de un año. index.html y el service worker, siempre frescos.
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/sw.js"
+  [headers.values]
+    Cache-Control = "no-cache"
