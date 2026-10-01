@@ -4,13 +4,26 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="preload" as="image" href="/domi-128.webp" type="image/webp" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#FBF7F4" />
     <meta name="description" content="Domna — Tu estilo, apartado para ti." />
     <title>Domna</title>
+    <style>
+      /* Pantalla inicial mientras carga la app (React la reemplaza al montar). */
+      html, body { margin: 0; background: #fbf7f4; }
+      .arranque { min-height: 100vh; min-height: 100dvh; display: grid; place-items: center; }
+      .arranque img { width: 112px; height: auto; animation: arranque-respira 2.4s ease-in-out infinite; }
+      @keyframes arranque-respira { 0%, 100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-4px) scale(1.03); } }
+      @media (prefers-reduced-motion: reduce) { .arranque img { animation: none; } }
+    </style>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div class="arranque" role="status" aria-label="Cargando Domna">
+        <img src="/domi-128.webp" width="128" height="104" alt="" />
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
