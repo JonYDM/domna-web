@@ -19,6 +19,7 @@ function invalidarTodo(qc: QueryClient, { stock }: { stock: boolean }) {
   qc.invalidateQueries({ queryKey: qk.misApartadosTodos() });
   qc.invalidateQueries({ queryKey: qk.clientaTodos() });
   qc.invalidateQueries({ queryKey: qk.metricas() });
+  qc.invalidateQueries({ queryKey: qk.clientasTodos() });
   if (stock) {
     qc.invalidateQueries({ queryKey: qk.productoTodos() });
     qc.invalidateQueries({ queryKey: qk.productosTodos() });

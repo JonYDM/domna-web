@@ -25,7 +25,7 @@ export interface DbState {
 }
 
 /** Subir al cambiar la forma de los datos: la demo se reinicia con el seed nuevo. */
-export const DB_VERSION = 4;
+export const DB_VERSION = 5;
 const KEY = "domna.demo.db";
 
 export function cargar(): DbState | null {

@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { NuevoProductoInput, SucursalId } from "@/types/api";
+import type { FiltroClientas, NuevaClientaInput, NuevoProductoInput, SucursalId } from "@/types/api";
 import { qk } from "@/lib/queryKeys";
 import * as api from "@/mock/server";
 
@@ -54,6 +54,34 @@ export function useAjustarStock(productoId: string) {
   });
 }
 
+// ── Clientas ──
+
+export function useClientas(filtro: FiltroClientas, texto: string) {
+  return useQuery({
+    queryKey: qk.clientas(filtro, texto),
+    queryFn: () => api.listarClientas(filtro, texto),
+    staleTime: 30_000,
+    placeholderData: (prev) => prev,
+  });
+}
+
+export function useResumenClientas() {
+  return useQuery({ queryKey: qk.resumenClientas(), queryFn: api.obtenerResumenClientas, staleTime: 60_000 });
+}
+
+export function useClientaResumen(id: string) {
+  return useQuery({ queryKey: qk.clientaResumen(id), queryFn: () => api.obtenerClientaResumen(id), staleTime: 15_000 });
+}
+
+/** Alta en mostrador: invalida lista, resumen y métricas. */
+export function useCrearClienta() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: NuevaClientaInput) => api.crearClienta(input),
+    onSuccess: () => qc.invalidateQueries({ queryKey: qk.clientasTodos() }),
+  });
+}
+
 /** Controles de la demo: cambian todo → se invalida toda la caché. */
 export function useControlesDemo() {
   const qc = useQueryClient();
@@ -62,5 +90,6 @@ export function useControlesDemo() {
     avanzar: useMutation({ mutationFn: (dias: number) => api.demoAvanzarDias(dias), onSuccess: todo }),
     suspender: useMutation({ mutationFn: (s: boolean) => api.demoSuspender(s), onSuccess: todo }),
     reiniciar: useMutation({ mutationFn: api.demoReiniciar, onSuccess: todo }),
+    catalogoPublico: useMutation({ mutationFn: (p: boolean) => api.demoCatalogoPublico(p), onSuccess: todo }),
   };
 }

@@ -32,7 +32,7 @@ const TEXTOS: Record<TipoPedido, { curso: string; historial: string; vacio: stri
 
 /** Pedidos de la clienta: pestañas Apartados | Compras y, en cada una, En curso / Historial. */
 export default function MisApartadosPage() {
-  const { sesion, entrar } = useSesion();
+  const { sesion } = useSesion();
   const clientaId = sesion?.rol === "clienta" ? sesion.clientaId : undefined;
   const apartados = useMisApartados(clientaId);
   const clienta = useClienta(clientaId);
@@ -61,7 +61,7 @@ export default function MisApartadosPage() {
         expresion="feliz"
         titulo="Tus pedidos viven aquí"
         texto="Entra como clienta para ver lo que compraste o apartaste."
-        accion={<Button onClick={() => entrar("clienta")}>Entrar como clienta</Button>}
+        accion={<ButtonLink to="/entrar?volver=/tienda/apartados">Entrar</ButtonLink>}
       />
     );
   }

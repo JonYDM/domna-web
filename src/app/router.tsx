@@ -7,9 +7,12 @@ import {
   ApartadosPage,
   AvisosPage,
   CatalogoPage,
+  ClientaPage,
+  ClientasPage,
   DashboardPage,
   DemoPage,
   DuenaLayout,
+  EntrarPage,
   InventarioPage,
   MisApartadosPage,
   ProductoDuenaPage,
@@ -27,6 +30,15 @@ import {
  */
 export const router = createBrowserRouter([
   { path: "/", element: <BienvenidaPage />, errorElement: <PaginaError tipo="error" /> },
+  {
+    path: "/entrar",
+    element: (
+      <S>
+        <EntrarPage />
+      </S>
+    ),
+    errorElement: <PaginaError tipo="error" />,
+  },
   {
     path: "/tienda",
     element: (
@@ -59,6 +71,8 @@ export const router = createBrowserRouter([
       { path: "apartados/:id", element: <S><ApartadoDuenaPage /></S> },
       { path: "inventario", element: <S><InventarioPage /></S> },
       { path: "inventario/:id", element: <S><ProductoDuenaPage /></S> },
+      { path: "clientas", element: <S><ClientasPage /></S> },
+      { path: "clientas/:id", element: <S><ClientaPage /></S> },
       { path: "demo", element: <S><DemoPage /></S> },
     ],
   },

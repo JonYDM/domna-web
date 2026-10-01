@@ -20,4 +20,8 @@ export const qk = {
   clienta: (id: string) => ["clienta", id] as const,
   clientaTodos: () => ["clienta"] as const,
   metricas: () => ["metricas"] as const,
+  clientas: (filtro: string, texto: string) => ["clientas", "lista", filtro, texto] as const,
+  resumenClientas: () => ["clientas", "resumen"] as const,
+  clientaResumen: (id: string) => ["clientas", "detalle", id] as const,
+  clientasTodos: () => ["clientas"] as const,
 };

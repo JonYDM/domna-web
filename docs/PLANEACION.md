@@ -29,6 +29,12 @@
 | I6 | Comprar o apartar | Compra de contado (pago completo, descuenta stock al momento) además de apartar; por prenda la dueña decide si se puede apartar (ofertas solo de contado); "Mis pedidos" con En curso / Historial; filtro "Por entregar" | ✅ |
 | I7 | Novedades | Carruseles "Recién llegados" (alta < 7 días) y "De vuelta en stock" (una talla agotada volvió a tener piezas hace < 7 días) con "Ver todo" (`?seccion=`). Se derivan de fechas: caducan solas | ✅ |
 | I8 | Avisos in-app | Campana con contador y centro de avisos de la clienta: vence en ≤ 3 días (urgente, banda en el catálogo), venció + cargo, abono recibido, va en camino, lista para recoger. Sin WhatsApp automático ni costo por mensaje | ✅ |
+| I9 | Clientas y acceso | `/entrar`: "Continuar con Google" (selector simulado) o teléfono; a la nueva se le pide su WhatsApp una vez y, si ya estaba registrada en mostrador con ese número, se enlaza. Módulo Clientas de la dueña (total, nuevas, activas, cargo, cómo llegaron, ficha con pedidos, alta en mostrador). Nav de la dueña con Inicio al centro. Interruptor "Catálogo visible sin cuenta" en Demo | ✅ |
+
+## Pendiente de decidir con la dueña (antes del backend)
+- ¿Catálogo y precios **públicos** (link de Instagram) o **solo con cuenta**? En la demo se cambia en Demo.
+- ¿Login con Google, con teléfono + código SMS, o ambos? (El SMS tiene costo por mensaje.)
+- Aviso de privacidad (LFPDPPP) al guardar nombre, correo y teléfono.
 
 ## Avisos: cómo crece en el backend
 1. **In-app (hecho en la demo):** los avisos se derivan del estado de los pedidos; solo se guarda cuáles leyó

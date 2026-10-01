@@ -1,6 +1,6 @@
 import { CheckCheck } from "lucide-react";
 import { EmptyState } from "@/components/molecules/EmptyState";
-import { Button, Skeleton } from "@/components/ui";
+import { Button, ButtonLink, Skeleton } from "@/components/ui";
 import { mensajeError } from "@/lib/errores";
 import { useSesion } from "@/features/auth/sesion";
 import { useAvisos, useMarcarAvisosLeidos } from "../hooks";
@@ -8,7 +8,7 @@ import { AvisoItem } from "../components/AvisoItem";
 
 /** Centro de avisos de la clienta: vencimientos, abonos, traslados y prendas listas. */
 export default function AvisosPage() {
-  const { sesion, entrar } = useSesion();
+  const { sesion } = useSesion();
   const clientaId = sesion?.rol === "clienta" ? sesion.clientaId : undefined;
   const avisos = useAvisos(clientaId);
   const marcar = useMarcarAvisosLeidos(clientaId);
@@ -19,7 +19,7 @@ export default function AvisosPage() {
         expresion="feliz"
         titulo="Tus avisos viven aquí"
         texto="Entra como clienta para ver tus recordatorios."
-        accion={<Button onClick={() => entrar("clienta")}>Entrar como clienta</Button>}
+        accion={<ButtonLink to="/entrar?volver=/tienda/avisos">Entrar</ButtonLink>}
       />
     );
   }

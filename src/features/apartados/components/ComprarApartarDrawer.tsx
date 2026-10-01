@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { AlertTriangle, Truck } from "lucide-react";
 import type {
@@ -11,7 +11,7 @@ import type {
   VarianteDisponible,
 } from "@/types/api";
 import { PrendaImagen } from "@/components/ilustraciones/PrendaImagen";
-import { Badge, Button, Chip, Drawer, Skeleton } from "@/components/ui";
+import { Badge, Button, ButtonLink, Chip, Drawer, Skeleton } from "@/components/ui";
 import { cn } from "@/lib/cn";
 import { METODO_PAGO } from "@/lib/enums";
 import { formatFecha, formatMXN } from "@/lib/format";
@@ -42,8 +42,9 @@ export function ComprarApartarDrawer({
   color,
   modalidadInicial,
 }: ComprarApartarDrawerProps) {
-  const { sesion, entrar } = useSesion();
+  const { sesion } = useSesion();
   const navigate = useNavigate();
+  const location = useLocation();
   const config = useConfig();
   const [modalidad, setModalidad] = useState<ModalidadApartado>(
     producto.permiteApartado ? modalidadInicial : "compra",
@@ -74,13 +75,18 @@ export function ComprarApartarDrawer({
 
   if (!esClienta) {
     return (
-      <Drawer open={open} onClose={onClose} title="Para comprar o apartar, entra como clienta">
+      <Drawer open={open} onClose={onClose} title="Entra para comprar o apartar">
         <p className="text-body-md text-on-surface-variant">
-          En la app real la clienta entra con su teléfono. En la demo, entra como María.
+          Usa tu cuenta de Google o tu teléfono. Solo toma un momento y guardamos tus pedidos.
         </p>
-        <Button className="mt-5" fullWidth onClick={() => entrar("clienta")}>
-          Entrar como clienta
-        </Button>
+        <ButtonLink
+          to={`/entrar?volver=${encodeURIComponent(location.pathname + location.search)}`}
+          className="mt-5"
+          size="lg"
+          fullWidth
+        >
+          Entrar
+        </ButtonLink>
       </Drawer>
     );
   }

@@ -1,5 +1,6 @@
 import type {
   Categoria,
+  Clienta,
   ColorProducto,
   ConfigBoutique,
   FamiliaColor,
@@ -104,6 +105,7 @@ export const CONFIG_INICIAL: ConfigBoutique = {
   diasTraslado: 2,
   suspendida: false,
   diasNovedad: 7,
+  catalogoPublico: true,
   sucursales: [
     { id: "temixco", nombre: "Boutique Temixco", direccion: "Av. Emiliano Zapata 120, Temixco, Mor." },
     { id: "azteca", nombre: "Boutique La Azteca", direccion: "Calle Azteca 45, Col. La Azteca, Temixco, Mor." },
@@ -178,6 +180,37 @@ function crearProductos(hoy: Date): Producto[] {
   });
 }
 
+/** 40 clientas sin pedidos (registradas por la campaña de Instagram, mostrador o teléfono). */
+function clientasDeEjemplo(hoy: Date): Clienta[] {
+  const nombres = ["Andrea", "Paola", "Karla", "Mónica", "Ximena", "Regina", "Itzel", "Camila", "Renata", "Brenda", "Diana", "Lucía", "Mariana", "Abril", "Natalia", "Elena", "Jimena", "Rocío", "Alejandra", "Gabriela"];
+  const apellidos = ["Ramírez", "Flores", "Morales", "Jiménez", "Vargas", "Reyes", "Ortiz", "Cruz", "Navarro", "Salazar", "Aguilar", "Rojas", "Domínguez", "Ríos"];
+  const r = rng(777);
+  return Array.from({ length: 40 }, (_, i) => {
+    const nombre = `${nombres[i % nombres.length]} ${apellidos[(i * 7) % apellidos.length]}`;
+    const x = r();
+    const origen = x < 0.62 ? "google" : x < 0.88 ? "mostrador" : "telefono";
+    // Ocho de la última semana ("nuevas"); el resto, en los últimos 2 meses.
+    const dias = i < 8 ? i % 7 : 8 + Math.floor(r() * 55);
+    const tel = `777 ${String(300 + i * 13).padStart(3, "0")} ${String(1000 + Math.floor(r() * 8999)).padStart(4, "0")}`;
+    const slugNombre = nombre
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .replace(/\s+/g, ".");
+    return {
+      id: `c-ej-${i}`,
+      nombre,
+      // Algunas de Google aún no capturan su WhatsApp.
+      telefono: origen === "google" && i % 9 === 4 ? "" : tel,
+      email: origen === "google" ? `${slugNombre}${i}@gmail.com` : undefined,
+      origen,
+      creada: sumarDias(hoy, -dias).toISOString(),
+      ultimoAcceso: origen === "mostrador" ? undefined : sumarDias(hoy, -Math.min(dias, Math.floor(r() * 10))).toISOString(),
+      penalizacionPendiente: 0,
+    } satisfies Clienta;
+  });
+}
+
 export function crearSeed(hoy: Date): DbState {
   const db: DbState = {
     version: DB_VERSION,
@@ -185,12 +218,15 @@ export function crearSeed(hoy: Date): DbState {
     categorias: CATEGORIAS,
     productos: crearProductos(hoy),
     clientas: [
-      { id: "c-maria", nombre: "María López", telefono: "777 123 4567", penalizacionPendiente: 0 },
-      { id: "c-ana", nombre: "Ana Ruiz", telefono: "777 234 5678", penalizacionPendiente: 0 },
-      { id: "c-sofia", nombre: "Sofía Hernández", telefono: "777 345 6789", penalizacionPendiente: 0 },
-      { id: "c-dani", nombre: "Daniela Torres", telefono: "777 456 7890", penalizacionPendiente: 0 },
-      { id: "c-vale", nombre: "Valeria Gómez", telefono: "777 567 8901", penalizacionPendiente: 0 },
-      { id: "c-fer", nombre: "Fernanda Castro", telefono: "777 678 9012", penalizacionPendiente: 0 },
+      { id: "c-maria", nombre: "María López", telefono: "777 123 4567", email: "maria.lopez@gmail.com", origen: "google", creada: sumarDias(hoy, -40).toISOString(), ultimoAcceso: sumarDias(hoy, -1).toISOString(), penalizacionPendiente: 0 },
+      { id: "c-ana", nombre: "Ana Ruiz", telefono: "777 234 5678", email: "ana.ruiz@gmail.com", origen: "google", creada: sumarDias(hoy, -35).toISOString(), ultimoAcceso: hoy.toISOString(), penalizacionPendiente: 0 },
+      { id: "c-sofia", nombre: "Sofía Hernández", telefono: "777 345 6789", origen: "mostrador", creada: sumarDias(hoy, -52).toISOString(), penalizacionPendiente: 0 },
+      { id: "c-dani", nombre: "Daniela Torres", telefono: "777 456 7890", email: "dani.torres@gmail.com", origen: "google", creada: sumarDias(hoy, -30).toISOString(), ultimoAcceso: sumarDias(hoy, -2).toISOString(), penalizacionPendiente: 0 },
+      { id: "c-vale", nombre: "Valeria Gómez", telefono: "777 567 8901", origen: "telefono", creada: sumarDias(hoy, -26).toISOString(), ultimoAcceso: sumarDias(hoy, -3).toISOString(), penalizacionPendiente: 0 },
+      { id: "c-fer", nombre: "Fernanda Castro", telefono: "777 678 9012", origen: "mostrador", creada: sumarDias(hoy, -45).toISOString(), penalizacionPendiente: 0 },
+      // Alta en mostrador SIN correo: si entra con Google y captura este teléfono, se enlaza.
+      { id: "c-lupita", nombre: "Guadalupe Mendoza", telefono: "777 111 2233", origen: "mostrador", creada: sumarDias(hoy, -12).toISOString(), penalizacionPendiente: 0 },
+      ...clientasDeEjemplo(hoy),
     ],
     apartados: [],
     folioSeq: 0,

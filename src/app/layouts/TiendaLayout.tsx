@@ -1,4 +1,4 @@
-import { Link, Outlet } from "react-router-dom";
+import { Link, Navigate, Outlet, useLocation } from "react-router-dom";
 import { ArrowLeftRight, Bell, ShoppingBag, Store } from "lucide-react";
 import { Logo } from "@/components/ilustraciones/Logo";
 import { BottomNav, TopNav, type ItemNav } from "@/components/organisms/Navegacion";
@@ -24,6 +24,13 @@ export default function TiendaLayout() {
     { to: "/tienda/apartados", label: "Mis pedidos", icono: ShoppingBag, contador: activos },
     { to: "/", label: "Cambiar rol", icono: ArrowLeftRight, end: true },
   ];
+
+  const location = useLocation();
+  const volver = encodeURIComponent(location.pathname + location.search);
+  // Catálogo privado (lo decide la dueña): sin cuenta no se ven prendas ni precios.
+  if (config.data && !config.data.catalogoPublico && !sesion) {
+    return <Navigate to={`/entrar?volver=${volver}`} replace />;
+  }
 
   if (config.data?.suspendida) {
     return (
@@ -62,6 +69,11 @@ export default function TiendaLayout() {
                 </span>
               )}
             </Link>
+          )}
+          {!sesion && (
+            <ButtonLink to={`/entrar?volver=${volver}`} size="sm" variant="tinta">
+              Entrar
+            </ButtonLink>
           )}
         </div>
       </header>

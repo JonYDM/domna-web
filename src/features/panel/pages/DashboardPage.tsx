@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { AlertTriangle, ChevronRight, ClipboardList, PackageCheck, Plus, TrendingUp, Wallet } from "lucide-react";
+import { AlertTriangle, ChevronRight, ClipboardList, PackageCheck, Plus, TrendingUp, Users, Wallet } from "lucide-react";
 import type { ReactNode } from "react";
 import { Domi } from "@/components/ilustraciones/Domi";
 import { PrendaImagen } from "@/components/ilustraciones/PrendaImagen";
@@ -10,13 +10,14 @@ import { fechaHoyLarga, formatMXN } from "@/lib/format";
 import { mensajeError } from "@/lib/errores";
 import { saludo } from "@/lib/saludo";
 import { useSesion } from "@/features/auth/sesion";
-import { useMetricas } from "../hooks";
+import { useMetricas, useResumenClientas } from "../hooks";
 
 const DIA_CORTO = new Intl.DateTimeFormat("es-MX", { weekday: "short", timeZone: "UTC" });
 
 export default function DashboardPage() {
   const { sesion } = useSesion();
   const m = useMetricas();
+  const clientas = useResumenClientas();
 
   return (
     <div className="flex flex-col gap-5">
@@ -89,6 +90,26 @@ export default function DashboardPage() {
               icono={<PackageCheck className="h-5 w-5" aria-hidden />}
             />
           </div>
+
+          {clientas.data && (
+            <Link
+              to="/app/clientas"
+              className="flex items-center gap-3 rounded-2xl bg-surface-container-lowest p-4 shadow-soft hover:shadow-lift"
+            >
+              <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-primary-soft text-primary-on-soft">
+                <Users className="h-5 w-5" aria-hidden />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="tabular block text-label-lg">
+                  {clientas.data.total} clientas · +{clientas.data.nuevasSemana} esta semana
+                </span>
+                <span className="block text-body-sm text-on-surface-variant">
+                  {Math.round((clientas.data.porOrigen.google / Math.max(1, clientas.data.total)) * 100)}% entró con Google
+                </span>
+              </span>
+              <ChevronRight className="h-4 w-4 text-outline" aria-hidden />
+            </Link>
+          )}
 
           <div className="grid gap-4 lg:grid-cols-3">
             <section className="rounded-2xl bg-surface-container-lowest p-4 shadow-soft lg:col-span-2">

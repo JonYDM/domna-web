@@ -28,6 +28,11 @@ export interface ConfigBoutique {
   suspendida: boolean;
   /** Días que una prenda se muestra como "Nuevo" o "De vuelta" (default 7). */
   diasNovedad: number;
+  /**
+   * true: cualquiera ve catálogo y precios; la cuenta solo se pide al comprar/apartar.
+   * false: solo clientas con cuenta ven la tienda (decisión de la dueña).
+   */
+  catalogoPublico: boolean;
   sucursales: Sucursal[];
 }
 
@@ -202,11 +207,53 @@ export interface Apartado {
   cerradoEl?: string;
 }
 
+/** Cómo llegó la clienta: se registró con Google, con su teléfono, o la dio de alta la tienda. */
+export type OrigenClienta = "google" | "telefono" | "mostrador";
+
 export interface Clienta {
   id: string;
   nombre: string;
+  /** 10 dígitos con formato "777 123 4567". Vacío si entró con Google y aún no lo captura. */
   telefono: string;
+  email?: string;
+  origen: OrigenClienta;
+  /** Fecha de registro (UTC). */
+  creada: string;
+  ultimoAcceso?: string;
   penalizacionPendiente: number;
+}
+
+/** Fila del módulo Clientas (dueña): la clienta + datos derivados de sus pedidos. */
+export interface ClientaResumen extends Clienta {
+  apartadosActivos: number;
+  porRecoger: number;
+  /** Suma de lo pagado en pedidos liquidados. */
+  totalComprado: number;
+  saldoPendiente: number;
+  pedidos: number;
+  ultimoPedido?: string;
+}
+
+export type FiltroClientas = "todas" | "activas" | "nuevas" | "cargo";
+
+export interface ResumenClientas {
+  total: number;
+  nuevasSemana: number;
+  conApartadoActivo: number;
+  conCargo: number;
+  porOrigen: Record<OrigenClienta, number>;
+}
+
+export interface NuevaClientaInput {
+  nombre: string;
+  telefono: string;
+  email?: string;
+}
+
+/** Lo que devuelve Google (simulado en la demo): nombre y correo verificados. */
+export interface CuentaGoogle {
+  nombre: string;
+  email: string;
 }
 
 export interface CrearApartadoInput {

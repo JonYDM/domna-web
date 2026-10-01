@@ -2,18 +2,13 @@ import { useNavigate } from "react-router-dom";
 import { ShoppingBag, Store } from "lucide-react";
 import { Domi } from "@/components/ilustraciones/Domi";
 import { Logo } from "@/components/ilustraciones/Logo";
-import { Button } from "@/components/ui";
-import { useSesion, type Rol } from "../sesion";
+import { Button, ButtonLink } from "@/components/ui";
+import { useSesion } from "../sesion";
 
-/** Bienvenida de la demo: elegir rol (en producción: login con teléfono + PIN). */
+/** Bienvenida de la demo: entrar como clienta (Google / teléfono) o abrir el panel de la dueña. */
 export function BienvenidaPage() {
   const { entrar } = useSesion();
   const navigate = useNavigate();
-
-  function ir(rol: Rol) {
-    entrar(rol);
-    navigate(rol === "clienta" ? "/tienda" : "/app");
-  }
 
   return (
     <main className="lunares flex min-h-dvh flex-col items-center justify-center bg-surface px-5 py-10">
@@ -27,11 +22,19 @@ export function BienvenidaPage() {
           <p className="text-body-sm text-on-surface-variant">Temixco · La Azteca</p>
 
           <div className="mt-5 flex flex-col gap-2.5">
-            <Button size="lg" fullWidth onClick={() => ir("clienta")}>
+            <ButtonLink to="/entrar" size="lg" fullWidth>
               <ShoppingBag className="h-5 w-5" aria-hidden />
-              Soy clienta: ver catálogo
-            </Button>
-            <Button size="lg" variant="tinta" fullWidth onClick={() => ir("duena")}>
+              Soy clienta
+            </ButtonLink>
+            <Button
+              size="lg"
+              variant="tinta"
+              fullWidth
+              onClick={() => {
+                entrar("duena");
+                navigate("/app");
+              }}
+            >
               <Store className="h-5 w-5" aria-hidden />
               Soy la dueña: abrir panel
             </Button>

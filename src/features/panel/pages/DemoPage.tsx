@@ -2,7 +2,7 @@ import { useState } from "react";
 import toast from "react-hot-toast";
 import { CalendarClock, Power, RotateCcw } from "lucide-react";
 import { Domi } from "@/components/ilustraciones/Domi";
-import { Button } from "@/components/ui";
+import { Button, Interruptor } from "@/components/ui";
 import { fechaHoyLarga } from "@/lib/format";
 import { offsetDias } from "@/lib/reloj";
 import { mensajeError } from "@/lib/errores";
@@ -16,7 +16,7 @@ import { useControlesDemo, useMetricas } from "../hooks";
 export default function DemoPage() {
   const config = useConfig();
   const metricas = useMetricas();
-  const { avanzar, suspender, reiniciar } = useControlesDemo();
+  const { avanzar, suspender, reiniciar, catalogoPublico } = useControlesDemo();
   const [confirmar, setConfirmar] = useState(false);
   const offset = offsetDias();
   const suspendida = config.data?.suspendida ?? false;
@@ -67,6 +67,24 @@ export default function DemoPage() {
             </Button>
           ))}
         </div>
+      </section>
+
+      <section className="rounded-2xl bg-surface-container-lowest p-4 shadow-soft">
+        <Interruptor
+          checked={config.data?.catalogoPublico ?? true}
+          disabled={catalogoPublico.isPending}
+          onChange={(v) =>
+            catalogoPublico.mutate(v, {
+              onSuccess: () => toast.success(v ? "Catálogo visible para todas" : "Solo clientas con cuenta ven la tienda"),
+            })
+          }
+          label="Catálogo visible sin cuenta"
+          descripcion={
+            config.data?.catalogoPublico ?? true
+              ? "Cualquiera ve prendas y precios (ideal para el link de Instagram). La cuenta se pide al comprar o apartar."
+              : "Privado: para ver prendas y precios hay que entrar con Google o teléfono."
+          }
+        />
       </section>
 
       <section className="rounded-2xl bg-surface-container-lowest p-4 shadow-soft">

@@ -8,6 +8,8 @@ export interface ItemNav {
   icono: LucideIcon;
   end?: boolean;
   contador?: number;
+  /** Botón central elevado (p. ej. Inicio de la dueña). */
+  destacado?: boolean;
 }
 
 /** Navegación inferior (móvil). Fondo sólido, safe-area, touch ≥ 44 px. */
@@ -18,8 +20,25 @@ export function BottomNav({ items }: { items: ItemNav[] }) {
       className="pb-safe fixed inset-x-0 bottom-0 z-40 border-t border-outline-variant/70 bg-surface-container-lowest md:hidden"
     >
       <ul className="mx-auto flex max-w-lg">
-        {items.map(({ to, label, icono: Icono, end, contador }) => (
+        {items.map(({ to, label, icono: Icono, end, contador, destacado }) => (
           <li key={to} className="flex-1">
+            {destacado ? (
+              <NavLink to={to} end={end} aria-label={label} className="group flex h-16 flex-col items-center justify-end gap-1 pb-1.5">
+                {({ isActive }) => (
+                  <>
+                    <span
+                      className={cn(
+                        "-mt-7 grid h-14 w-14 place-items-center rounded-full shadow-primary-glow ring-4 ring-surface-container-lowest transition-transform group-active:scale-95",
+                        isActive ? "bg-primary-strong text-on-primary" : "bg-tinta text-on-primary",
+                      )}
+                    >
+                      <Icono className="h-6 w-6" strokeWidth={2.2} aria-hidden />
+                    </span>
+                    <span className={cn("text-label-sm", isActive ? "text-primary-strong" : "text-on-surface-variant")}>{label}</span>
+                  </>
+                )}
+              </NavLink>
+            ) : (
             <NavLink
               to={to}
               end={end}
@@ -44,6 +63,7 @@ export function BottomNav({ items }: { items: ItemNav[] }) {
                 </>
               )}
             </NavLink>
+            )}
           </li>
         ))}
       </ul>

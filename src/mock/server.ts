@@ -3,6 +3,11 @@ import type {
   Aviso,
   Categoria,
   Clienta,
+  ClientaResumen,
+  CuentaGoogle,
+  FiltroClientas,
+  NuevaClientaInput,
+  ResumenClientas,
   ConfigBoutique,
   CotizacionApartado,
   CrearApartadoInput,
@@ -30,6 +35,7 @@ import {
 } from "@/lib/reloj";
 import { borrar, cargar, guardar, type DbState } from "./db";
 import * as dom from "./dominio";
+import * as cli from "./clientas";
 import { crearSeed } from "./seed";
 
 /**
@@ -170,6 +176,64 @@ function clientaDe(s: DbState, id: string): Clienta {
 
 export function obtenerClienta(id: string): Promise<Clienta> {
   return responder(() => clientaDe(estado(), id));
+}
+
+// ── Acceso de clientas (simulado: en producción, Google Identity + JWT del backend) ──
+
+export function entrarConGoogle(cuenta: CuentaGoogle): Promise<{ clienta: Clienta; nueva: boolean }> {
+  return responder(() => {
+    const r = cli.entrarConGoogle(estado(), cuenta, ahora());
+    persistir();
+    return r;
+  }, true);
+}
+
+export function guardarTelefono(clientaId: string, telefono: string): Promise<{ clienta: Clienta; enlazada: boolean }> {
+  return responder(() => {
+    const r = cli.guardarTelefono(estado(), clientaId, telefono, ahora());
+    persistir();
+    return r;
+  });
+}
+
+export function entrarConTelefono(telefono: string): Promise<Clienta> {
+  return responder(() => {
+    const c = cli.entrarConTelefono(estado(), telefono, ahora());
+    persistir();
+    return c;
+  }, true);
+}
+
+// ── Clientas (dueña) ──
+
+export function listarClientas(filtro: FiltroClientas, texto: string): Promise<ClientaResumen[]> {
+  return responder(() => cli.listarClientas(estado(), filtro, texto, ahora()));
+}
+
+export function obtenerResumenClientas(): Promise<ResumenClientas> {
+  return responder(() => cli.resumenClientas(estado(), ahora()));
+}
+
+export function obtenerClientaResumen(id: string): Promise<ClientaResumen> {
+  return responder(() => {
+    const s = estado();
+    return cli.resumenDe(s, clientaDe(s, id));
+  });
+}
+
+export function crearClienta(input: NuevaClientaInput): Promise<Clienta> {
+  return responder(() => {
+    const c = cli.crearClienta(estado(), input, ahora());
+    persistir();
+    return c;
+  }, true);
+}
+
+export function demoCatalogoPublico(publico: boolean): Promise<void> {
+  return responder(() => {
+    estado().config.catalogoPublico = publico;
+    persistir();
+  });
 }
 
 export function cotizarApartado(clientaId: string, input: CrearApartadoInput): Promise<CotizacionApartado> {

@@ -1,5 +1,5 @@
 import { Link, Outlet } from "react-router-dom";
-import { ClipboardList, FlaskConical, LayoutDashboard, LogOut, Package, Store } from "lucide-react";
+import { ClipboardList, FlaskConical, LayoutDashboard, LogOut, Package, Store, Users } from "lucide-react";
 import { Domi } from "@/components/ilustraciones/Domi";
 import { Logo } from "@/components/ilustraciones/Logo";
 import { BottomNav, TopNav, type ItemNav } from "@/components/organisms/Navegacion";
@@ -13,12 +13,14 @@ export default function DuenaLayout() {
   const metricas = useMetricas();
   const config = useConfig();
 
-  const items: ItemNav[] = [
-    { to: "/app", label: "Inicio", icono: LayoutDashboard, end: true },
-    { to: "/app/apartados", label: "Pedidos", icono: ClipboardList, contador: metricas.data?.porVencer },
-    { to: "/app/inventario", label: "Inventario", icono: Package },
-    { to: "/app/demo", label: "Demo", icono: FlaskConical },
-  ];
+  // Móvil: Inicio al centro y elevado. Escritorio: Inicio primero.
+  const inicio: ItemNav = { to: "/app", label: "Inicio", icono: LayoutDashboard, end: true };
+  const pedidos: ItemNav = { to: "/app/apartados", label: "Pedidos", icono: ClipboardList, contador: metricas.data?.porVencer };
+  const inventario: ItemNav = { to: "/app/inventario", label: "Inventario", icono: Package };
+  const clientas: ItemNav = { to: "/app/clientas", label: "Clientas", icono: Users };
+  const demo: ItemNav = { to: "/app/demo", label: "Demo", icono: FlaskConical };
+  const items: ItemNav[] = [inicio, pedidos, inventario, clientas, demo];
+  const itemsMovil: ItemNav[] = [pedidos, inventario, { ...inicio, destacado: true }, clientas, demo];
 
   return (
     <div className="min-h-dvh bg-surface">
@@ -60,7 +62,7 @@ export default function DuenaLayout() {
       <main className="mx-auto max-w-6xl px-4 pb-28 pt-5 md:pb-12">
         <Outlet />
       </main>
-      <BottomNav items={items} />
+      <BottomNav items={itemsMovil} />
     </div>
   );
 }

@@ -11,7 +11,10 @@ export interface Sesion {
 
 export interface SesionValor {
   sesion: Sesion | null;
+  /** Entrar con un rol de demo (la dueña, o María como clienta de ejemplo). */
   entrar: (rol: Rol) => void;
+  /** Entrar como una clienta concreta (tras "Continuar con Google" o con teléfono). */
+  entrarComoClienta: (clienta: { id: string; nombre: string }) => void;
   salir: () => void;
 }
 
