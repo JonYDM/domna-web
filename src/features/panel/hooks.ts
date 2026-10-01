@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { FiltroClientas, NuevaClientaInput, NuevoProductoInput, SucursalId } from "@/types/api";
+import type { CambioStock, FiltroClientas, MotivoAjuste, NuevaClientaInput, NuevoProductoInput, SucursalId } from "@/types/api";
 import { qk } from "@/lib/queryKeys";
 import * as api from "@/mock/server";
 
@@ -41,18 +41,35 @@ export function useCambiarPermiteApartado() {
   });
 }
 
-export function useAjustarStock(productoId: string) {
+/** Stock cambia disponibilidad, novedades ("De vuelta") y métricas → invalida todo eso. */
+function useInvalidarStock(productoId: string) {
   const qc = useQueryClient();
+  return () => {
+    qc.invalidateQueries({ queryKey: qk.producto(productoId) });
+    qc.invalidateQueries({ queryKey: qk.productosTodos() });
+    qc.invalidateQueries({ queryKey: qk.metricas() });
+  };
+}
+
+/** Guardar el borrador de stock en una sola operación (todo o nada) con su motivo. */
+export function useGuardarStock(productoId: string) {
+  const invalidar = useInvalidarStock(productoId);
   return useMutation({
-    mutationFn: ({ varianteId, sucursal, delta }: { varianteId: string; sucursal: SucursalId; delta: number }) =>
-      api.ajustarStock(varianteId, sucursal, delta),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: qk.producto(productoId) });
-      qc.invalidateQueries({ queryKey: qk.productosTodos() });
-      qc.invalidateQueries({ queryKey: qk.metricas() });
-    },
+    mutationFn: ({ cambios, motivo }: { cambios: CambioStock[]; motivo: MotivoAjuste }) =>
+      api.guardarStock(productoId, cambios, motivo),
+    onSuccess: invalidar,
   });
 }
+
+export function useMoverStock(productoId: string) {
+  const invalidar = useInvalidarStock(productoId);
+  return useMutation({
+    mutationFn: ({ varianteId, desde, cantidad }: { varianteId: string; desde: SucursalId; cantidad: number }) =>
+      api.moverStock(varianteId, desde, cantidad),
+    onSuccess: invalidar,
+  });
+}
+
 
 // ── Clientas ──
 

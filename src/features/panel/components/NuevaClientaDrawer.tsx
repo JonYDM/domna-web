@@ -3,6 +3,7 @@ import toast from "react-hot-toast";
 import type { Clienta } from "@/types/api";
 import { Button, Drawer, Input } from "@/components/ui";
 import { mensajeError } from "@/lib/errores";
+import { formatTelefonoInput } from "@/lib/format";
 import { useCrearClienta } from "../hooks";
 
 /** Alta en mostrador: nombre y teléfono (el correo es opcional). */
@@ -52,7 +53,8 @@ export function NuevaClientaDrawer({ open, onClose, onCreada }: { open: boolean;
           type="tel"
           inputMode="tel"
           value={telefono}
-          onChange={(e) => setTelefono(e.target.value)}
+          onChange={(e) => setTelefono(formatTelefonoInput(e.target.value))}
+          maxLength={12}
           placeholder="777 123 4567"
           error={telefono && digitos !== 10 ? "Debe tener 10 dígitos" : undefined}
         />

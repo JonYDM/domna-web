@@ -1,6 +1,9 @@
 import type {
   Apartado,
   Aviso,
+  CambioStock,
+  MotivoAjuste,
+  SucursalId,
   Categoria,
   Clienta,
   ClientaResumen,
@@ -160,7 +163,12 @@ export function obtenerProducto(id: string, { incluirInactivo = false } = {}): P
       ...dom.novedad(s, p, ahora()),
       variantes: p.variantes.map((v) => {
         const porSuc = dom.disponiblePorSucursal(s, v);
-        return { ...v, disponiblePorSucursal: porSuc, disponible: porSuc.temixco + porSuc.azteca };
+        return {
+          ...v,
+          disponiblePorSucursal: porSuc,
+          disponible: porSuc.temixco + porSuc.azteca,
+          reservadoPorSucursal: { temixco: dom.reservado(s, v.id, "temixco"), azteca: dom.reservado(s, v.id, "azteca") },
+        };
       }),
     };
   });
@@ -478,9 +486,17 @@ export function cambiarPermiteApartado(id: string, permite: boolean): Promise<vo
   });
 }
 
-export function ajustarStock(varianteId: string, sucursal: "temixco" | "azteca", delta: number): Promise<void> {
+export function guardarStock(productoId: string, cambios: CambioStock[], motivo: MotivoAjuste): Promise<number> {
   return responder(() => {
-    dom.ajustarStock(estado(), varianteId, sucursal, delta, ahora());
+    const n = dom.guardarStockLote(estado(), productoId, cambios, motivo, ahora());
+    persistir();
+    return n;
+  }, true);
+}
+
+export function moverStock(varianteId: string, desde: SucursalId, cantidad: number): Promise<void> {
+  return responder(() => {
+    dom.moverStock(estado(), varianteId, desde, cantidad, ahora());
     persistir();
   });
 }

@@ -81,6 +81,28 @@ export interface VarianteDisponible extends Variante {
   /** disponible = stock físico − reservado en apartados activos. */
   disponible: number;
   disponiblePorSucursal: Record<SucursalId, number>;
+  /** Piezas apartadas (no se pueden quitar ni mover). */
+  reservadoPorSucursal: Record<SucursalId, number>;
+}
+
+/** Por qué cambió el stock (queda en el historial de movimientos). */
+export type MotivoAjuste = "entrada" | "conteo" | "merma" | "devolucion" | "traspaso";
+
+export interface CambioStock {
+  varianteId: string;
+  sucursal: SucursalId;
+  /** Nuevo stock físico (absoluto, no delta: evita errores si dos personas editan). */
+  nuevo: number;
+}
+
+export interface MovimientoInventario {
+  id: string;
+  fecha: string;
+  productoId: string;
+  varianteId: string;
+  sucursal: SucursalId;
+  delta: number;
+  motivo: MotivoAjuste;
 }
 
 export interface Producto {

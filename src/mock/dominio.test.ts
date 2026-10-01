@@ -276,6 +276,73 @@ describe("avisos in-app", () => {
   });
 });
 
+describe("stock: guardar en lote y mover entre sucursales", () => {
+  it("guarda varios cambios con motivo y registra movimientos", () => {
+    const db = nuevaDb();
+    db.movimientos = [];
+    const [a, b] = db.productos[0].variantes;
+    a.stock = { temixco: 1, azteca: 0 };
+    b.stock = { temixco: 3, azteca: 2 };
+    const n = dom.guardarStockLote(
+      db,
+      db.productos[0].id,
+      [
+        { varianteId: a.id, sucursal: "temixco", nuevo: 4 },
+        { varianteId: b.id, sucursal: "azteca", nuevo: 0 },
+      ],
+      "conteo",
+      HOY,
+    );
+    expect(n).toBe(2);
+    expect(a.stock.temixco).toBe(4);
+    expect(b.stock.azteca).toBe(0);
+    expect(db.movimientos.map((m) => m.delta).sort()).toEqual([-2, 3]);
+    expect(db.movimientos.every((m) => m.motivo === "conteo")).toBe(true);
+  });
+
+  it("es todo o nada: si un cambio deja menos que lo apartado, no aplica ninguno", () => {
+    const db = nuevaDb();
+    const [a, b] = db.productos[0].variantes;
+    a.stock = { temixco: 1, azteca: 0 };
+    b.stock = { temixco: 2, azteca: 0 };
+    dom.crearApartado(db, "c-maria", { varianteId: b.id, cantidad: 1, modalidad: "anticipo", entrega: "temixco" }, HOY);
+    expect(() =>
+      dom.guardarStockLote(
+        db,
+        db.productos[0].id,
+        [
+          { varianteId: a.id, sucursal: "temixco", nuevo: 5 },
+          { varianteId: b.id, sucursal: "temixco", nuevo: 0 },
+        ],
+        "merma",
+        HOY,
+      ),
+    ).toThrowError(/apartadas/);
+    expect(a.stock.temixco).toBe(1); // el primero NO se aplicó
+  });
+
+  it("subir desde agotado en lote marca 'De vuelta en stock'", () => {
+    const db = nuevaDb();
+    const p = db.productos[0];
+    p.reabastecidoEl = undefined;
+    const v = varianteCon(db, 0);
+    dom.guardarStockLote(db, p.id, [{ varianteId: v.id, sucursal: "azteca", nuevo: 2 }], "entrada", HOY);
+    expect(p.reabastecidoEl).toBe(HOY.toISOString());
+  });
+
+  it("mover solo piezas disponibles; las apartadas se quedan", () => {
+    const db = nuevaDb();
+    db.movimientos = [];
+    const v = varianteCon(db, 3); // 3 en Temixco
+    dom.crearApartado(db, "c-maria", { varianteId: v.id, cantidad: 1, modalidad: "anticipo", entrega: "temixco" }, HOY);
+    expect(() => dom.moverStock(db, v.id, "temixco", 3, HOY)).toThrowError(/Solo hay 2/);
+    dom.moverStock(db, v.id, "temixco", 2, HOY);
+    expect(v.stock).toEqual({ temixco: 1, azteca: 2 });
+    expect(dom.disponibleTotal(db, v)).toBe(2);
+    expect(db.movimientos.filter((m) => m.motivo === "traspaso")).toHaveLength(2);
+  });
+});
+
 describe("seed", () => {
   it("es consistente: ningún disponible negativo", () => {
     const db = crearSeed(HOY);

@@ -8,6 +8,7 @@ import { GoogleLogo } from "@/components/ilustraciones/GoogleLogo";
 import { Logo } from "@/components/ilustraciones/Logo";
 import { Button, Input } from "@/components/ui";
 import { mensajeError } from "@/lib/errores";
+import { formatTelefonoInput } from "@/lib/format";
 import { useSesion } from "../sesion";
 import { useEntrarConGoogle, useEntrarConTelefono, useGuardarTelefono } from "../hooks";
 import { SelectorCuentaGoogle } from "../components/SelectorCuentaGoogle";
@@ -138,7 +139,8 @@ export default function EntrarPage() {
                 inputMode="tel"
                 autoComplete="tel-national"
                 value={tel}
-                onChange={(e) => setTel(e.target.value)}
+                onChange={(e) => setTel(formatTelefonoInput(e.target.value))}
+                maxLength={12}
                 placeholder="777 123 4567"
                 hint="Prueba con 777 123 4567 (María) o 777 345 6789 (Sofía, registrada en la tienda)."
                 autoFocus
@@ -175,7 +177,8 @@ export default function EntrarPage() {
                 inputMode="tel"
                 autoComplete="tel-national"
                 value={tel}
-                onChange={(e) => setTel(e.target.value)}
+                onChange={(e) => setTel(formatTelefonoInput(e.target.value))}
+                maxLength={12}
                 placeholder="777 123 4567"
                 icono={<MessageCircle className="h-5 w-5" />}
                 hint="Si ya compraste en la tienda, usa el mismo número y ligamos tu historial. Prueba: 777 111 2233."

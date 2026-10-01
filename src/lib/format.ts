@@ -79,3 +79,16 @@ export function formatHace(iso: string): string {
   if (d < 7) return `Hace ${d} días`;
   return formatFecha(iso);
 }
+
+/**
+ * Para inputs de teléfono: solo dígitos, máximo 10, con formato "777 123 4567" mientras se escribe.
+ * Si pegan "+52 777…" quita la lada del país.
+ */
+export function formatTelefonoInput(v: string): string {
+  let d = v.replace(/\D/g, "");
+  if (d.length > 10 && d.startsWith("52")) d = d.slice(2);
+  d = d.slice(0, 10);
+  if (d.length <= 3) return d;
+  if (d.length <= 6) return `${d.slice(0, 3)} ${d.slice(3)}`;
+  return `${d.slice(0, 3)} ${d.slice(3, 6)} ${d.slice(6)}`;
+}

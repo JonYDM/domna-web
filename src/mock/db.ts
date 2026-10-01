@@ -3,6 +3,7 @@ import type {
   Categoria,
   Clienta,
   ConfigBoutique,
+  MovimientoInventario,
   Producto,
 } from "@/types/api";
 
@@ -22,10 +23,12 @@ export interface DbState {
   folioSeq: number;
   /** Avisos leídos por clienta (ids). Los avisos en sí se derivan del estado. */
   avisosLeidos: Record<string, string[]>;
+  /** Historial de cambios de stock (entradas, conteos, mermas, traspasos). */
+  movimientos: MovimientoInventario[];
 }
 
 /** Subir al cambiar la forma de los datos: la demo se reinicia con el seed nuevo. */
-export const DB_VERSION = 5;
+export const DB_VERSION = 6;
 const KEY = "domna.demo.db";
 
 export function cargar(): DbState | null {

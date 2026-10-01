@@ -1,11 +1,14 @@
 import type {
   Apartado,
   Aviso,
+  CambioStock,
   Clienta,
   CotizacionApartado,
   CrearApartadoInput,
   EstadoEntrega,
   LineaApartado,
+  MotivoAjuste,
+  MovimientoInventario,
   Novedad,
   Producto,
   RegistrarAbonoInput,
@@ -85,6 +88,59 @@ export function ajustarStock(db: DbState, varianteId: string, sucursal: Sucursal
   }
   enc.variante.stock[sucursal] = nuevo;
   if (antes === 0 && disponibleTotal(db, enc.variante) > 0) enc.producto.reabastecidoEl = hoy.toISOString();
+  return enc;
+}
+
+function registrarMovimiento(db: DbState, m: Omit<MovimientoInventario, "id">) {
+  (db.movimientos ??= []).unshift({ ...m, id: `mv_${Date.now().toString(36)}_${db.movimientos.length}` });
+}
+
+/**
+ * Guarda varios cambios de stock de un producto con un motivo. Todo o nada: primero valida todo
+ * (entero ≥ 0 y ≥ lo apartado) y solo si todo es válido aplica. Usa valores absolutos.
+ */
+export function guardarStockLote(
+  db: DbState,
+  productoId: string,
+  cambios: CambioStock[],
+  motivo: MotivoAjuste,
+  hoy: Date,
+): number {
+  const producto = db.productos.find((p) => p.id === productoId);
+  if (!producto) throw new ApiError(404, "Producto no encontrado.");
+  if (!cambios.length) throw new ApiError(400, "No hay cambios que guardar.");
+  const validos = cambios.map((c) => {
+    const v = producto.variantes.find((x) => x.id === c.varianteId);
+    if (!v) throw new ApiError(404, "Variante no encontrada.");
+    if (!Number.isInteger(c.nuevo) || c.nuevo < 0 || c.nuevo > 999) throw new ApiError(400, "Cantidad inválida.");
+    const apartadas = reservado(db, v.id, c.sucursal);
+    if (c.nuevo < apartadas) {
+      throw new ApiError(409, `Talla ${v.talla}: no puedes dejar menos de ${apartadas} (están apartadas).`);
+    }
+    return { v, c };
+  });
+  for (const { v, c } of validos) {
+    const delta = c.nuevo - v.stock[c.sucursal];
+    if (delta === 0) continue;
+    ajustarStock(db, v.id, c.sucursal, delta, hoy);
+    registrarMovimiento(db, { fecha: hoy.toISOString(), productoId, varianteId: v.id, sucursal: c.sucursal, delta, motivo });
+  }
+  return validos.length;
+}
+
+/** Mueve piezas DISPONIBLES de una sucursal a otra (las apartadas no se mueven). */
+export function moverStock(db: DbState, varianteId: string, desde: SucursalId, cantidad: number, hoy: Date) {
+  const enc = buscarVariante(db, varianteId);
+  if (!enc) throw new ApiError(404, "Variante no encontrada.");
+  const hacia = otra(desde);
+  const libres = enc.variante.stock[desde] - reservado(db, varianteId, desde);
+  if (!Number.isInteger(cantidad) || cantidad < 1) throw new ApiError(400, "Cantidad inválida.");
+  if (cantidad > libres) throw new ApiError(409, `Solo hay ${libres} disponibles para mover.`);
+  enc.variante.stock[desde] -= cantidad;
+  enc.variante.stock[hacia] += cantidad;
+  const base = { fecha: hoy.toISOString(), productoId: enc.producto.id, varianteId, motivo: "traspaso" as const };
+  registrarMovimiento(db, { ...base, sucursal: desde, delta: -cantidad });
+  registrarMovimiento(db, { ...base, sucursal: hacia, delta: cantidad });
   return enc;
 }
 

@@ -231,6 +231,7 @@ export function crearSeed(hoy: Date): DbState {
     apartados: [],
     folioSeq: 0,
     avisosLeidos: {},
+    movimientos: [],
   };
   for (const [idx, dias] of REABASTECIDOS) db.productos[idx].reabastecidoEl = sumarDias(hoy, -dias).toISOString();
 
