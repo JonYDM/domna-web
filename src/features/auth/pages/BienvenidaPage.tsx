@@ -1,12 +1,13 @@
 import { useNavigate } from "react-router-dom";
-import { ShoppingBag, Store } from "lucide-react";
+import { Receipt, ShoppingBag, Store } from "lucide-react";
 import { DomiImagen } from "@/components/ilustraciones/DomiImagen";
 import { Logo } from "@/components/ilustraciones/Logo";
 import { Button, ButtonLink } from "@/components/ui";
+import { BotonInstalar } from "@/components/organisms/BotonInstalar";
 import { useSesion } from "../sesion";
 import { BotonPresentacion } from "@/features/presentacion/BotonPresentacion";
 
-/** Bienvenida de la demo: entrar como clienta (Google / teléfono) o abrir el panel de la dueña. */
+/** Bienvenida de la demo: entrar como clienta (registro / login con PIN) o abrir el panel de la dueña. */
 export function BienvenidaPage() {
   const { entrar } = useSesion();
   const navigate = useNavigate();
@@ -14,6 +15,7 @@ export function BienvenidaPage() {
   return (
     <main className="lunares relative flex min-h-dvh flex-col items-center justify-center bg-surface px-5 pb-10 pt-20">
       <BotonPresentacion className="absolute right-4 top-4" />
+      <BotonInstalar className="absolute left-4 top-4" compacto />
       <div className="anim-sube flex w-full max-w-sm flex-col items-center text-center">
         <DomiImagen ancho={196} prioridad animar alt="Domi, la catarina de Domna" />
         <Logo className="mt-6 text-[56px]" conLema />
@@ -39,6 +41,18 @@ export function BienvenidaPage() {
             >
               <Store className="h-5 w-5" aria-hidden />
               Soy la dueña: abrir panel
+            </Button>
+            <Button
+              size="lg"
+              variant="soft"
+              fullWidth
+              onClick={() => {
+                entrar("cajera");
+                navigate("/caja");
+              }}
+            >
+              <Receipt className="h-5 w-5" aria-hidden />
+              Soy cajera: abrir caja
             </Button>
           </div>
         </div>

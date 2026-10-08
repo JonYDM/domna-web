@@ -36,14 +36,29 @@ function limpiarNombre(nombre: string, min = 2, max = 30): string {
   return n;
 }
 
-/** Tallas: sin espacios extra, en mayúsculas ("ch" → "CH"), sin repetir, 1–15 de máx. 6 caracteres. */
+/** Palabras de tamaño que se guardan en Capitalización (no en MAYÚSCULAS) para que se lean bien. */
+const PALABRAS_TAMANO = ["chica", "mediana", "grande", "única", "unica"] as const;
+
+function capitalizar(v: string): string {
+  const low = v.toLowerCase();
+  if (low === "unica" || low === "única") return "Única";
+  return low.charAt(0).toUpperCase() + low.slice(1);
+}
+
+/**
+ * Tallas: sin espacios extra, sin repetir, 1–15 por categoría.
+ * - Códigos cortos ("ch", "m") → MAYÚSCULAS ("CH", "M"), máx. 6 caracteres.
+ * - Palabras de tamaño ("mediana", "grande", "única") → Capitalizadas, máx. 10 caracteres.
+ */
 export function normalizarTallas(tallas: string[]): string[] {
   const out: string[] = [];
   for (const t of tallas) {
     const v = t.trim().replace(/\s+/g, " ");
     if (!v) continue;
-    const norm = /^[úu]nica$/i.test(v) ? "Única" : v.toUpperCase();
-    if (norm.length > 6) throw new ApiError(400, `La talla "${v}" es muy larga (máx. 6).`);
+    const esPalabra = PALABRAS_TAMANO.includes(v.toLowerCase() as (typeof PALABRAS_TAMANO)[number]);
+    const norm = esPalabra ? capitalizar(v) : v.toUpperCase();
+    const maxLen = esPalabra ? 10 : 6;
+    if (norm.length > maxLen) throw new ApiError(400, `La talla "${v}" es muy larga (máx. ${maxLen}).`);
     if (!out.includes(norm)) out.push(norm);
   }
   if (!out.length) throw new ApiError(400, "Agrega al menos una talla.");

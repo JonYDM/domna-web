@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
-import { Clock, MapPin, ShieldCheck, ShoppingBag, Truck } from "lucide-react";
+import toast from "react-hot-toast";
+import { Clock, MapPin, ShieldCheck, ShoppingBag, ShoppingCart, Truck } from "lucide-react";
 import type { ModalidadApartado } from "@/types/api";
 import { EmptyState } from "@/components/molecules/EmptyState";
 import { PrecioTag } from "@/components/molecules/PrecioTag";
@@ -22,6 +23,7 @@ import {
 import { formatMXN } from "@/lib/format";
 import { mensajeError } from "@/lib/errores";
 import { ComprarApartarDrawer } from "@/features/apartados/components/ComprarApartarDrawer";
+import { useCarrito } from "@/features/carrito/carrito";
 import { useCategorias, useConfig, useProducto } from "../hooks";
 import { GaleriaProducto } from "../components/GaleriaProducto";
 
@@ -31,6 +33,7 @@ export default function ProductoPage() {
   const producto = useProducto(id);
   const config = useConfig();
   const categorias = useCategorias();
+  const carrito = useCarrito();
 
   const [colorElegido, setColorElegido] = useState<string | null>(params.get("color"));
   const [tallaElegida, setTallaElegida] = useState<string | null>(null);
@@ -91,6 +94,22 @@ export default function ProductoPage() {
   const anticipo = Math.ceil((p.precio * (config.data?.anticipoPct ?? 50)) / 100);
   const categoria = categorias.data?.find((c) => c.id === p.categoriaId)?.nombre;
   const nombreSucursal = (s: "temixco" | "azteca") => (s === "temixco" ? "Temixco" : "La Azteca");
+
+  function agregarAlCarrito() {
+    if (!p || !variante) return;
+    carrito.agregar({
+      varianteId: variante.id,
+      productoId: p.id,
+      nombre: p.nombre,
+      silueta: p.silueta,
+      precio: p.precio,
+      talla: variante.talla,
+      colorNombre: color.nombre,
+      colorHex: color.hex,
+      permiteApartado: p.permiteApartado,
+    });
+    toast.success(`${p.nombre} (${color.nombre} · ${variante.talla}) va en tu carrito`);
+  }
 
   return (
     <div className="pb-24 md:pb-0">
@@ -188,14 +207,14 @@ export default function ProductoPage() {
           </ul>
 
           <div className="hidden md:block">
-            <Acciones talla={talla} agotada={tallaAgotada} precio={p.precio} anticipo={anticipo} permiteApartado={p.permiteApartado} onAccion={setAccion} />
+            <Acciones talla={talla} agotada={tallaAgotada} precio={p.precio} anticipo={anticipo} permiteApartado={p.permiteApartado} onAccion={setAccion} onAgregarCarrito={agregarAlCarrito} />
           </div>
         </div>
       </div>
 
       {/* CTA fijo abajo en móvil (sobre la nav inferior) */}
       <div className="fixed inset-x-0 bottom-16 z-30 border-t border-outline-variant/60 bg-surface-container-lowest px-4 py-3 md:hidden">
-        <Acciones talla={talla} agotada={tallaAgotada} precio={p.precio} anticipo={anticipo} permiteApartado={p.permiteApartado} onAccion={setAccion} />
+        <Acciones talla={talla} agotada={tallaAgotada} precio={p.precio} anticipo={anticipo} permiteApartado={p.permiteApartado} onAccion={setAccion} onAgregarCarrito={agregarAlCarrito} />
       </div>
 
       {variante && accion && (
@@ -220,6 +239,7 @@ function Acciones({
   anticipo,
   permiteApartado,
   onAccion,
+  onAgregarCarrito,
 }: {
   talla: string | null;
   agotada: boolean;
@@ -227,6 +247,7 @@ function Acciones({
   anticipo: number;
   permiteApartado: boolean;
   onAccion: (m: ModalidadApartado) => void;
+  onAgregarCarrito: () => void;
 }) {
   if (!talla || agotada) {
     return (
@@ -236,15 +257,21 @@ function Acciones({
     );
   }
   return (
-    <div className="flex gap-2">
-      <Button size="lg" variant="tinta" fullWidth className="px-3" onClick={() => onAccion("compra")}>
-        Comprar · {formatMXN(precio)}
-      </Button>
-      {permiteApartado && (
-        <Button size="lg" fullWidth className="px-3" onClick={() => onAccion("anticipo")}>
-          Apartar · {formatMXN(anticipo)}
+    <div className="flex flex-col gap-2">
+      <div className="flex gap-2">
+        <Button size="lg" variant="tinta" fullWidth className="px-3" onClick={() => onAccion("compra")}>
+          Comprar · {formatMXN(precio)}
         </Button>
-      )}
+        {permiteApartado && (
+          <Button size="lg" fullWidth className="px-3" onClick={() => onAccion("anticipo")}>
+            Apartar · {formatMXN(anticipo)}
+          </Button>
+        )}
+      </div>
+      <Button size="lg" variant="outline" fullWidth onClick={onAgregarCarrito}>
+        <ShoppingCart className="h-5 w-5" aria-hidden />
+        Agregar al carrito
+      </Button>
     </div>
   );
 }

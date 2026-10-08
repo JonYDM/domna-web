@@ -1,43 +1,60 @@
 import { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import toast from "react-hot-toast";
-import { ChevronLeft, MessageCircle, Phone } from "lucide-react";
-import type { Clienta, CuentaGoogle } from "@/types/api";
+import { ChevronLeft, KeyRound, Mail } from "lucide-react";
+import type { Clienta } from "@/types/api";
 import { DomiImagen } from "@/components/ilustraciones/DomiImagen";
-import { GoogleLogo } from "@/components/ilustraciones/GoogleLogo";
 import { Logo } from "@/components/ilustraciones/Logo";
 import { Button, Input } from "@/components/ui";
 import { mensajeError } from "@/lib/errores";
 import { formatTelefonoInput } from "@/lib/format";
 import { useSesion } from "../sesion";
-import { useEntrarConGoogle, useEntrarConTelefono, useGuardarTelefono } from "../hooks";
-import { SelectorCuentaGoogle } from "../components/SelectorCuentaGoogle";
+import { useConfirmarRecuperacion, useLoginConPin, useRegistrar, useSolicitarRecuperacion } from "../hooks";
 import { BotonPresentacion } from "@/features/presentacion/BotonPresentacion";
 
-type Fase = "inicio" | "telefono" | "whatsapp";
+type Fase = "login" | "registro" | "recuperar" | "recuperar-pin";
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 /** Solo rutas internas de la tienda (evita redirecciones abiertas con ?volver=). */
 function destinoSeguro(v: string | null): string {
   return v && v.startsWith("/tienda") ? v : "/tienda";
 }
 
+/** Solo dígitos, máximo 6 (para el PIN). */
+function soloPin(v: string): string {
+  return v.replace(/\D/g, "").slice(0, 6);
+}
+
 /**
- * Entrar como clienta: "Continuar con Google" (1 toque) o con teléfono. A quien es nueva se le pide
- * su WhatsApp una sola vez; si la tienda ya la tenía registrada con ese número, las cuentas se enlazan.
+ * Acceso de la clienta con cuenta propia de Domna:
+ * - Iniciar sesión con teléfono + PIN de 6 dígitos.
+ * - Registrarse (nombre, apellidos, teléfono +52, correo y PIN).
+ * - Recuperar el PIN por correo (en la demo el enlace se muestra en pantalla).
  */
 export default function EntrarPage() {
   const [params] = useSearchParams();
   const destino = destinoSeguro(params.get("volver"));
   const navigate = useNavigate();
   const { entrarComoClienta } = useSesion();
-  const google = useEntrarConGoogle();
-  const telefonoLogin = useEntrarConTelefono();
-  const guardarTel = useGuardarTelefono();
 
-  const [fase, setFase] = useState<Fase>("inicio");
-  const [selector, setSelector] = useState(false);
-  const [pendiente, setPendiente] = useState<Clienta | null>(null);
+  const login = useLoginConPin();
+  const registro = useRegistrar();
+  const solicitar = useSolicitarRecuperacion();
+  const confirmar = useConfirmarRecuperacion();
+
+  const [fase, setFase] = useState<Fase>("login");
+
+  // Campos compartidos / de cada formulario.
   const [tel, setTel] = useState("");
+  const [pin, setPin] = useState("");
+  const [nombre, setNombre] = useState("");
+  const [apellidos, setApellidos] = useState("");
+  const [email, setEmail] = useState("");
+  const [tokenRec, setTokenRec] = useState("");
+  const [pinNuevo, setPinNuevo] = useState("");
+
+  const digitos = tel.replace(/\D/g, "").length;
 
   function terminar(c: Clienta, mensaje: string) {
     entrarComoClienta(c);
@@ -45,44 +62,55 @@ export default function EntrarPage() {
     navigate(destino, { replace: true });
   }
 
-  function elegirCuenta(cuenta: CuentaGoogle) {
-    google.mutate(cuenta, {
-      onSuccess: ({ clienta, nueva }) => {
-        setSelector(false);
-        if (nueva) {
-          setPendiente(clienta);
-          setFase("whatsapp");
-        } else terminar(clienta, `¡Hola de nuevo, ${clienta.nombre.split(" ")[0]}!`);
-      },
-      onError: (e) => toast.error(mensajeError(e)),
-    });
-  }
-
-  function guardarWhatsapp() {
-    if (!pendiente) return;
-    guardarTel.mutate(
-      { clientaId: pendiente.id, telefono: tel },
+  function entrar() {
+    login.mutate(
+      { telefono: tel, pin },
       {
-        onSuccess: ({ clienta, enlazada }) =>
-          terminar(
-            clienta,
-            enlazada
-              ? "¡Listo! Ligamos tu cuenta con tu registro de la tienda."
-              : `¡Bienvenida, ${clienta.nombre.split(" ")[0]}!`,
-          ),
+        onSuccess: (c) => terminar(c, `¡Hola, ${c.nombre}!`),
         onError: (e) => toast.error(mensajeError(e)),
       },
     );
   }
 
-  function entrarTelefono() {
-    telefonoLogin.mutate(tel, {
-      onSuccess: (c) => terminar(c, `¡Hola, ${c.nombre.split(" ")[0]}!`),
+  function registrar() {
+    registro.mutate(
+      { nombre, apellidos, telefono: tel, email: email.trim(), pin },
+      {
+        onSuccess: (c) => terminar(c, `¡Bienvenida, ${c.nombre}!`),
+        onError: (e) => toast.error(mensajeError(e)),
+      },
+    );
+  }
+
+  function pedirEnlace() {
+    solicitar.mutate(email.trim(), {
+      onSuccess: ({ token }) => {
+        // En la demo mostramos el enlace/código (en producción llega por correo).
+        if (token) {
+          setTokenRec(token);
+          setFase("recuperar-pin");
+          toast.success("Te enviamos un enlace a tu correo (demo: ya lo cargamos).");
+        } else {
+          toast.success("Si ese correo tiene cuenta, te enviamos un enlace para restablecer tu PIN.");
+        }
+      },
       onError: (e) => toast.error(mensajeError(e)),
     });
   }
 
-  const digitos = tel.replace(/\D/g, "").length;
+  function fijarPin() {
+    confirmar.mutate(
+      { token: tokenRec, pin: pinNuevo },
+      {
+        onSuccess: (c) => terminar(c, "¡Listo! Tu PIN quedó actualizado."),
+        onError: (e) => toast.error(mensajeError(e)),
+      },
+    );
+  }
+
+  const loginValido = digitos === 10 && pin.length === 6;
+  const registroValido =
+    nombre.trim().length >= 2 && digitos === 10 && EMAIL_RE.test(email.trim()) && pin.length === 6;
 
   return (
     <main className="lunares flex min-h-dvh flex-col items-center bg-surface px-5 py-6">
@@ -104,39 +132,18 @@ export default function EntrarPage() {
         </div>
 
         <section className="mt-8 rounded-3xl bg-surface-container-lowest p-5 shadow-soft">
-          {fase === "inicio" && (
-            <div className="flex flex-col gap-3">
-              <div className="text-center">
-                <h1 className="font-marca text-headline-md">Entra para comprar y apartar</h1>
-                <p className="mt-1 text-body-md text-on-surface-variant">Sin contraseñas, en un toque.</p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setSelector(true)}
-                className="mt-2 inline-flex h-14 w-full items-center justify-center gap-3 rounded-xl border border-outline-variant bg-surface-container-lowest text-body-lg font-semibold text-on-surface shadow-xs transition hover:bg-surface-container-low active:scale-[0.98]"
-              >
-                <GoogleLogo className="h-5 w-5" />
-                Continuar con Google
-              </button>
-              <Button size="lg" variant="soft" fullWidth onClick={() => setFase("telefono")}>
-                <Phone className="h-5 w-5" aria-hidden />
-                Entrar con mi teléfono
-              </Button>
-              <Link to="/tienda" className="mt-1 text-center text-label-lg text-primary-strong hover:underline">
-                Solo quiero ver el catálogo
-              </Link>
-            </div>
-          )}
-
-          {fase === "telefono" && (
+          {fase === "login" && (
             <form
               className="flex flex-col gap-3"
               onSubmit={(e) => {
                 e.preventDefault();
-                if (digitos >= 10) entrarTelefono();
+                if (loginValido) entrar();
               }}
             >
-              <h1 className="font-marca text-headline-md">Entra con tu teléfono</h1>
+              <div className="text-center">
+                <h1 className="font-marca text-headline-md">Entra a tu cuenta</h1>
+                <p className="mt-1 text-body-md text-on-surface-variant">Con tu teléfono y tu PIN.</p>
+              </div>
               <Input
                 label="Teléfono (10 dígitos)"
                 type="tel"
@@ -146,37 +153,57 @@ export default function EntrarPage() {
                 onChange={(e) => setTel(formatTelefonoInput(e.target.value))}
                 maxLength={12}
                 placeholder="777 123 4567"
-                hint="Prueba con 777 123 4567 (María) o 777 345 6789 (Sofía, registrada en la tienda)."
+                hint="Prueba con 777 123 4567 y PIN 123456 (María)."
                 autoFocus
               />
-              <p className="text-body-sm text-on-surface-variant">
-                En la app real te llegará un código por SMS para confirmar que es tu número.
+              <Input
+                label="PIN (6 dígitos)"
+                type="password"
+                inputMode="numeric"
+                autoComplete="current-password"
+                value={pin}
+                onChange={(e) => setPin(soloPin(e.target.value))}
+                maxLength={6}
+                placeholder="••••••"
+                icono={<KeyRound className="h-5 w-5" />}
+              />
+              <button
+                type="button"
+                onClick={() => setFase("recuperar")}
+                className="w-fit text-label-lg text-primary-strong hover:underline"
+              >
+                Olvidé mi PIN
+              </button>
+              <Button type="submit" size="lg" fullWidth disabled={!loginValido} loading={login.isPending}>
+                Entrar
+              </Button>
+              <p className="mt-1 text-center text-body-sm text-on-surface-variant">
+                ¿Primera vez?{" "}
+                <button type="button" onClick={() => setFase("registro")} className="text-label-lg text-primary-strong hover:underline">
+                  Crea tu cuenta
+                </button>
               </p>
-              <div className="flex gap-2">
-                <Button variant="ghost" onClick={() => setFase("inicio")}>
-                  Atrás
-                </Button>
-                <Button type="submit" fullWidth disabled={digitos < 10} loading={telefonoLogin.isPending}>
-                  Entrar
-                </Button>
-              </div>
+              <Link to="/tienda" className="mt-1 text-center text-label-lg text-on-surface-variant hover:underline">
+                Solo quiero ver el catálogo
+              </Link>
             </form>
           )}
 
-          {fase === "whatsapp" && pendiente && (
+          {fase === "registro" && (
             <form
               className="flex flex-col gap-3"
               onSubmit={(e) => {
                 e.preventDefault();
-                if (digitos >= 10) guardarWhatsapp();
+                if (registroValido) registrar();
               }}
             >
-              <h1 className="font-marca text-headline-md">Un último dato, {pendiente.nombre.split(" ")[0]}</h1>
-              <p className="text-body-md text-on-surface-variant">
-                Tu WhatsApp es para avisarte cuando tu prenda esté lista y para tus apartados. Solo te lo pedimos una vez.
-              </p>
+              <h1 className="font-marca text-headline-md">Crea tu cuenta</h1>
+              <div className="flex gap-2">
+                <Input label="Nombre(s)" value={nombre} onChange={(e) => setNombre(e.target.value)} autoComplete="given-name" autoFocus />
+                <Input label="Apellidos" value={apellidos} onChange={(e) => setApellidos(e.target.value)} autoComplete="family-name" />
+              </div>
               <Input
-                label="WhatsApp (10 dígitos)"
+                label="Teléfono (10 dígitos)"
                 type="tel"
                 inputMode="tel"
                 autoComplete="tel-national"
@@ -184,11 +211,103 @@ export default function EntrarPage() {
                 onChange={(e) => setTel(formatTelefonoInput(e.target.value))}
                 maxLength={12}
                 placeholder="777 123 4567"
-                icono={<MessageCircle className="h-5 w-5" />}
-                hint="Si ya compraste en la tienda, usa el mismo número y ligamos tu historial. Prueba: 777 111 2233."
+                hint="Se usa como tu usuario. Lada +52."
+                error={tel && digitos !== 10 ? "Debe tener 10 dígitos" : undefined}
+              />
+              <Input
+                label="Correo"
+                type="email"
+                inputMode="email"
+                autoComplete="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="nombre@gmail.com"
+                icono={<Mail className="h-5 w-5" />}
+                hint="Para recuperar tu PIN si lo olvidas."
+                error={email && !EMAIL_RE.test(email.trim()) ? "Correo inválido" : undefined}
+              />
+              <Input
+                label="Crea tu PIN (6 dígitos)"
+                type="password"
+                inputMode="numeric"
+                autoComplete="new-password"
+                value={pin}
+                onChange={(e) => setPin(soloPin(e.target.value))}
+                maxLength={6}
+                placeholder="••••••"
+                icono={<KeyRound className="h-5 w-5" />}
+              />
+              <div className="mt-1 flex gap-2">
+                <Button variant="ghost" onClick={() => setFase("login")}>
+                  Atrás
+                </Button>
+                <Button type="submit" fullWidth disabled={!registroValido} loading={registro.isPending}>
+                  Crear cuenta y entrar
+                </Button>
+              </div>
+            </form>
+          )}
+
+          {fase === "recuperar" && (
+            <form
+              className="flex flex-col gap-3"
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (EMAIL_RE.test(email.trim())) pedirEnlace();
+              }}
+            >
+              <h1 className="font-marca text-headline-md">Recupera tu PIN</h1>
+              <p className="text-body-md text-on-surface-variant">
+                Escribe tu correo y te enviaremos un enlace para crear un PIN nuevo.
+              </p>
+              <Input
+                label="Correo de tu cuenta"
+                type="email"
+                inputMode="email"
+                autoComplete="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="nombre@gmail.com"
+                icono={<Mail className="h-5 w-5" />}
                 autoFocus
               />
-              <Button type="submit" size="lg" fullWidth disabled={digitos < 10} loading={guardarTel.isPending}>
+              <div className="mt-1 flex gap-2">
+                <Button variant="ghost" onClick={() => setFase("login")}>
+                  Atrás
+                </Button>
+                <Button type="submit" fullWidth disabled={!EMAIL_RE.test(email.trim())} loading={solicitar.isPending}>
+                  Enviar enlace
+                </Button>
+              </div>
+            </form>
+          )}
+
+          {fase === "recuperar-pin" && (
+            <form
+              className="flex flex-col gap-3"
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (pinNuevo.length === 6) fijarPin();
+              }}
+            >
+              <h1 className="font-marca text-headline-md">Crea tu PIN nuevo</h1>
+              <p className="text-body-sm text-on-surface-variant">
+                Demo: tu enlace de recuperación es <code className="rounded bg-surface-container px-1">{tokenRec}</code>.
+                En la app real llega a tu correo.
+              </p>
+              <Input
+                label="Nuevo PIN (6 dígitos)"
+                type="password"
+                inputMode="numeric"
+                autoComplete="new-password"
+                value={pinNuevo}
+                onChange={(e) => setPinNuevo(soloPin(e.target.value))}
+                maxLength={6}
+                placeholder="••••••"
+                icono={<KeyRound className="h-5 w-5" />}
+                autoFocus
+              />
+              <Button type="submit" size="lg" fullWidth disabled={pinNuevo.length !== 6} loading={confirmar.isPending}>
                 Guardar y entrar
               </Button>
             </form>
@@ -199,8 +318,6 @@ export default function EntrarPage() {
           Al continuar aceptas el aviso de privacidad de Jesly Boutique.
         </p>
       </div>
-
-      <SelectorCuentaGoogle open={selector} onClose={() => setSelector(false)} onElegir={elegirCuenta} cargando={google.isPending} />
     </main>
   );
 }

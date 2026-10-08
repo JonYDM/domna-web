@@ -16,10 +16,9 @@ interface ResumenProductoProps {
   precio: number;
   colores: { nombre: string; hex: string; familia: FamiliaColor }[];
   tallas: string[];
-  /** stock[talla][índice de color] */
-  stock: Record<string, number[]>;
+  /** Stock por sucursal: stock[sucursal][talla][índice de color] */
+  stock: Record<SucursalId, Record<string, number[]>>;
   totalPiezas: number;
-  sucursal: SucursalId;
   permiteApartado: boolean;
   anticipoPct: number;
 }
@@ -28,9 +27,17 @@ interface ResumenProductoProps {
 export function ResumenProducto(p: ResumenProductoProps) {
   const [colorIdx, setColorIdx] = useState(0);
   const color = p.colores[colorIdx] ?? p.colores[0];
-  const piezas = (t: string, ci?: number) =>
-    ci === undefined ? p.colores.reduce((n, _, i) => n + (p.stock[t]?.[i] ?? 0), 0) : (p.stock[t]?.[ci] ?? 0);
+  /** Piezas combinadas (ambas sucursales) de una talla (y color opcional). */
+  const piezas = (t: string, ci?: number) => {
+    const sucs: SucursalId[] = ["temixco", "azteca"];
+    if (ci === undefined) {
+      return p.colores.reduce((n, _, i) => n + sucs.reduce((m, s) => m + (p.stock[s][t]?.[i] ?? 0), 0), 0);
+    }
+    return sucs.reduce((m, s) => m + (p.stock[s][t]?.[ci] ?? 0), 0);
+  };
   const piezasColor = (ci: number) => p.tallas.reduce((n, t) => n + piezas(t, ci), 0);
+  const piezasSucursal = (s: SucursalId) =>
+    p.tallas.reduce((n, t) => n + p.colores.reduce((m, _, i) => m + (p.stock[s][t]?.[i] ?? 0), 0), 0);
   const tipo = SILUETAS.find((s) => s.id === p.silueta)?.nombre;
 
   return (
@@ -121,9 +128,9 @@ export function ResumenProducto(p: ResumenProductoProps) {
           <Package className="h-4 w-4 text-primary" aria-hidden />
           {p.totalPiezas} {p.totalPiezas === 1 ? "pieza" : "piezas"}
         </span>
-        <span className="inline-flex items-center gap-1.5">
+        <span className="tabular inline-flex items-center gap-1.5">
           <MapPin className="h-4 w-4 text-primary" aria-hidden />
-          {p.sucursal === "temixco" ? "Temixco" : "La Azteca"}
+          Temixco {piezasSucursal("temixco")} · La Azteca {piezasSucursal("azteca")}
         </span>
       </div>
     </section>

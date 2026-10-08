@@ -152,6 +152,27 @@ export function buscarVariante(db: DbState, varianteId: string) {
   return null;
 }
 
+/** Busca una variante por su código de barras (POS). */
+export function buscarPorCodigoBarras(db: DbState, codigo: string) {
+  const c = codigo.trim();
+  if (!c) return null;
+  for (const p of db.productos) {
+    const v = p.variantes.find((x) => x.codigoBarras === c);
+    if (v) return { producto: p, variante: v };
+  }
+  return null;
+}
+
+/**
+ * Normaliza el input a una lista de líneas. Acepta el carrito nuevo (`lineas`) o el flujo
+ * legacy de una sola variante (`varianteId` + `cantidad`).
+ */
+export function lineasDe(input: CrearApartadoInput): { varianteId: string; cantidad: number }[] {
+  if (input.lineas && input.lineas.length) return input.lineas.map((l) => ({ ...l }));
+  if (input.varianteId) return [{ varianteId: input.varianteId, cantidad: input.cantidad ?? 1 }];
+  return [];
+}
+
 export function pagado(a: ApartadoEntidad): number {
   return a.abonos.reduce((s, x) => s + x.monto, 0);
 }
@@ -160,6 +181,24 @@ export function aDto(a: ApartadoEntidad): Apartado {
   const { penalizado: _p, ...resto } = a;
   const p = pagado(a);
   return { ...resto, pagado: p, saldo: Math.max(0, a.total - p) };
+}
+
+/** Ganancia congelada de un apartado = Σ (precio − costo) × cantidad de sus líneas. */
+export function gananciaDe(a: Pick<Apartado, "lineas">): number {
+  return a.lineas.reduce((n, l) => n + (l.precio - l.costo) * l.cantidad, 0);
+}
+
+/** Piezas de un apartado = Σ cantidad de sus líneas. */
+export function piezasDe(a: Pick<Apartado, "lineas">): number {
+  return a.lineas.reduce((n, l) => n + l.cantidad, 0);
+}
+
+/** ¿La línea salió de esta sucursal? (sucursalOrigen = de dónde se descuenta el stock). */
+export function lineasDeSucursal<T extends { sucursalOrigen: SucursalId }>(
+  lineas: T[],
+  sucursal: SucursalId | "todas",
+): T[] {
+  return sucursal === "todas" ? lineas : lineas.filter((l) => l.sucursalOrigen === sucursal);
 }
 
 /**
@@ -186,23 +225,76 @@ function anticipoDe(total: number, pct: number): number {
   return Math.ceil((total * pct) / 100);
 }
 
-/** Calcula el apartado sin guardarlo (lo que la clienta ve antes de confirmar). */
+/** Resuelve cada línea del carrito: valida y congela precio/costo y la sucursal de origen. */
+function resolverLineas(db: DbState, input: CrearApartadoInput): LineaApartado[] {
+  const lineas = lineasDe(input);
+  if (!lineas.length) throw new ApiError(400, "Agrega al menos una prenda.");
+  // Suma de cantidades por variante en el MISMO carrito, para validar stock total pedido.
+  const pedidoPorVariante = new Map<string, number>();
+  for (const l of lineas) {
+    if (l.cantidad < 1) throw new ApiError(400, "Cantidad inválida.");
+    pedidoPorVariante.set(l.varianteId, (pedidoPorVariante.get(l.varianteId) ?? 0) + l.cantidad);
+  }
+
+  const resueltas: LineaApartado[] = [];
+  for (const l of lineas) {
+    const enc = buscarVariante(db, l.varianteId);
+    if (!enc || !enc.producto.activo) throw new ApiError(404, "Una de las prendas ya no está disponible.");
+    const disp = disponiblePorSucursal(db, enc.variante);
+    const pedidoTotal = pedidoPorVariante.get(l.varianteId) ?? l.cantidad;
+    // Elegir sucursal: la de entrega si cubre TODO lo pedido de esa variante; si no, la otra.
+    let origen: SucursalId | null = null;
+    if (disp[input.entrega] >= pedidoTotal) origen = input.entrega;
+    else if (disp[otra(input.entrega)] >= pedidoTotal) origen = otra(input.entrega);
+    if (!origen) {
+      throw new ApiError(409, `Ya no hay stock suficiente de ${enc.producto.nombre} (${enc.variante.talla}).`);
+    }
+    const color = enc.producto.colores.find((c) => c.id === enc.variante.colorId)!;
+    resueltas.push({
+      varianteId: enc.variante.id,
+      productoId: enc.producto.id,
+      nombre: enc.producto.nombre,
+      silueta: enc.producto.silueta,
+      talla: enc.variante.talla,
+      colorNombre: color.nombre,
+      colorHex: color.hex,
+      precio: enc.producto.precio, // precio congelado
+      costo: enc.producto.costo, // costo congelado (ganancia real)
+      cantidad: l.cantidad,
+      sucursalOrigen: origen,
+    });
+  }
+  return resueltas;
+}
+
+/** Calcula el apartado sin guardarlo (lo que se ve antes de confirmar). Procesa todo el carrito. */
 export function cotizar(
   db: DbState,
   clienta: Clienta,
   input: CrearApartadoInput,
   hoy: Date,
 ): CotizacionApartado {
-  const enc = buscarVariante(db, input.varianteId);
-  if (!enc || !enc.producto.activo) throw new ApiError(404, "Esa prenda ya no está disponible.");
-  if (input.cantidad < 1) throw new ApiError(400, "Cantidad inválida.");
+  let lineas: LineaApartado[];
+  try {
+    lineas = resolverLineas(db, input);
+  } catch (e) {
+    // La cotización no revienta por falta de stock: lo informa con sucursalOrigen = null.
+    if (e instanceof ApiError && e.status === 409) {
+      return {
+        subtotal: 0,
+        penalizacion: clienta.penalizacionPendiente,
+        total: clienta.penalizacionPendiente,
+        anticipo: 0,
+        venceEl: hoy.toISOString(),
+        requiereTraslado: false,
+        listoEstimado: hoy.toISOString(),
+        sucursalOrigen: null,
+      };
+    }
+    throw e;
+  }
 
-  const disp = disponiblePorSucursal(db, enc.variante);
-  let origen: SucursalId | null = null;
-  if (disp[input.entrega] >= input.cantidad) origen = input.entrega;
-  else if (disp[otra(input.entrega)] >= input.cantidad) origen = otra(input.entrega);
-
-  const subtotal = enc.producto.precio * input.cantidad;
+  const subtotal = lineas.reduce((n, l) => n + l.precio * l.cantidad, 0);
   const penalizacion = clienta.penalizacionPendiente;
   const total = subtotal + penalizacion;
   const compra = input.modalidad === "compra";
@@ -212,7 +304,7 @@ export function cotizar(
     : conAnticipo
       ? db.config.vigenciaConAnticipoDias
       : db.config.vigenciaSinAnticipoDias;
-  const requiereTraslado = origen !== null && origen !== input.entrega;
+  const requiereTraslado = lineas.some((l) => l.sucursalOrigen !== input.entrega);
 
   return {
     subtotal,
@@ -225,7 +317,8 @@ export function cotizar(
       ? sumarDiasHabiles(hoy, db.config.diasTraslado)
       : hoy
     ).toISOString(),
-    sucursalOrigen: origen,
+    // Para una línea, su origen; para varias, el de entrega (representativo). null si no hay stock.
+    sucursalOrigen: lineas[0]?.sucursalOrigen ?? null,
   };
 }
 
@@ -240,9 +333,15 @@ export function crearApartado(
   if (!clienta) throw new ApiError(404, "Clienta no encontrada.");
 
   const compra = input.modalidad === "compra";
-  const enc = buscarVariante(db, input.varianteId);
-  if (!compra && enc && !enc.producto.permiteApartado) {
-    throw new ApiError(400, "Esta prenda solo se vende de contado.");
+  const lineas = resolverLineas(db, input);
+
+  // Para apartados (no compra), todas las prendas deben permitir apartado.
+  if (!compra) {
+    const noApartable = lineas.find((l) => {
+      const enc = buscarVariante(db, l.varianteId);
+      return enc && !enc.producto.permiteApartado;
+    });
+    if (noApartable) throw new ApiError(400, `${noApartable.nombre} solo se vende de contado.`);
   }
 
   // El límite de apartados activos no aplica a compras (no reservan: se venden al momento).
@@ -259,35 +358,21 @@ export function crearApartado(
   }
 
   const cot = cotizar(db, clienta, input, hoy);
-  if (!cot.sucursalOrigen) throw new ApiError(409, "Ya no hay stock de esa talla. Elige otra.");
-
-  const { producto, variante } = enc!;
-  const color = producto.colores.find((c) => c.id === variante.colorId)!;
-  const linea: LineaApartado = {
-    varianteId: variante.id,
-    productoId: producto.id,
-    nombre: producto.nombre,
-    silueta: producto.silueta,
-    talla: variante.talla,
-    colorNombre: color.nombre,
-    colorHex: color.hex,
-    precio: producto.precio, // precio congelado
-    cantidad: input.cantidad,
-    sucursalOrigen: cot.sucursalOrigen,
-  };
+  if (!cot.sucursalOrigen) throw new ApiError(409, "Ya no hay stock de una de las prendas. Revisa el carrito.");
 
   db.folioSeq += 1;
   const a: ApartadoEntidad = {
     id: `ap_${db.folioSeq}_${Math.random().toString(36).slice(2, 7)}`,
     folio: `DOM-${String(db.folioSeq).padStart(4, "0")}`,
     clientaId,
-    clientaNombre: clienta.nombre,
+    clientaNombre: `${clienta.nombre} ${clienta.apellidos}`.trim(),
     clientaTelefono: clienta.telefono,
-    lineas: [linea],
+    lineas,
     subtotal: cot.subtotal,
     penalizacion: cot.penalizacion,
     total: cot.total,
     modalidad: input.modalidad,
+    canal: input.canal ?? "online",
     entrega: input.entrega,
     requiereTraslado: cot.requiereTraslado,
     estadoEntrega: cot.requiereTraslado ? "en_origen" : "listo",

@@ -69,4 +69,41 @@ describe("flujo de la demo a través del mock service layer", () => {
       api.crearApartado("c-maria", { varianteId: v.id, cantidad: 1, modalidad: "anticipo", entrega: "temixco" }),
     ).rejects.toThrow(/pausa/);
   }, 30_000);
+
+  it("corte del día y ganancia del mes reflejan una venta en físico", async () => {
+    const api = await import("./server");
+    await api.demoReiniciar();
+
+    // Una variante con stock en Temixco.
+    const vestidos = await api.listarProductos({ categoria: "vestidos" });
+    const det = await api.obtenerProducto(vestidos[0].id);
+    const v = det.variantes.find((x) => x.disponiblePorSucursal.temixco >= 1)!;
+    expect(v).toBeDefined();
+
+    const corteAntes = await api.obtenerCorteDia("temixco");
+
+    // Venta en físico (compra de contado) a público general en Temixco.
+    const venta = await api.crearApartado("c-publico", {
+      lineas: [{ varianteId: v.id, cantidad: 1 }],
+      modalidad: "compra",
+      entrega: "temixco",
+      canal: "fisico",
+    });
+    expect(venta.canal).toBe("fisico");
+    expect(venta.estado).toBe("liquidado");
+
+    const corte = await api.obtenerCorteDia("temixco");
+    expect(corte.tickets).toBe(corteAntes.tickets + 1);
+    expect(corte.ventasDia).toBe(corteAntes.ventasDia + venta.total);
+    expect(corte.piezasDia).toBe(corteAntes.piezasDia + 1);
+    // La ganancia del día es positiva (precio > costo en el seed).
+    expect(corte.gananciaDia).toBeGreaterThan(corteAntes.gananciaDia);
+
+    // La métrica global incluye gananciaMes.
+    const m = await api.obtenerMetricas();
+    expect(m.gananciaMes).toBeGreaterThan(0);
+    // Filtrar por la otra sucursal no cuenta esta venta de Temixco.
+    const soloAzteca = await api.obtenerMetricas({ sucursal: "azteca" });
+    expect(soloAzteca.ventasMes).toBeLessThanOrEqual(m.ventasMes);
+  }, 30_000);
 });

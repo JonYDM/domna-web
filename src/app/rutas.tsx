@@ -8,6 +8,7 @@ export const TiendaLayout = lazy(() => import("./layouts/TiendaLayout"));
 export const CatalogoPage = lazy(() => import("@/features/catalogo/pages/CatalogoPage"));
 export const ProductoPage = lazy(() => import("@/features/catalogo/pages/ProductoPage"));
 export const MisApartadosPage = lazy(() => import("@/features/apartados/pages/MisApartadosPage"));
+export const CarritoPage = lazy(() => import("@/features/carrito/pages/CarritoPage"));
 export const EntrarPage = lazy(() => import("@/features/auth/pages/EntrarPage"));
 export const PresentacionPage = lazy(() => import("@/features/presentacion/pages/PresentacionPage"));
 export const ClientasPage = lazy(() => import("@/features/panel/pages/ClientasPage"));
@@ -16,6 +17,9 @@ export const AvisosPage = lazy(() => import("@/features/avisos/pages/AvisosPage"
 export const ApartadoClientaPage = lazy(() => import("@/features/apartados/pages/ApartadoClientaPage"));
 
 export const DuenaLayout = lazy(() => import("./layouts/DuenaLayout"));
+export const CajeraLayout = lazy(() => import("./layouts/CajeraLayout"));
+export const CortePage = lazy(() => import("@/features/panel/pages/CortePage"));
+export const VenderPage = lazy(() => import("@/features/pos/pages/VenderPage"));
 export const DashboardPage = lazy(() => import("@/features/panel/pages/DashboardPage"));
 export const ApartadosPage = lazy(() => import("@/features/panel/pages/ApartadosPage"));
 export const ApartadoDuenaPage = lazy(() => import("@/features/panel/pages/ApartadoDuenaPage"));
@@ -34,5 +38,12 @@ export function S({ children }: { children: ReactNode }) {
 export function SoloDuena({ children }: { children: ReactNode }) {
   const { sesion } = useSesion();
   if (sesion?.rol !== "duena") return <Navigate to="/" replace />;
+  return <>{children}</>;
+}
+
+/** Guardia de staff: dueña o cajera (POS, alta de productos). En producción: rol del token. */
+export function SoloStaff({ children }: { children: ReactNode }) {
+  const { sesion } = useSesion();
+  if (sesion?.rol !== "duena" && sesion?.rol !== "cajera") return <Navigate to="/" replace />;
   return <>{children}</>;
 }

@@ -10,9 +10,9 @@ import type {
   ColorInput,
   Clienta,
   ClientaResumen,
-  CuentaGoogle,
   FiltroClientas,
   NuevaClientaInput,
+  RegistroClientaInput,
   ResumenClientas,
   ConfigBoutique,
   CotizacionApartado,
@@ -21,10 +21,13 @@ import type {
   FiltroEstadoApartado,
   FiltrosCatalogo,
   Metricas,
+  FiltroMetricas,
+  CorteDia,
   NuevoProductoInput,
   Producto,
   ProductoDetalle,
   ProductoResumen,
+  ResultadoCodigo,
   RegistrarAbonoInput,
   TipoPedido,
 } from "@/types/api";
@@ -223,6 +226,46 @@ export function obtenerProducto(id: string, { incluirInactivo = false } = {}): P
   });
 }
 
+/** POS: busca una variante por su código de barras y devuelve lo necesario para el carrito. */
+export function buscarPorCodigo(codigo: string): Promise<ResultadoCodigo> {
+  return responder(() => {
+    const s = estado();
+    const enc = dom.buscarPorCodigoBarras(s, codigo);
+    if (!enc) throw new ApiError(404, "Ningún producto con ese código.");
+    const { producto, variante } = enc;
+    const color = producto.colores.find((c) => c.id === variante.colorId)!;
+    const porSuc = dom.disponiblePorSucursal(s, variante);
+    return {
+      productoId: producto.id,
+      varianteId: variante.id,
+      nombre: producto.nombre,
+      precio: producto.precio,
+      talla: variante.talla,
+      colorNombre: color.nombre,
+      colorHex: color.hex,
+      disponible: porSuc.temixco + porSuc.azteca,
+      disponiblePorSucursal: porSuc,
+    };
+  });
+}
+
+/**
+ * Demo del escáner: devuelve el código de barras de una variante CON stock, para "simular" una
+ * lectura cuando no hay cámara. Prefiere stock en la sucursal dada.
+ */
+export function codigoDemo(sucursal?: SucursalId): Promise<string> {
+  return responder(() => {
+    const s = estado();
+    const candidatas = s.productos
+      .filter((p) => p.activo)
+      .flatMap((p) => p.variantes)
+      .filter((v) => v.codigoBarras && (sucursal ? v.stock[sucursal] > 0 : v.stock.temixco + v.stock.azteca > 0));
+    const v = candidatas[Math.floor(Math.random() * candidatas.length)] ?? candidatas[0];
+    if (!v?.codigoBarras) throw new ApiError(404, "No hay productos con código para la demo.");
+    return v.codigoBarras;
+  });
+}
+
 // ── Tienda (clienta) ──
 
 function clientaDe(s: DbState, id: string): Clienta {
@@ -235,27 +278,35 @@ export function obtenerClienta(id: string): Promise<Clienta> {
   return responder(() => clientaDe(estado(), id));
 }
 
-// ── Acceso de clientas (simulado: en producción, Google Identity + JWT del backend) ──
+// ── Acceso de clientas (auth propia: en producción, JWT + hash BCrypt del backend) ──
 
-export function entrarConGoogle(cuenta: CuentaGoogle): Promise<{ clienta: Clienta; nueva: boolean }> {
+export function registrar(input: RegistroClientaInput): Promise<Clienta> {
   return responder(() => {
-    const r = cli.entrarConGoogle(estado(), cuenta, ahora());
+    const c = cli.registrar(estado(), input, ahora());
+    persistir();
+    return c;
+  }, true);
+}
+
+export function loginConPin(telefono: string, pin: string): Promise<Clienta> {
+  return responder(() => {
+    const c = cli.loginConPin(estado(), telefono, pin, ahora());
+    persistir();
+    return c;
+  }, true);
+}
+
+export function solicitarRecuperacion(email: string): Promise<{ token: string | null }> {
+  return responder(() => {
+    const r = cli.solicitarRecuperacion(estado(), email, ahora());
     persistir();
     return r;
   }, true);
 }
 
-export function guardarTelefono(clientaId: string, telefono: string): Promise<{ clienta: Clienta; enlazada: boolean }> {
+export function confirmarRecuperacion(token: string, pinNuevo: string): Promise<Clienta> {
   return responder(() => {
-    const r = cli.guardarTelefono(estado(), clientaId, telefono, ahora());
-    persistir();
-    return r;
-  });
-}
-
-export function entrarConTelefono(telefono: string): Promise<Clienta> {
-  return responder(() => {
-    const c = cli.entrarConTelefono(estado(), telefono, ahora());
+    const c = cli.confirmarRecuperacion(estado(), token, pinNuevo, ahora());
     persistir();
     return c;
   }, true);
@@ -397,10 +448,17 @@ export function avanzarEntrega(id: string, siguiente: EstadoEntrega): Promise<Ap
   });
 }
 
-export function obtenerMetricas(): Promise<Metricas> {
+export function obtenerMetricas(filtro: FiltroMetricas = {}): Promise<Metricas> {
   return responder(() => {
     const s = estado();
     const hoy = ahora();
+    const suc = filtro.sucursal ?? "todas";
+    /** Líneas de un apartado que salieron de la sucursal filtrada. */
+    const lineasFiltradas = (a: { lineas: Apartado["lineas"] }) => dom.lineasDeSucursal(a.lineas, suc);
+    /** Total de dinero de un apartado, limitado a las líneas de la sucursal filtrada. */
+    const totalFiltrado = (a: { lineas: Apartado["lineas"] }) =>
+      lineasFiltradas(a).reduce((n, l) => n + l.precio * l.cantidad, 0);
+
     const activos = s.apartados.filter((a) => a.estado === "activo");
     const liquidados = s.apartados.filter((a) => a.estado === "liquidado");
     const delMes = liquidados.filter((a) => a.cerradoEl && esMismoMesMx(new Date(a.cerradoEl), hoy));
@@ -428,7 +486,7 @@ export function obtenerMetricas(): Promise<Metricas> {
 
     const unidades = new Map<string, Metricas["topProductos"][number]>();
     for (const a of [...liquidados, ...activos]) {
-      for (const l of a.lineas) {
+      for (const l of lineasFiltradas(a)) {
         const u = unidades.get(l.productoId) ?? {
           productoId: l.productoId,
           nombre: l.nombre,
@@ -445,7 +503,7 @@ export function obtenerMetricas(): Promise<Metricas> {
       const dia = claveDiaMx(sumarDias(hoy, i - 6));
       const total = liquidados
         .filter((a) => a.cerradoEl && claveDiaMx(new Date(a.cerradoEl)) === dia)
-        .reduce((n, a) => n + a.total, 0);
+        .reduce((n, a) => n + totalFiltrado(a), 0);
       return { dia, total };
     });
 
@@ -454,8 +512,9 @@ export function obtenerMetricas(): Promise<Metricas> {
       montoActivos: activos.reduce((n, a) => n + a.total, 0),
       saldoPorCobrar: activos.reduce((n, a) => n + (a.total - dom.pagado(a)), 0),
       porVencer: activos.filter(porVencer).length,
-      ventasMes: delMes.reduce((n, a) => n + a.total, 0),
-      piezasVendidasMes: delMes.reduce((n, a) => n + a.lineas.reduce((m, l) => m + l.cantidad, 0), 0),
+      ventasMes: delMes.reduce((n, a) => n + totalFiltrado(a), 0),
+      gananciaMes: delMes.reduce((n, a) => n + dom.gananciaDe({ lineas: lineasFiltradas(a) }), 0),
+      piezasVendidasMes: delMes.reduce((n, a) => n + dom.piezasDe({ lineas: lineasFiltradas(a) }), 0),
       conversion: cerrados.length ? Math.round((apartadosLiquidados.length / cerrados.length) * 100) : 0,
       porEntregar: s.apartados.filter(porEntregar).length,
       comprasMes: delMes.filter((a) => a.modalidad === "compra").length,
@@ -470,11 +529,37 @@ export function obtenerMetricas(): Promise<Metricas> {
   });
 }
 
+/** Corte del día de una sucursal (lo que ve la cajera): venta y ganancia del día. */
+export function obtenerCorteDia(sucursal: SucursalId, fecha?: Date): Promise<CorteDia> {
+  return responder(() => {
+    const s = estado();
+    const dia = claveDiaMx(fecha ?? ahora());
+    // Ventas (apartados liquidados / compras) cerradas ese día, con líneas de esa sucursal.
+    const delDia = s.apartados.filter(
+      (a) => a.estado === "liquidado" && a.cerradoEl && claveDiaMx(new Date(a.cerradoEl)) === dia,
+    );
+    let ventasDia = 0;
+    let gananciaDia = 0;
+    let piezasDia = 0;
+    let tickets = 0;
+    for (const a of delDia) {
+      const lineas = dom.lineasDeSucursal(a.lineas, sucursal);
+      if (!lineas.length) continue;
+      ventasDia += lineas.reduce((n, l) => n + l.precio * l.cantidad, 0);
+      gananciaDia += dom.gananciaDe({ lineas });
+      piezasDia += dom.piezasDe({ lineas });
+      tickets += 1;
+    }
+    return { sucursal, dia, ventasDia, gananciaDia, piezasDia, tickets };
+  });
+}
+
 export function crearProducto(input: NuevoProductoInput): Promise<Producto> {
   return responder(() => {
     const s = estado();
     if (!input.nombre.trim()) throw new ApiError(400, "Ponle nombre a la prenda.");
     if (!(input.precio > 0)) throw new ApiError(400, "El precio debe ser mayor a 0.");
+    if (!(input.costo >= 0)) throw new ApiError(400, "El costo no puede ser negativo.");
     const base =
       input.nombre
         .normalize("NFD")
@@ -491,20 +576,24 @@ export function crearProducto(input: NuevoProductoInput): Promise<Producto> {
       categoriaId: input.categoriaId,
       silueta: input.silueta,
       precio: input.precio,
+      costo: input.costo,
       activo: true,
       permiteApartado: input.permiteApartado,
       colores,
       tallas: input.tallas,
       variantes: colores.flatMap((c, ci) =>
         input.tallas.map((t) => {
-          const n = Math.max(0, Math.floor(input.stock[t]?.[ci] ?? 0));
+          const tem = Math.max(0, Math.floor(input.stock.temixco?.[t]?.[ci] ?? 0));
+          const azt = Math.max(0, Math.floor(input.stock.azteca?.[t]?.[ci] ?? 0));
+          const codigoBarras = input.codigoBarras?.[t]?.[ci]?.trim() || undefined;
           return {
             id: `${c.id}-${t.toLowerCase()}`,
             productoId: id,
             talla: t,
             colorId: c.id,
             sku: `${id.slice(0, 6).toUpperCase()}-${c.nombre.slice(0, 3).toUpperCase()}-${t}`,
-            stock: { temixco: input.sucursal === "temixco" ? n : 0, azteca: input.sucursal === "azteca" ? n : 0 },
+            codigoBarras,
+            stock: { temixco: tem, azteca: azt },
           };
         }),
       ),

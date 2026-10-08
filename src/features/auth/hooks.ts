@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import type { CuentaGoogle } from "@/types/api";
+import type { RegistroClientaInput } from "@/types/api";
 import { qk } from "@/lib/queryKeys";
 import * as api from "@/mock/server";
 
@@ -13,20 +13,31 @@ function useInvalidarClientas() {
   };
 }
 
-export function useEntrarConGoogle() {
+/** Registro propio (nombre, apellidos, teléfono +52, correo, PIN 6 díg). */
+export function useRegistrar() {
   const invalidar = useInvalidarClientas();
-  return useMutation({ mutationFn: (c: CuentaGoogle) => api.entrarConGoogle(c), onSuccess: invalidar });
+  return useMutation({ mutationFn: (input: RegistroClientaInput) => api.registrar(input), onSuccess: invalidar });
 }
 
-export function useGuardarTelefono() {
+/** Login con teléfono + PIN. */
+export function useLoginConPin() {
   const invalidar = useInvalidarClientas();
   return useMutation({
-    mutationFn: ({ clientaId, telefono }: { clientaId: string; telefono: string }) => api.guardarTelefono(clientaId, telefono),
+    mutationFn: ({ telefono, pin }: { telefono: string; pin: string }) => api.loginConPin(telefono, pin),
     onSuccess: invalidar,
   });
 }
 
-export function useEntrarConTelefono() {
+/** Olvidé mi PIN: pide el enlace de recuperación por correo (en la demo devuelve el token). */
+export function useSolicitarRecuperacion() {
+  return useMutation({ mutationFn: (email: string) => api.solicitarRecuperacion(email) });
+}
+
+/** Fija un PIN nuevo con el token de recuperación. */
+export function useConfirmarRecuperacion() {
   const invalidar = useInvalidarClientas();
-  return useMutation({ mutationFn: (t: string) => api.entrarConTelefono(t), onSuccess: invalidar });
+  return useMutation({
+    mutationFn: ({ token, pin }: { token: string; pin: string }) => api.confirmarRecuperacion(token, pin),
+    onSuccess: invalidar,
+  });
 }

@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { ChevronRight, Plus } from "lucide-react";
 import { PrendaImagen } from "@/components/ilustraciones/PrendaImagen";
 import { BarraBusqueda } from "@/components/molecules/BarraBusqueda";
@@ -14,6 +14,9 @@ import { NuevoProductoDrawer } from "../components/NuevoProductoDrawer";
 export default function InventarioPage() {
   const [params, setParams] = useSearchParams();
   const navigate = useNavigate();
+  const { pathname } = useLocation();
+  // La cajera también usa el inventario (/caja); los enlaces respetan su base.
+  const base = pathname.startsWith("/caja") ? "/caja" : "/app";
   const categoria = params.get("categoria") ?? undefined;
   const nuevo = params.get("nuevo") === "1";
   const [texto, setTexto] = useState("");
@@ -79,7 +82,7 @@ export default function InventarioPage() {
           {lista.map((p) => (
             <li key={p.id}>
               <Link
-                to={`/app/inventario/${p.id}`}
+                to={`${base}/inventario/${p.id}`}
                 className="flex items-center gap-3 rounded-2xl bg-surface-container-lowest p-2.5 pr-3 shadow-soft hover:shadow-lift"
               >
                 <PrendaImagen silueta={p.silueta} hex={p.colores[0].hex} alt="" className="w-14 shrink-0 rounded-xl" />

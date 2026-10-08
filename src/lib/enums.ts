@@ -87,6 +87,8 @@ export const SILUETAS: { id: Silueta; nombre: string }[] = [
 export const TALLAS_ROPA = ["CH", "M", "G", "XG"];
 export const TALLAS_NUMERICAS = ["3", "5", "7", "9", "11"];
 export const TALLA_UNICA = ["Única"];
+/** Tamaños genéricos para bolsas y accesorios. */
+export const TAMANOS_GENERICOS = ["Chica", "Mediana", "Grande"];
 
 /** Umbral para "Quedan pocas". */
 export const STOCK_BAJO = 2;

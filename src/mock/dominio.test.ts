@@ -343,6 +343,123 @@ describe("stock: guardar en lote y mover entre sucursales", () => {
   });
 });
 
+describe("ganancia congelada (costo + precio)", () => {
+  it("gananciaDe = Σ (precio − costo) × cantidad de las líneas", () => {
+    const db = nuevaDb();
+    const v = varianteCon(db, 3);
+    db.productos[0].precio = 500;
+    db.productos[0].costo = 200;
+    const a = dom.crearApartado(db, "c-maria", { varianteId: v.id, cantidad: 2, modalidad: "compra", entrega: "temixco" }, HOY);
+    expect(a.lineas[0].costo).toBe(200);
+    expect(a.lineas[0].precio).toBe(500);
+    expect(dom.gananciaDe(a)).toBe((500 - 200) * 2);
+    expect(dom.piezasDe(a)).toBe(2);
+  });
+
+  it("el costo se congela: cambiar el costo del producto no altera ventas pasadas", () => {
+    const db = nuevaDb();
+    const v = varianteCon(db, 2);
+    db.productos[0].precio = 400;
+    db.productos[0].costo = 150;
+    const a = dom.crearApartado(db, "c-maria", { varianteId: v.id, cantidad: 1, modalidad: "compra", entrega: "temixco" }, HOY);
+    db.productos[0].costo = 350; // la dueña corrige el costo después
+    expect(a.lineas[0].costo).toBe(150);
+    expect(dom.gananciaDe(a)).toBe(250);
+  });
+
+  it("lineasDeSucursal filtra por la sucursal de origen de la línea", () => {
+    const db = nuevaDb();
+    const v = varianteCon(db, 2); // stock solo en Temixco
+    const a = dom.crearApartado(db, "c-maria", { varianteId: v.id, cantidad: 1, modalidad: "compra", entrega: "temixco" }, HOY);
+    expect(dom.lineasDeSucursal(a.lineas, "temixco")).toHaveLength(1);
+    expect(dom.lineasDeSucursal(a.lineas, "azteca")).toHaveLength(0);
+    expect(dom.lineasDeSucursal(a.lineas, "todas")).toHaveLength(1);
+  });
+
+  it("acepta el carrito nuevo (lineas[]) además de varianteId/cantidad", () => {
+    const db = nuevaDb();
+    const v = varianteCon(db, 3);
+    const a = dom.crearApartado(db, "c-maria", { lineas: [{ varianteId: v.id, cantidad: 2 }], modalidad: "compra", entrega: "temixco" }, HOY);
+    expect(a.lineas[0].cantidad).toBe(2);
+  });
+
+  it("carrito de 2 líneas: suma subtotal, ganancia y piezas, y descuenta ambas al cobrar", () => {
+    const db = nuevaDb();
+    const p = db.productos[0];
+    const [v1, v2] = p.variantes;
+    v1.stock = { temixco: 5, azteca: 0 };
+    v2.stock = { temixco: 5, azteca: 0 };
+    p.precio = 400;
+    p.costo = 150;
+    const a = dom.crearApartado(
+      db,
+      "c-maria",
+      { lineas: [{ varianteId: v1.id, cantidad: 2 }, { varianteId: v2.id, cantidad: 1 }], modalidad: "compra", entrega: "temixco" },
+      HOY,
+    );
+    expect(a.lineas).toHaveLength(2);
+    expect(a.subtotal).toBe(400 * 3);
+    expect(dom.gananciaDe(a)).toBe((400 - 150) * 3);
+    expect(dom.piezasDe(a)).toBe(3);
+    expect(a.estado).toBe("liquidado"); // compra
+    expect(v1.stock.temixco).toBe(3);
+    expect(v2.stock.temixco).toBe(4);
+  });
+
+  it("si una línea no tiene stock, aborta TODO el carrito (nada se descuenta)", () => {
+    const db = nuevaDb();
+    const p = db.productos[0];
+    const [v1, v2] = p.variantes;
+    v1.stock = { temixco: 5, azteca: 0 };
+    v2.stock = { temixco: 0, azteca: 0 }; // agotada
+    expect(() =>
+      dom.crearApartado(
+        db,
+        "c-maria",
+        { lineas: [{ varianteId: v1.id, cantidad: 1 }, { varianteId: v2.id, cantidad: 1 }], modalidad: "compra", entrega: "temixco" },
+        HOY,
+      ),
+    ).toThrowError(/stock/i);
+    expect(v1.stock.temixco).toBe(5); // la primera NO se descontó
+  });
+
+  it("venta en físico a público general con carrito y canal fisico", () => {
+    const db = nuevaDb();
+    const p = db.productos[0];
+    const [v1, v2] = p.variantes;
+    v1.stock = { temixco: 3, azteca: 0 };
+    v2.stock = { temixco: 3, azteca: 0 };
+    const a = dom.crearApartado(
+      db,
+      "c-publico",
+      { lineas: [{ varianteId: v1.id, cantidad: 1 }, { varianteId: v2.id, cantidad: 2 }], modalidad: "compra", entrega: "temixco", canal: "fisico" },
+      HOY,
+    );
+    expect(a.canal).toBe("fisico");
+    expect(a.clientaId).toBe("c-publico");
+    expect(a.estado).toBe("liquidado");
+    expect(dom.piezasDe(a)).toBe(3);
+  });
+
+  it("canal por defecto online; físico cuando se indica", () => {
+    const db = nuevaDb();
+    const v = varianteCon(db, 3);
+    const online = dom.crearApartado(db, "c-maria", { varianteId: v.id, cantidad: 1, modalidad: "compra", entrega: "temixco" }, HOY);
+    expect(online.canal).toBe("online");
+    const fisico = dom.crearApartado(db, "c-maria", { varianteId: v.id, cantidad: 1, modalidad: "compra", entrega: "temixco", canal: "fisico" }, HOY);
+    expect(fisico.canal).toBe("fisico");
+  });
+
+  it("buscarPorCodigoBarras encuentra la variante por su código", () => {
+    const db = crearSeed(HOY);
+    const v = db.productos[0].variantes[0];
+    const codigo = v.codigoBarras!;
+    expect(codigo).toBeTruthy();
+    expect(dom.buscarPorCodigoBarras(db, codigo)?.variante.id).toBe(v.id);
+    expect(dom.buscarPorCodigoBarras(db, "no-existe")).toBeNull();
+  });
+});
+
 describe("seed", () => {
   it("es consistente: ningún disponible negativo", () => {
     const db = crearSeed(HOY);

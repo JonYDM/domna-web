@@ -7,6 +7,9 @@ import { BottomNav, TopNav, type ItemNav } from "@/components/organisms/Navegaci
 import { PerfilMenu } from "@/components/organisms/PerfilMenu";
 import { EmptyState } from "@/components/molecules/EmptyState";
 import { ButtonLink } from "@/components/ui";
+import { BotonInstalar } from "@/components/organisms/BotonInstalar";
+import { CarritoProvider } from "@/features/carrito/CarritoProvider";
+import { CarritoIcono } from "@/features/carrito/components/CarritoIcono";
 import { useConfig } from "@/features/catalogo/hooks";
 import { useClienta, useMisApartados } from "@/features/apartados/hooks";
 import { useAvisos } from "@/features/avisos/hooks";
@@ -53,46 +56,52 @@ export default function TiendaLayout() {
   }
 
   return (
-    <div className="min-h-dvh bg-surface">
-      <header className="sticky top-0 z-30 border-b border-outline-variant/60 bg-surface">
-        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4">
-          <Link to="/tienda" className="flex min-w-0 items-center gap-2" aria-label="Domna, ir al catálogo">
-            <DomiImagen ancho={40} prioridad />
-            <span className="flex min-w-0 flex-col leading-tight">
-              <Logo className="text-[20px]" />
-              <span className="truncate text-label-sm uppercase text-on-surface-variant">
-                {config.data?.nombre ?? "Jesly Boutique"}
+    <CarritoProvider clientaId={sesion?.rol === "clienta" ? sesion.clientaId : undefined}>
+      <div className="min-h-dvh bg-surface">
+        <header className="sticky top-0 z-30 border-b border-outline-variant/60 bg-surface">
+          <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-3 px-4">
+            <Link to="/tienda" className="flex min-w-0 items-center gap-2" aria-label="Domna, ir al catálogo">
+              <DomiImagen ancho={40} prioridad />
+              <span className="flex min-w-0 flex-col leading-tight">
+                <Logo className="text-[20px]" />
+                <span className="truncate text-label-sm uppercase text-on-surface-variant">
+                  {config.data?.nombre ?? "Jesly Boutique"}
+                </span>
               </span>
-            </span>
-          </Link>
-          <TopNav items={items} />
-          {sesion?.rol === "clienta" && sesion.clientaId && (
-            <PerfilMenu
-              nombre={clienta.data?.nombre ?? sesion.nombre}
-              subtitulo={clienta.data?.email ?? clienta.data?.telefono}
-              pendientes={sinLeer}
-              open={perfilAbierto}
-              onOpenChange={setPerfilAbierto}
-              onSalir={() => {
-                setPerfilAbierto(false);
-                salir();
-                navigate("/");
-              }}
-            >
-              <AvisosPopover clientaId={sesion.clientaId} onNavegar={() => setPerfilAbierto(false)} />
-            </PerfilMenu>
-          )}
-          {!sesion && (
-            <ButtonLink to={`/entrar?volver=${volver}`} size="sm" variant="tinta">
-              Entrar
-            </ButtonLink>
-          )}
-        </div>
-      </header>
-      <main className="mx-auto max-w-6xl px-4 pb-28 pt-4 md:pb-12">
-        <Outlet />
-      </main>
-      <BottomNav items={items} />
-    </div>
+            </Link>
+            <TopNav items={items} />
+            <div className="flex items-center gap-1">
+              <BotonInstalar compacto className="hidden sm:inline-flex" />
+              <CarritoIcono />
+              {sesion?.rol === "clienta" && sesion.clientaId && (
+                <PerfilMenu
+                  nombre={clienta.data?.nombre ?? sesion.nombre}
+                  subtitulo={clienta.data?.email ?? clienta.data?.telefono}
+                  pendientes={sinLeer}
+                  open={perfilAbierto}
+                  onOpenChange={setPerfilAbierto}
+                  onSalir={() => {
+                    setPerfilAbierto(false);
+                    salir();
+                    navigate("/");
+                  }}
+                >
+                  <AvisosPopover clientaId={sesion.clientaId} onNavegar={() => setPerfilAbierto(false)} />
+                </PerfilMenu>
+              )}
+              {!sesion && (
+                <ButtonLink to={`/entrar?volver=${volver}`} size="sm" variant="tinta">
+                  Entrar
+                </ButtonLink>
+              )}
+            </div>
+          </div>
+        </header>
+        <main className="mx-auto max-w-6xl px-4 pb-28 pt-4 md:pb-12">
+          <Outlet />
+        </main>
+        <BottomNav items={items} />
+      </div>
+    </CarritoProvider>
   );
 }

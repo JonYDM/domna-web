@@ -6,6 +6,14 @@
 
 export type SucursalId = "temixco" | "azteca";
 
+/**
+ * Roles del sistema:
+ * - clienta: compra y aparta en la tienda.
+ * - duena: ve todo (métricas, ganancia del mes, configuración).
+ * - cajera: POS/ventas y alta de productos; solo ve el corte del día de su sucursal.
+ */
+export type Rol = "clienta" | "duena" | "cajera";
+
 export interface Sucursal {
   id: SucursalId;
   nombre: string;
@@ -96,6 +104,8 @@ export interface Variante {
   talla: string;
   colorId: string;
   sku: string;
+  /** Código de barras físico (EAN-13/UPC/Code128). Por variante: cada talla+color es un SKU físico. */
+  codigoBarras?: string;
   /** Stock físico por sucursal. */
   stock: Record<SucursalId, number>;
 }
@@ -106,6 +116,20 @@ export interface VarianteDisponible extends Variante {
   disponiblePorSucursal: Record<SucursalId, number>;
   /** Piezas apartadas (no se pueden quitar ni mover). */
   reservadoPorSucursal: Record<SucursalId, number>;
+}
+
+/** Lo que devuelve buscar una variante por su código de barras (POS). */
+export interface ResultadoCodigo {
+  productoId: string;
+  varianteId: string;
+  nombre: string;
+  precio: number;
+  talla: string;
+  colorNombre: string;
+  colorHex: string;
+  /** disponible = stock físico − reservado (en ambas sucursales). */
+  disponible: number;
+  disponiblePorSucursal: Record<SucursalId, number>;
 }
 
 /** Por qué cambió el stock (queda en el historial de movimientos). */
@@ -135,6 +159,10 @@ export interface Producto {
   categoriaId: string;
   silueta: Silueta;
   precio: number;
+  /** Costo de la boutique (lo que le costó la prenda). Para la ganancia real. */
+  costo: number;
+  /** Código de barras "principal" opcional (p. ej. para búsqueda rápida). El real vive por variante. */
+  codigoBarras?: string;
   /** Precio tachado (oferta). */
   precioAntes?: number;
   activo: boolean;
@@ -203,6 +231,8 @@ export type EstadoApartado = "activo" | "liquidado" | "vencido" | "cancelado";
 export type ModalidadApartado = "sin_anticipo" | "anticipo" | "compra";
 export type EstadoEntrega = "en_origen" | "en_traslado" | "listo" | "entregado";
 export type MetodoPago = "efectivo" | "transferencia" | "tarjeta";
+/** Canal de la venta/apartado: online (clienta) o físico (POS en mostrador). */
+export type Canal = "online" | "fisico";
 
 export interface LineaApartado {
   varianteId: string;
@@ -214,6 +244,8 @@ export interface LineaApartado {
   colorHex: string;
   /** Precio congelado al apartar. */
   precio: number;
+  /** Costo congelado al apartar (para la ganancia real; no se muestra a la clienta). */
+  costo: number;
   cantidad: number;
   sucursalOrigen: SucursalId;
 }
@@ -238,6 +270,8 @@ export interface Apartado {
   penalizacion: number;
   total: number;
   modalidad: ModalidadApartado;
+  /** Canal de la venta: online (clienta) o físico (POS). */
+  canal: Canal;
   entrega: SucursalId;
   requiereTraslado: boolean;
   estadoEntrega: EstadoEntrega;
@@ -252,15 +286,19 @@ export interface Apartado {
   cerradoEl?: string;
 }
 
-/** Cómo llegó la clienta: se registró con Google, con su teléfono, o la dio de alta la tienda. */
-export type OrigenClienta = "google" | "telefono" | "mostrador";
+/** Cómo se registró la clienta: ella misma (sign-in propio) o la dio de alta la tienda en mostrador. */
+export type OrigenClienta = "registro" | "mostrador";
 
 export interface Clienta {
   id: string;
+  /** Nombres de pila. */
   nombre: string;
-  /** 10 dígitos con formato "777 123 4567". Vacío si entró con Google y aún no lo captura. */
+  /** Apellidos. Separado de `nombre` para formularios y ordenamientos. */
+  apellidos: string;
+  /** 10 dígitos con formato "777 123 4567" (lada +52 implícita). Identificador de acceso. */
   telefono: string;
-  email?: string;
+  /** Obligatorio: es el canal de recuperación del PIN. */
+  email: string;
   origen: OrigenClienta;
   /** Fecha de registro (UTC). */
   creada: string;
@@ -291,21 +329,43 @@ export interface ResumenClientas {
 
 export interface NuevaClientaInput {
   nombre: string;
+  apellidos: string;
   telefono: string;
-  email?: string;
-}
-
-/** Lo que devuelve Google (simulado en la demo): nombre y correo verificados. */
-export interface CuentaGoogle {
-  nombre: string;
   email: string;
 }
 
-export interface CrearApartadoInput {
+/** Alta propia de la clienta (sign-in): PIN de 6 dígitos. El PIN no se guarda en claro. */
+export interface RegistroClientaInput {
+  nombre: string;
+  apellidos: string;
+  telefono: string;
+  email: string;
+  /** 6 dígitos. En producción se guarda como hash (BCrypt). */
+  pin: string;
+}
+
+/** Una línea del carrito. */
+export interface LineaCarrito {
   varianteId: string;
   cantidad: number;
+}
+
+export interface CrearApartadoInput {
+  /**
+   * Carrito multi-línea. Para el flujo actual de la clienta (una prenda) es un arreglo de 1.
+   * Compat: también se acepta `varianteId`/`cantidad` sueltos (se normalizan a `lineas`).
+   */
+  lineas?: LineaCarrito[];
+  /** @deprecated usar `lineas`. Se mantiene para el flujo de una sola variante. */
+  varianteId?: string;
+  /** @deprecated usar `lineas`. */
+  cantidad?: number;
   modalidad: ModalidadApartado;
   entrega: SucursalId;
+  /** Online (clienta) o físico (POS en mostrador). Default online. */
+  canal?: Canal;
+  /** Ausente en físico ⇒ venta a "Público general". */
+  clientaId?: string;
   metodoAnticipo?: MetodoPago;
 }
 
@@ -351,6 +411,8 @@ export interface Metricas {
   saldoPorCobrar: number;
   porVencer: number;
   ventasMes: number;
+  /** Ganancia del mes = Σ (precio − costo) congelados de las líneas vendidas (ventas directas y liquidados). */
+  gananciaMes: number;
   piezasVendidasMes: number;
   /** % de apartados cerrados que se liquidaron. */
   conversion: number;
@@ -362,18 +424,38 @@ export interface Metricas {
   ventasUltimos7: { dia: string; total: number }[];
 }
 
+/** Filtro de métricas de la dueña: por sucursal o todas. */
+export interface FiltroMetricas {
+  sucursal?: SucursalId | "todas";
+}
+
+/** Corte del día (lo único de dinero que ve la cajera): venta y ganancia del día de su sucursal. */
+export interface CorteDia {
+  sucursal: SucursalId;
+  /** Día local (clave YYYY-MM-DD, hora de México). */
+  dia: string;
+  ventasDia: number;
+  gananciaDia: number;
+  piezasDia: number;
+  /** Número de ventas (tickets) del día. */
+  tickets: number;
+}
+
 export interface NuevoProductoInput {
   nombre: string;
   descripcion: string;
   categoriaId: string;
   silueta: Silueta;
   precio: number;
+  /** Costo de la boutique (para la ganancia real). */
+  costo: number;
   colores: Omit<ColorProducto, "id">[];
   tallas: string[];
-  /** stock[talla][colorIndex] en la sucursal elegida. */
-  stock: Record<string, number[]>;
-  sucursal: SucursalId;
+  /** Stock por sucursal, independiente: stock[sucursal][talla][colorIndex]. */
+  stock: Record<SucursalId, Record<string, number[]>>;
   permiteApartado: boolean;
+  /** Código de barras por variante: codigoBarras[talla][colorIndex] (opcional). */
+  codigoBarras?: Record<string, (string | undefined)[]>;
 }
 
 // ── Avisos in-app (notificaciones de la clienta) ──

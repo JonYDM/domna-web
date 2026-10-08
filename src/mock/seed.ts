@@ -10,7 +10,7 @@ import type {
   Silueta,
   SucursalId,
 } from "@/types/api";
-import { TALLAS_NUMERICAS, TALLAS_ROPA, TALLA_UNICA } from "@/lib/enums";
+import { TALLAS_NUMERICAS, TALLAS_ROPA, TAMANOS_GENERICOS } from "@/lib/enums";
 import { sumarDias } from "@/lib/reloj";
 import { DB_VERSION, type CategoriaEntidad, type DbState } from "./db";
 import { abonar, crearApartado, disponiblePorSucursal } from "./dominio";
@@ -55,10 +55,29 @@ interface Def {
   categoriaId: string;
   silueta: Silueta;
   precio: number;
+  /** Costo de la boutique. Si falta, se deriva de `precio` por silueta. */
+  costo?: number;
   precioAntes?: number;
   nuevo?: boolean;
   colores: (keyof typeof C)[];
   tallas: string[];
+}
+
+/** Margen típico por silueta (costo ≈ precio × factor). Determinístico, para la ganancia de la demo. */
+const FACTOR_COSTO: Record<Silueta, number> = {
+  vestido: 0.52,
+  blusa: 0.48,
+  pantalon: 0.55,
+  falda: 0.5,
+  chamarra: 0.58,
+  conjunto: 0.56,
+  bolsa: 0.45,
+};
+
+/** Costo redondeado a decena. */
+function costoDe(d: Def): number {
+  if (d.costo != null) return d.costo;
+  return Math.round((d.precio * FACTOR_COSTO[d.silueta]) / 10) * 10;
 }
 
 const DEFS: Def[] = [
@@ -80,8 +99,8 @@ const DEFS: Def[] = [
   { nombre: "Chamarra de mezclilla Jess", descripcion: "Clásica de mezclilla con botones metálicos.", categoriaId: "abrigos", silueta: "chamarra", precio: 749, colores: ["mezclilla", "negro"], tallas: TALLAS_ROPA },
   { nombre: "Conjunto de lino Brisa", descripcion: "Blusa y pantalón de lino a juego. Fresco y elegante.", categoriaId: "conjuntos", silueta: "conjunto", precio: 799, nuevo: true, colores: ["blanco", "beige", "olivo"], tallas: TALLAS_ROPA },
   { nombre: "Conjunto deportivo Ivy", descripcion: "Sudadera corta y jogger de felpa suave.", categoriaId: "conjuntos", silueta: "conjunto", precio: 689, colores: ["gris", "rosapalo", "chocolate"], tallas: ["CH", "M", "G"] },
-  { nombre: "Bolsa de mano Domna", descripcion: "Piel sintética con asa corta y correa larga desmontable.", categoriaId: "accesorios", silueta: "bolsa", precio: 649, colores: ["negro", "rojo", "camel"], tallas: TALLA_UNICA },
-  { nombre: "Bolsa tote Lunares", descripcion: "Tote de lona con estampado de lunares. Cabe todo.", categoriaId: "accesorios", silueta: "bolsa", precio: 359, nuevo: true, colores: ["marfil", "negro"], tallas: TALLA_UNICA },
+  { nombre: "Bolsa de mano Domna", descripcion: "Piel sintética con asa corta y correa larga desmontable.", categoriaId: "accesorios", silueta: "bolsa", precio: 649, colores: ["negro", "rojo", "camel"], tallas: TAMANOS_GENERICOS },
+  { nombre: "Bolsa tote Lunares", descripcion: "Tote de lona con estampado de lunares. Cabe todo.", categoriaId: "accesorios", silueta: "bolsa", precio: 359, nuevo: true, colores: ["marfil", "negro"], tallas: TAMANOS_GENERICOS },
 ];
 
 export const CATEGORIAS: CategoriaEntidad[] = [
@@ -91,7 +110,7 @@ export const CATEGORIAS: CategoriaEntidad[] = [
   { id: "faldas", nombre: "Faldas", tallas: TALLAS_ROPA },
   { id: "conjuntos", nombre: "Conjuntos", tallas: TALLAS_ROPA },
   { id: "abrigos", nombre: "Blazers y chamarras", tallas: TALLAS_ROPA },
-  { id: "accesorios", nombre: "Accesorios", tallas: TALLA_UNICA },
+  { id: "accesorios", nombre: "Accesorios", tallas: TAMANOS_GENERICOS },
 ];
 
 /** Catálogo inicial de colores (la dueña agrega, edita o quita los suyos). */
@@ -156,12 +175,15 @@ function crearProductos(hoy: Date): Producto[] {
         const x = r();
         const total = x < 0.18 ? 0 : x < 0.43 ? 1 + Math.floor(r() * 2) : 3 + Math.floor(r() * 4);
         const tem = Math.round(total * (0.35 + r() * 0.4));
+        // Código de barras EAN-13 determinístico (750 = prefijo MX de ejemplo + secuencia).
+        const codigoBarras = `750${String(Math.floor(r() * 1_000_000_0000)).padStart(10, "0")}`;
         return {
           id: `${c.id}-${slug(t)}`,
           productoId: id,
           talla: t,
           colorId: c.id,
           sku: `${id.slice(0, 6).toUpperCase()}-${c.nombre.slice(0, 3).toUpperCase()}-${t}`,
+          codigoBarras,
           stock: { temixco: tem, azteca: total - tem },
         };
       }),
@@ -173,6 +195,7 @@ function crearProductos(hoy: Date): Producto[] {
       categoriaId: d.categoriaId,
       silueta: d.silueta,
       precio: d.precio,
+      costo: costoDe(d),
       precioAntes: d.precioAntes,
       activo: true,
       // Regla de ejemplo de la boutique: lo que está en oferta se vende solo de contado.
@@ -188,29 +211,29 @@ function crearProductos(hoy: Date): Producto[] {
   });
 }
 
-/** 40 clientas sin pedidos (registradas por la campaña de Instagram, mostrador o teléfono). */
+/** 40 clientas sin pedidos (registradas por la campaña de Instagram o alta en mostrador). */
 function clientasDeEjemplo(hoy: Date): Clienta[] {
   const nombres = ["Andrea", "Paola", "Karla", "Mónica", "Ximena", "Regina", "Itzel", "Camila", "Renata", "Brenda", "Diana", "Lucía", "Mariana", "Abril", "Natalia", "Elena", "Jimena", "Rocío", "Alejandra", "Gabriela"];
   const apellidos = ["Ramírez", "Flores", "Morales", "Jiménez", "Vargas", "Reyes", "Ortiz", "Cruz", "Navarro", "Salazar", "Aguilar", "Rojas", "Domínguez", "Ríos"];
   const r = rng(777);
   return Array.from({ length: 40 }, (_, i) => {
-    const nombre = `${nombres[i % nombres.length]} ${apellidos[(i * 7) % apellidos.length]}`;
+    const nombre = nombres[i % nombres.length];
+    const apellido = apellidos[(i * 7) % apellidos.length];
     const x = r();
-    const origen = x < 0.62 ? "google" : x < 0.88 ? "mostrador" : "telefono";
+    const origen = x < 0.72 ? "registro" : "mostrador";
     // Ocho de la última semana ("nuevas"); el resto, en los últimos 2 meses.
     const dias = i < 8 ? i % 7 : 8 + Math.floor(r() * 55);
     const tel = `777 ${String(300 + i * 13).padStart(3, "0")} ${String(1000 + Math.floor(r() * 8999)).padStart(4, "0")}`;
-    const slugNombre = nombre
+    const slugNombre = `${nombre}.${apellido}`
       .normalize("NFD")
       .replace(/[\u0300-\u036f]/g, "")
-      .toLowerCase()
-      .replace(/\s+/g, ".");
+      .toLowerCase();
     return {
       id: `c-ej-${i}`,
       nombre,
-      // Algunas de Google aún no capturan su WhatsApp.
-      telefono: origen === "google" && i % 9 === 4 ? "" : tel,
-      email: origen === "google" ? `${slugNombre}${i}@gmail.com` : undefined,
+      apellidos: apellido,
+      telefono: tel,
+      email: `${slugNombre}${i}@gmail.com`,
       origen,
       creada: sumarDias(hoy, -dias).toISOString(),
       ultimoAcceso: origen === "mostrador" ? undefined : sumarDias(hoy, -Math.min(dias, Math.floor(r() * 10))).toISOString(),
@@ -227,18 +250,28 @@ export function crearSeed(hoy: Date): DbState {
     colores: structuredClone(COLORES_INICIALES),
     productos: crearProductos(hoy),
     clientas: [
-      { id: "c-maria", nombre: "María López", telefono: "777 123 4567", email: "maria.lopez@gmail.com", origen: "google", creada: sumarDias(hoy, -40).toISOString(), ultimoAcceso: sumarDias(hoy, -1).toISOString(), penalizacionPendiente: 0 },
-      { id: "c-ana", nombre: "Ana Ruiz", telefono: "777 234 5678", email: "ana.ruiz@gmail.com", origen: "google", creada: sumarDias(hoy, -35).toISOString(), ultimoAcceso: hoy.toISOString(), penalizacionPendiente: 0 },
-      { id: "c-sofia", nombre: "Sofía Hernández", telefono: "777 345 6789", origen: "mostrador", creada: sumarDias(hoy, -52).toISOString(), penalizacionPendiente: 0 },
-      { id: "c-dani", nombre: "Daniela Torres", telefono: "777 456 7890", email: "dani.torres@gmail.com", origen: "google", creada: sumarDias(hoy, -30).toISOString(), ultimoAcceso: sumarDias(hoy, -2).toISOString(), penalizacionPendiente: 0 },
-      { id: "c-vale", nombre: "Valeria Gómez", telefono: "777 567 8901", origen: "telefono", creada: sumarDias(hoy, -26).toISOString(), ultimoAcceso: sumarDias(hoy, -3).toISOString(), penalizacionPendiente: 0 },
-      { id: "c-fer", nombre: "Fernanda Castro", telefono: "777 678 9012", origen: "mostrador", creada: sumarDias(hoy, -45).toISOString(), penalizacionPendiente: 0 },
-      // Alta en mostrador SIN correo: si entra con Google y captura este teléfono, se enlaza.
-      { id: "c-lupita", nombre: "Guadalupe Mendoza", telefono: "777 111 2233", origen: "mostrador", creada: sumarDias(hoy, -12).toISOString(), penalizacionPendiente: 0 },
+      // Clienta del sistema para ventas en físico a "Público general" (no cuenta como clienta real).
+      { id: "c-publico", nombre: "Público", apellidos: "general", telefono: "777 000 0000", email: "publico@jesly.local", origen: "mostrador", creada: sumarDias(hoy, -200).toISOString(), penalizacionPendiente: 0 },
+      { id: "c-maria", nombre: "María", apellidos: "López", telefono: "777 123 4567", email: "maria.lopez@gmail.com", origen: "registro", creada: sumarDias(hoy, -40).toISOString(), ultimoAcceso: sumarDias(hoy, -1).toISOString(), penalizacionPendiente: 0 },
+      { id: "c-ana", nombre: "Ana", apellidos: "Ruiz", telefono: "777 234 5678", email: "ana.ruiz@gmail.com", origen: "registro", creada: sumarDias(hoy, -35).toISOString(), ultimoAcceso: hoy.toISOString(), penalizacionPendiente: 0 },
+      { id: "c-sofia", nombre: "Sofía", apellidos: "Hernández", telefono: "777 345 6789", email: "sofia.hernandez@gmail.com", origen: "mostrador", creada: sumarDias(hoy, -52).toISOString(), penalizacionPendiente: 0 },
+      { id: "c-dani", nombre: "Daniela", apellidos: "Torres", telefono: "777 456 7890", email: "dani.torres@gmail.com", origen: "registro", creada: sumarDias(hoy, -30).toISOString(), ultimoAcceso: sumarDias(hoy, -2).toISOString(), penalizacionPendiente: 0 },
+      { id: "c-vale", nombre: "Valeria", apellidos: "Gómez", telefono: "777 567 8901", email: "valeria.gomez@gmail.com", origen: "registro", creada: sumarDias(hoy, -26).toISOString(), ultimoAcceso: sumarDias(hoy, -3).toISOString(), penalizacionPendiente: 0 },
+      { id: "c-fer", nombre: "Fernanda", apellidos: "Castro", telefono: "777 678 9012", email: "fernanda.castro@gmail.com", origen: "mostrador", creada: sumarDias(hoy, -45).toISOString(), penalizacionPendiente: 0 },
+      { id: "c-lupita", nombre: "Guadalupe", apellidos: "Mendoza", telefono: "777 111 2233", email: "guadalupe.mendoza@gmail.com", origen: "mostrador", creada: sumarDias(hoy, -12).toISOString(), penalizacionPendiente: 0 },
       ...clientasDeEjemplo(hoy),
     ],
     apartados: [],
     folioSeq: 0,
+    // PINs de demo (6 dígitos) solo para clientas que se "registraron". Las de mostrador aún no
+    // tienen acceso (pueden reclamar su ficha al registrarse). En el backend serían hashes BCrypt.
+    pins: {
+      "c-maria": "123456",
+      "c-ana": "234567",
+      "c-dani": "456789",
+      "c-vale": "567890",
+    },
+    recuperaciones: {},
     avisosLeidos: {},
     movimientos: [],
   };

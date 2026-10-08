@@ -12,6 +12,17 @@ describe("categorías", () => {
     expect(c).toMatchObject({ id: "trajes-de-bano", nombre: "Trajes de baño", tallas: ["CH", "M", "G", "Única"] });
   });
 
+  it("conserva los tamaños genéricos capitalizados (chica/mediana/grande)", () => {
+    const db = crearSeed(HOY);
+    const c = atr.crearCategoria(db, { nombre: "Mochilas", tallas: ["chica", "MEDIANA", "Grande"] });
+    expect(c.tallas).toEqual(["Chica", "Mediana", "Grande"]);
+  });
+
+  it("la categoría de accesorios del seed usa tamaños genéricos", () => {
+    const db = crearSeed(HOY);
+    expect(db.categorias.find((c) => c.id === "accesorios")!.tallas).toEqual(["Chica", "Mediana", "Grande"]);
+  });
+
   it("no permite nombres repetidos (sin importar acentos o mayúsculas) ni categorías sin tallas", () => {
     const db = crearSeed(HOY);
     expect(() => atr.crearCategoria(db, { nombre: "VESTIDOS", tallas: ["CH"] })).toThrowError(/Ya existe/);

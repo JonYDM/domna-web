@@ -1,4 +1,4 @@
-import { Link, useParams } from "react-router-dom";
+import { Link, useLocation, useParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import { Eye, EyeOff, Store } from "lucide-react";
 import { PrendaImagen } from "@/components/ilustraciones/PrendaImagen";
@@ -25,6 +25,9 @@ import { EditorStock } from "../components/EditorStock";
 /** Ficha de producto de la dueña: resumen, visibilidad, apartado y stock por variante. */
 export default function ProductoDuenaPage() {
   const { id = "" } = useParams();
+  const { pathname } = useLocation();
+  // La cajera también abre fichas desde /caja; los enlaces respetan su base.
+  const base = pathname.startsWith("/caja") ? "/caja" : "/app";
   const producto = useProducto(id, { incluirInactivo: true });
   const categorias = useCategorias();
   const estado = useCambiarEstadoProducto();
@@ -45,7 +48,7 @@ export default function ProductoDuenaPage() {
         expresion="triste"
         titulo="No encontramos esa prenda"
         texto={mensajeError(producto.error)}
-        accion={<ButtonLink to="/app/inventario">Inventario</ButtonLink>}
+        accion={<ButtonLink to={`${base}/inventario`}>Inventario</ButtonLink>}
       />
     );
   }
@@ -72,11 +75,11 @@ export default function ProductoDuenaPage() {
       <Breadcrumb>
         <BreadcrumbList>
           <BreadcrumbItem>
-            <BreadcrumbLink render={<Link to="/app/inventario" />}>Inventario</BreadcrumbLink>
+            <BreadcrumbLink render={<Link to={`${base}/inventario`} />}>Inventario</BreadcrumbLink>
           </BreadcrumbItem>
           <BreadcrumbSeparator />
           <BreadcrumbItem>
-            <BreadcrumbLink render={<Link to={`/app/inventario?categoria=${p.categoriaId}`} />}>{categoria}</BreadcrumbLink>
+            <BreadcrumbLink render={<Link to={`${base}/inventario?categoria=${p.categoriaId}`} />}>{categoria}</BreadcrumbLink>
           </BreadcrumbItem>
           <BreadcrumbSeparator />
           <BreadcrumbItem className="min-w-0 flex-1">

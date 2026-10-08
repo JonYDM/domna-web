@@ -1,10 +1,11 @@
 import { Link } from "react-router-dom";
-import { AlertTriangle, ChevronRight, ClipboardList, PackageCheck, Plus, TrendingUp, Users, Wallet } from "lucide-react";
-import type { ReactNode } from "react";
+import { AlertTriangle, ChevronRight, ClipboardList, Coins, PackageCheck, Plus, TrendingUp, Users, Wallet } from "lucide-react";
+import { useState, type ReactNode } from "react";
+import type { SucursalId } from "@/types/api";
 import { Domi } from "@/components/ilustraciones/Domi";
 import { PrendaImagen } from "@/components/ilustraciones/PrendaImagen";
 import { EmptyState } from "@/components/molecules/EmptyState";
-import { Button, ButtonLink, Skeleton } from "@/components/ui";
+import { Button, ButtonLink, Chip, Skeleton } from "@/components/ui";
 import { cn } from "@/lib/cn";
 import { fechaHoyLarga, formatMXN } from "@/lib/format";
 import { mensajeError } from "@/lib/errores";
@@ -14,9 +15,17 @@ import { useMetricas, useResumenClientas } from "../hooks";
 
 const DIA_CORTO = new Intl.DateTimeFormat("es-MX", { weekday: "short", timeZone: "UTC" });
 
+type FiltroSucursal = SucursalId | "todas";
+const SUCURSALES: { id: FiltroSucursal; label: string }[] = [
+  { id: "todas", label: "Todas" },
+  { id: "temixco", label: "Temixco" },
+  { id: "azteca", label: "La Azteca" },
+];
+
 export default function DashboardPage() {
   const { sesion } = useSesion();
-  const m = useMetricas();
+  const [sucursal, setSucursal] = useState<FiltroSucursal>("todas");
+  const m = useMetricas({ sucursal });
   const clientas = useResumenClientas();
 
   return (
@@ -42,6 +51,15 @@ export default function DashboardPage() {
         </ButtonLink>
       </div>
 
+      <div className="no-scrollbar -mx-4 flex items-center gap-2 overflow-x-auto px-4" role="toolbar" aria-label="Filtrar métricas por sucursal">
+        <span className="shrink-0 text-label-md text-on-surface-variant">Sucursal:</span>
+        {SUCURSALES.map((s) => (
+          <Chip key={s.id} activo={sucursal === s.id} onClick={() => setSucursal(s.id)}>
+            {s.label}
+          </Chip>
+        ))}
+      </div>
+
       {m.isError ? (
         <EmptyState
           expresion="triste"
@@ -57,7 +75,7 @@ export default function DashboardPage() {
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4" style={{ opacity: m.isPlaceholderData ? 0.6 : 1 }}>
             <Metrica
               to="/app/apartados?tipo=apartados&estado=activo"
               titulo="Apartados activos"
@@ -91,6 +109,25 @@ export default function DashboardPage() {
             />
           </div>
 
+          {/* Ganancia real del mes (precio − costo). Dato sensible: solo la dueña. */}
+          <div
+            className="flex items-center gap-4 rounded-2xl bg-tinta p-4 text-on-primary shadow-soft"
+            style={{ opacity: m.isPlaceholderData ? 0.6 : 1 }}
+          >
+            <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-on-primary/15">
+              <Coins className="h-6 w-6" aria-hidden />
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="text-label-md text-on-primary/85">
+                Ganancia del mes{sucursal !== "todas" ? ` · ${SUCURSALES.find((s) => s.id === sucursal)?.label}` : ""}
+              </p>
+              <p className="tabular text-metric">{formatMXN(m.data.gananciaMes)}</p>
+              <p className="text-body-sm text-on-primary/85">
+                Sobre {formatMXN(m.data.ventasMes)} vendidos · precio menos costo de lo que ya se cobró.
+              </p>
+            </div>
+          </div>
+
           {clientas.data && (
             <Link
               to="/app/clientas"
@@ -104,7 +141,7 @@ export default function DashboardPage() {
                   {clientas.data.total} clientas · +{clientas.data.nuevasSemana} esta semana
                 </span>
                 <span className="block text-body-sm text-on-surface-variant">
-                  {Math.round((clientas.data.porOrigen.google / Math.max(1, clientas.data.total)) * 100)}% entró con Google
+                  {Math.round((clientas.data.porOrigen.registro / Math.max(1, clientas.data.total)) * 100)}% se registró
                 </span>
               </span>
               <ChevronRight className="h-4 w-4 text-outline" aria-hidden />

@@ -6,11 +6,14 @@ import {
   ApartadoDuenaPage,
   ApartadosPage,
   AvisosPage,
+  CajeraLayout,
+  CarritoPage,
   CatalogoPage,
   CategoriasPage,
   ClientaPage,
   ClientasPage,
   ColoresPage,
+  CortePage,
   DashboardPage,
   DemoPage,
   DuenaLayout,
@@ -22,7 +25,9 @@ import {
   ProductoPage,
   S,
   SoloDuena,
+  SoloStaff,
   TiendaLayout,
+  VenderPage,
 } from "./rutas";
 
 /**
@@ -62,6 +67,7 @@ export const router = createBrowserRouter([
     children: [
       { index: true, element: <S><CatalogoPage /></S> },
       { path: "producto/:id", element: <S><ProductoPage /></S> },
+      { path: "carrito", element: <S><CarritoPage /></S> },
       { path: "apartados", element: <S><MisApartadosPage /></S> },
       { path: "avisos", element: <S><AvisosPage /></S> },
       { path: "apartados/:id", element: <S><ApartadoClientaPage /></S> },
@@ -88,6 +94,23 @@ export const router = createBrowserRouter([
       { path: "demo", element: <S><DemoPage /></S> },
       { path: "categorias", element: <S><CategoriasPage /></S> },
       { path: "colores", element: <S><ColoresPage /></S> },
+    ],
+  },
+  {
+    path: "/caja",
+    element: (
+      <SoloStaff>
+        <S>
+          <CajeraLayout />
+        </S>
+      </SoloStaff>
+    ),
+    errorElement: <PaginaError tipo="error" />,
+    children: [
+      { index: true, element: <S><CortePage /></S> },
+      { path: "vender", element: <S><VenderPage /></S> },
+      { path: "inventario", element: <S><InventarioPage /></S> },
+      { path: "inventario/:id", element: <S><ProductoDuenaPage /></S> },
     ],
   },
   { path: "*", element: <PaginaError tipo="404" /> },

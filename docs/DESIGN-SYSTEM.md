@@ -56,6 +56,7 @@ ilustraciones usan `lib/marca.ts`.
   Tamaños `sm` 40 px, `md` 48 px, `lg` 56 px. Navegación con `ButtonLink` (nunca `<button>` dentro de `<a>`).
 - `Input` / `Textarea` (`outline` en formularios, `soft` en buscadores; `label`, `hint`, `error`), `Select`.
 - `Badge` (tonos `neutral primary success warning danger info`), `Chip` (filtro; activo en tinta), `Skeleton`.
+- `Segmentos`: control segmentado (pestañas) para vistas de primer nivel (modalidad de pago, tipo de cliente en el POS).
 - `Drawer`: diálogo en escritorio, bottom-sheet (Vaul) en móvil, con `pie` fijo para el botón principal.
 - `Pasos`: wizard de 1–3 campos por paso; `libre` para edición.
 
@@ -81,9 +82,15 @@ foto; si hay `url` usa la foto real con `loading="lazy"`).
 
 ## Layout
 - Header sólido (sin `backdrop-blur`) y `sticky`. Nav inferior fija en móvil con `pb-safe`; nav superior en escritorio.
+- **Roles y su shell:** `TiendaLayout` (clienta, `/tienda`), `DuenaLayout` (dueña, `/app`), `CajeraLayout`
+  (cajera, `/caja`: nav Corte · Vender · Inventario, sin métricas del mes). La bienvenida tiene un botón por rol.
 - `min-h-dvh`, `scrollbar-gutter: stable`. En grids con carruseles usa `grid-cols-1` / `min-w-0`
   (si no, el carrusel ensancha la página).
 - CTA de producto fijo sobre la nav inferior en móvil.
+- **POS (`/caja/vender`) mobile-first:** barra superior sticky (buscar + Escanear + chips de categorías), grid de
+  productos y **FAB del carrito** abajo a la derecha (siempre visible, con contador de piezas) que abre el carrito
+  en un `Drawer`; en escritorio el carrito es un aside sticky. Patrón FAB: `fixed bottom-20 right-4` (sube si hay
+  barra de cobrar), badge de conteo con `ring-2 ring-surface`.
 
 ## Animación
 CSS plano en `src/styles/index.css`: `domi-respira`, `domi-vuela`, `domi-ojo` (parpadeo), `lunar-confeti`,

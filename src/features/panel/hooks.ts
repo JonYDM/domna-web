@@ -1,10 +1,21 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { CambioStock, CategoriaInput, ColorInput, FiltroClientas, MotivoAjuste, NuevaClientaInput, NuevoProductoInput, SucursalId } from "@/types/api";
+import type { CambioStock, CategoriaInput, ColorInput, FiltroClientas, FiltroMetricas, MotivoAjuste, NuevaClientaInput, NuevoProductoInput, SucursalId } from "@/types/api";
 import { qk } from "@/lib/queryKeys";
 import * as api from "@/mock/server";
 
-export function useMetricas() {
-  return useQuery({ queryKey: qk.metricas(), queryFn: api.obtenerMetricas, staleTime: 60_000 });
+export function useMetricas(filtro: FiltroMetricas = {}) {
+  const sucursal = filtro.sucursal ?? "todas";
+  return useQuery({
+    queryKey: qk.metricas(sucursal),
+    queryFn: () => api.obtenerMetricas(filtro),
+    staleTime: 60_000,
+    placeholderData: (prev) => prev,
+  });
+}
+
+/** Corte del día de una sucursal (lo que ve la cajera). */
+export function useCorteDia(sucursal: SucursalId) {
+  return useQuery({ queryKey: qk.corteDia(sucursal), queryFn: () => api.obtenerCorteDia(sucursal), staleTime: 30_000 });
 }
 
 export function useCrearProducto() {
@@ -14,7 +25,7 @@ export function useCrearProducto() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: qk.productosTodos() });
       qc.invalidateQueries({ queryKey: qk.categorias() }); // cambia el conteo de prendas
-      qc.invalidateQueries({ queryKey: qk.metricas() });
+      qc.invalidateQueries({ queryKey: qk.metricasTodos() });
     },
   });
 }
@@ -26,7 +37,7 @@ export function useCambiarEstadoProducto() {
     onSuccess: (_d, v) => {
       qc.invalidateQueries({ queryKey: qk.productosTodos() });
       qc.invalidateQueries({ queryKey: qk.producto(v.id) });
-      qc.invalidateQueries({ queryKey: qk.metricas() });
+      qc.invalidateQueries({ queryKey: qk.metricasTodos() });
     },
   });
 }
@@ -48,7 +59,7 @@ function useInvalidarStock(productoId: string) {
   return () => {
     qc.invalidateQueries({ queryKey: qk.producto(productoId) });
     qc.invalidateQueries({ queryKey: qk.productosTodos() });
-    qc.invalidateQueries({ queryKey: qk.metricas() });
+    qc.invalidateQueries({ queryKey: qk.metricasTodos() });
   };
 }
 

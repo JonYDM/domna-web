@@ -2,7 +2,6 @@ import { memo, useRef, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { ChevronRight, UserPlus } from "lucide-react";
 import type { ClientaResumen, FiltroClientas } from "@/types/api";
-import { GoogleLogo } from "@/components/ilustraciones/GoogleLogo";
 import { BarraBusqueda } from "@/components/molecules/BarraBusqueda";
 import { EmptyState } from "@/components/molecules/EmptyState";
 import { Avatar, Badge, Button, Chip, Skeleton } from "@/components/ui";
@@ -51,7 +50,7 @@ export default function ClientasPage() {
 
   const r = resumen.data;
   const lista = clientas.data ?? [];
-  const pctGoogle = r && r.total ? Math.round((r.porOrigen.google / r.total) * 100) : 0;
+  const pctRegistro = r && r.total ? Math.round((r.porOrigen.registro / r.total) * 100) : 0;
 
   return (
     <div className="flex flex-col gap-4">
@@ -82,19 +81,16 @@ export default function ClientasPage() {
             <div className="flex items-center justify-between gap-2">
               <h2 className="text-label-lg">Cómo llegaron</h2>
               <span className="inline-flex items-center gap-1.5 text-body-sm text-on-surface-variant">
-                <GoogleLogo className="h-3.5 w-3.5" />
-                {pctGoogle}% con Google
+                {pctRegistro}% se registró
               </span>
             </div>
-            <div className="mt-3 flex h-3 overflow-hidden rounded-full bg-surface-container" role="img" aria-label={`Google ${r.porOrigen.google}, mostrador ${r.porOrigen.mostrador}, teléfono ${r.porOrigen.telefono}`}>
-              <span className="bg-primary" style={{ width: `${(r.porOrigen.google / r.total) * 100}%` }} />
+            <div className="mt-3 flex h-3 overflow-hidden rounded-full bg-surface-container" role="img" aria-label={`Se registró ${r.porOrigen.registro}, mostrador ${r.porOrigen.mostrador}`}>
+              <span className="bg-primary" style={{ width: `${(r.porOrigen.registro / r.total) * 100}%` }} />
               <span className="bg-tinta" style={{ width: `${(r.porOrigen.mostrador / r.total) * 100}%` }} />
-              <span className="bg-primary-rubor" style={{ width: `${(r.porOrigen.telefono / r.total) * 100}%` }} />
             </div>
             <ul className="tabular mt-2.5 flex flex-wrap gap-x-4 gap-y-1 text-body-sm text-on-surface-variant">
-              <Leyenda clase="bg-primary" texto={`Google · ${r.porOrigen.google}`} />
+              <Leyenda clase="bg-primary" texto={`Se registró · ${r.porOrigen.registro}`} />
               <Leyenda clase="bg-tinta" texto={`Mostrador · ${r.porOrigen.mostrador}`} />
-              <Leyenda clase="bg-primary-rubor" texto={`Teléfono · ${r.porOrigen.telefono}`} />
             </ul>
           </section>
         </>

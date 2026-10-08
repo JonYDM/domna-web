@@ -6,21 +6,25 @@ import { mensajeError } from "@/lib/errores";
 import { formatTelefonoInput } from "@/lib/format";
 import { useCrearClienta } from "../hooks";
 
-/** Alta en mostrador: nombre y teléfono (el correo es opcional). */
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+/** Alta en mostrador: nombre, apellidos, teléfono y correo (obligatorio, para recuperar el acceso). */
 export function NuevaClientaDrawer({ open, onClose, onCreada }: { open: boolean; onClose: () => void; onCreada: (c: Clienta) => void }) {
   const crear = useCrearClienta();
   const [nombre, setNombre] = useState("");
+  const [apellidos, setApellidos] = useState("");
   const [telefono, setTelefono] = useState("");
   const [email, setEmail] = useState("");
   const digitos = telefono.replace(/\D/g, "").length;
-  const valido = nombre.trim().length >= 3 && digitos === 10;
+  const emailOk = EMAIL_RE.test(email.trim());
+  const valido = nombre.trim().length >= 2 && digitos === 10 && emailOk;
 
   function guardar() {
     crear.mutate(
-      { nombre, telefono, email: email || undefined },
+      { nombre, apellidos, telefono, email: email.trim() },
       {
         onSuccess: (c) => {
-          toast.success(`${c.nombre.split(" ")[0]} quedó registrada`);
+          toast.success(`${c.nombre} quedó registrada`);
           onCreada(c);
         },
         onError: (e) => toast.error(mensajeError(e)),
@@ -33,7 +37,7 @@ export function NuevaClientaDrawer({ open, onClose, onCreada }: { open: boolean;
       open={open}
       onClose={onClose}
       title="Nueva clienta"
-      descripcion="Para quien compra en tienda. Si después entra con Google y usa este teléfono, su cuenta se liga sola."
+      descripcion="Para quien compra en tienda. El correo le sirve para recuperar su acceso."
       pie={
         <Button size="lg" fullWidth disabled={!valido} loading={crear.isPending} onClick={guardar}>
           Registrar clienta
@@ -47,7 +51,8 @@ export function NuevaClientaDrawer({ open, onClose, onCreada }: { open: boolean;
           if (valido) guardar();
         }}
       >
-        <Input label="Nombre completo" value={nombre} onChange={(e) => setNombre(e.target.value)} autoComplete="off" autoFocus />
+        <Input label="Nombre(s)" value={nombre} onChange={(e) => setNombre(e.target.value)} autoComplete="off" autoFocus />
+        <Input label="Apellidos" value={apellidos} onChange={(e) => setApellidos(e.target.value)} autoComplete="off" />
         <Input
           label="WhatsApp (10 dígitos)"
           type="tel"
@@ -59,12 +64,13 @@ export function NuevaClientaDrawer({ open, onClose, onCreada }: { open: boolean;
           error={telefono && digitos !== 10 ? "Debe tener 10 dígitos" : undefined}
         />
         <Input
-          label="Correo (opcional)"
+          label="Correo"
           type="email"
           inputMode="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           placeholder="nombre@gmail.com"
+          error={email && !emailOk ? "Correo inválido" : undefined}
         />
         <button type="submit" hidden aria-hidden />
       </form>

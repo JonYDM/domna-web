@@ -1,9 +1,9 @@
 import type {
   Clienta,
   ClientaResumen,
-  CuentaGoogle,
   FiltroClientas,
   NuevaClientaInput,
+  RegistroClientaInput,
   ResumenClientas,
 } from "@/types/api";
 import { ApiError } from "@/lib/errores";
@@ -12,12 +12,22 @@ import { pagado } from "./dominio";
 
 /**
  * Reglas de clientas (puras). En el backend:
- * - La identidad de Google se valida con GoogleJsonWebSignature y se guarda por `sub`, no por correo.
- * - El teléfono es la llave del negocio (WhatsApp, entregas): único por boutique.
+ * - El PIN se guarda como hash BCrypt y se valida con rate-limit / bloqueo tras N intentos.
+ * - El teléfono es la llave de acceso (y de negocio: WhatsApp, entregas): único por boutique.
+ * - La recuperación es por correo (token de un solo uso con expiración), para no pagar SMS.
  */
 
 const DIA_MS = 86_400_000;
 export const DIAS_CLIENTA_NUEVA = 7;
+/** Vigencia del enlace de recuperación de PIN. */
+const RECUPERACION_MIN = 30;
+
+/** Valida un PIN de 6 dígitos. */
+function normalizarPin(pin: string): string {
+  const p = pin.trim();
+  if (!/^\d{6}$/.test(p)) throw new ApiError(400, "El PIN debe ser de 6 dígitos.");
+  return p;
+}
 
 /** Normaliza a "777 123 4567". Lanza 400 si no son 10 dígitos. */
 export function normalizarTelefono(t: string): string {
@@ -43,14 +53,16 @@ function nuevoId(db: DbState): string {
 /** Alta en mostrador (la hace la dueña o una vendedora). */
 export function crearClienta(db: DbState, input: NuevaClientaInput, hoy: Date): Clienta {
   const nombre = input.nombre.trim().replace(/\s+/g, " ");
-  if (nombre.length < 3) throw new ApiError(400, "Escribe el nombre completo.");
+  if (nombre.length < 2) throw new ApiError(400, "Escribe el nombre.");
+  const apellidos = (input.apellidos ?? "").trim().replace(/\s+/g, " ");
   const telefono = normalizarTelefono(input.telefono);
   if (porTelefono(db, telefono)) throw new ApiError(409, "Ya hay una clienta con ese teléfono.");
-  const email = input.email?.trim() ? normalizarEmail(input.email) : undefined;
-  if (email && db.clientas.some((c) => c.email === email)) throw new ApiError(409, "Ya hay una clienta con ese correo.");
+  const email = normalizarEmail(input.email);
+  if (db.clientas.some((c) => c.email === email)) throw new ApiError(409, "Ya hay una clienta con ese correo.");
   const c: Clienta = {
     id: nuevoId(db),
     nombre,
+    apellidos,
     telefono,
     email,
     origen: "mostrador",
@@ -62,61 +74,90 @@ export function crearClienta(db: DbState, input: NuevaClientaInput, hoy: Date): 
 }
 
 /**
- * "Continuar con Google": si ya existe una clienta con ese correo, entra; si no, se crea su cuenta
- * (sin teléfono todavía). `nueva` indica si hay que pedirle el WhatsApp.
+ * Registro propio de la clienta (sign-in): nombre, apellidos, teléfono (10 díg, +52), correo y PIN.
+ * El teléfono y el correo son únicos. Si el teléfono ya existía por un alta en mostrador SIN acceso
+ * (sin PIN), se "reclama" esa ficha: conserva su historial y se le fija el PIN y el correo.
  */
-export function entrarConGoogle(db: DbState, cuenta: CuentaGoogle, hoy: Date): { clienta: Clienta; nueva: boolean } {
-  const email = normalizarEmail(cuenta.email);
-  const existente = db.clientas.find((c) => c.email === email);
-  if (existente) {
-    existente.ultimoAcceso = hoy.toISOString();
-    return { clienta: existente, nueva: !existente.telefono };
+export function registrar(db: DbState, input: RegistroClientaInput, hoy: Date): Clienta {
+  const nombre = input.nombre.trim().replace(/\s+/g, " ");
+  if (nombre.length < 2) throw new ApiError(400, "Escribe tu nombre.");
+  const apellidos = (input.apellidos ?? "").trim().replace(/\s+/g, " ");
+  const telefono = normalizarTelefono(input.telefono);
+  const email = normalizarEmail(input.email);
+  const pin = normalizarPin(input.pin);
+
+  const existentePorTel = porTelefono(db, telefono);
+  // Reclamar una ficha de mostrador que todavía no tiene acceso (sin PIN).
+  if (existentePorTel && !db.pins[existentePorTel.id]) {
+    if (db.clientas.some((c) => c.email === email && c.id !== existentePorTel.id)) {
+      throw new ApiError(409, "Ese correo ya está en uso.");
+    }
+    existentePorTel.nombre = nombre;
+    existentePorTel.apellidos = apellidos;
+    existentePorTel.email = email;
+    existentePorTel.origen = "registro";
+    existentePorTel.ultimoAcceso = hoy.toISOString();
+    db.pins[existentePorTel.id] = pin;
+    return existentePorTel;
   }
+  if (existentePorTel) throw new ApiError(409, "Ya hay una cuenta con ese teléfono. Inicia sesión.");
+  if (db.clientas.some((c) => c.email === email)) throw new ApiError(409, "Ese correo ya está en uso.");
+
   const c: Clienta = {
     id: nuevoId(db),
-    nombre: cuenta.nombre.trim() || email.split("@")[0],
-    telefono: "",
+    nombre,
+    apellidos,
+    telefono,
     email,
-    origen: "google",
+    origen: "registro",
     creada: hoy.toISOString(),
     ultimoAcceso: hoy.toISOString(),
     penalizacionPendiente: 0,
   };
   db.clientas.unshift(c);
-  return { clienta: c, nueva: true };
+  db.pins[c.id] = pin;
+  return c;
+}
+
+/** Iniciar sesión con teléfono + PIN. Mensaje genérico para no filtrar qué dato falló. */
+export function loginConPin(db: DbState, telefono: string, pin: string, hoy: Date): Clienta {
+  const tel = normalizarTelefono(telefono);
+  const p = normalizarPin(pin);
+  const c = porTelefono(db, tel);
+  if (!c || db.pins[c.id] !== p) {
+    throw new ApiError(401, "Teléfono o PIN incorrecto.");
+  }
+  c.ultimoAcceso = hoy.toISOString();
+  return c;
 }
 
 /**
- * Guarda el WhatsApp de una clienta que entró con Google. Si la tienda ya la tenía dada de alta en
- * mostrador con ese teléfono (y sin correo), se ENLAZAN: se conserva la ficha de mostrador (con su
- * historial y cargos) y se le agrega el correo. Devuelve la clienta final.
+ * Olvidé mi PIN: la clienta escribe su correo y se genera un enlace/código de recuperación.
+ * Devuelve el token (en la demo se muestra en pantalla; en producción se envía por correo y NO
+ * se revela si el correo existe). Si el correo no existe, no lanza error: responde en silencio.
  */
-export function guardarTelefono(db: DbState, clientaId: string, telefono: string, hoy: Date): { clienta: Clienta; enlazada: boolean } {
-  const actual = db.clientas.find((c) => c.id === clientaId);
-  if (!actual) throw new ApiError(404, "Clienta no encontrada.");
-  const tel = normalizarTelefono(telefono);
-  const otra = porTelefono(db, tel, clientaId);
-  if (!otra) {
-    actual.telefono = tel;
-    return { clienta: actual, enlazada: false };
-  }
-  if (otra.email && otra.email !== actual.email) {
-    throw new ApiError(409, "Ese teléfono ya está ligado a otra cuenta. Pide ayuda en la tienda.");
-  }
-  // Enlazar: la ficha de mostrador absorbe la cuenta de Google.
-  otra.email = actual.email;
-  otra.ultimoAcceso = hoy.toISOString();
-  otra.penalizacionPendiente += actual.penalizacionPendiente;
-  for (const a of db.apartados) if (a.clientaId === actual.id) a.clientaId = otra.id;
-  db.clientas = db.clientas.filter((c) => c.id !== actual.id);
-  return { clienta: otra, enlazada: true };
+export function solicitarRecuperacion(db: DbState, email: string, hoy: Date): { token: string | null } {
+  const correo = normalizarEmail(email);
+  const c = db.clientas.find((x) => x.email === correo);
+  if (!c) return { token: null };
+  const token = `rec-${Math.random().toString(36).slice(2, 8)}${Math.random().toString(36).slice(2, 8)}`;
+  db.recuperaciones[token] = {
+    clientaId: c.id,
+    expira: new Date(hoy.getTime() + RECUPERACION_MIN * 60_000).toISOString(),
+  };
+  return { token };
 }
 
-/** Entrar con teléfono (en producción: con un código por SMS/WhatsApp). */
-export function entrarConTelefono(db: DbState, telefono: string, hoy: Date): Clienta {
-  const tel = normalizarTelefono(telefono);
-  const c = porTelefono(db, tel);
-  if (!c) throw new ApiError(404, "No encontramos ese teléfono. Entra con Google o pide tu alta en la tienda.");
+/** Confirmar la recuperación: con el token válido y vigente, fija un PIN nuevo. */
+export function confirmarRecuperacion(db: DbState, token: string, pinNuevo: string, hoy: Date): Clienta {
+  const r = db.recuperaciones[token.trim()];
+  if (!r || new Date(r.expira) < hoy) {
+    throw new ApiError(400, "El enlace de recuperación no es válido o ya venció.");
+  }
+  const c = db.clientas.find((x) => x.id === r.clientaId);
+  if (!c) throw new ApiError(404, "Clienta no encontrada.");
+  db.pins[c.id] = normalizarPin(pinNuevo);
+  delete db.recuperaciones[token.trim()]; // un solo uso
   c.ultimoAcceso = hoy.toISOString();
   return c;
 }
@@ -165,7 +206,7 @@ export function resumenClientas(db: DbState, hoy: Date): ResumenClientas {
     nuevasSemana: 0,
     conApartadoActivo: 0,
     conCargo: 0,
-    porOrigen: { google: 0, telefono: 0, mostrador: 0 },
+    porOrigen: { registro: 0, mostrador: 0 },
   };
   const conActivo = new Set(db.apartados.filter((a) => a.estado === "activo").map((a) => a.clientaId));
   for (const c of db.clientas) {

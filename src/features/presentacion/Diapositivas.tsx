@@ -5,6 +5,7 @@ import {
   Check,
   Clock,
   Eye,
+  KeyRound,
   LayoutDashboard,
   Lock,
   MessageCircle,
@@ -22,7 +23,6 @@ import {
 } from "lucide-react";
 import { Domi } from "@/components/ilustraciones/Domi";
 import { DomiImagen } from "@/components/ilustraciones/DomiImagen";
-import { GoogleLogo } from "@/components/ilustraciones/GoogleLogo";
 import { Logo } from "@/components/ilustraciones/Logo";
 import { PrendaImagen } from "@/components/ilustraciones/PrendaImagen";
 import { cn } from "@/lib/cn";
@@ -197,7 +197,7 @@ export function Clientas() {
           <Punto n={3} icono={Tags} titulo="Compra o aparta con 50%" texto="Se la guardamos 15 días; sin anticipo, 2 días." />
           <Punto n={4} icono={BellRing} titulo="Avisos antes de que venza" texto="Dentro de la app, sin pagar por mensaje." />
           <li className="rev hidden items-center gap-2 text-body-sm text-on-surface-variant md:flex" style={d(5)}>
-            <GoogleLogo className="h-4 w-4" /> Entra con Google en un toque.
+            <KeyRound className="h-4 w-4" /> Entra con tu teléfono y un PIN de 6 dígitos.
           </li>
         </ul>
       </div>

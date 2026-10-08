@@ -4,15 +4,17 @@ import { Plus, Trash2, X } from "lucide-react";
 import type { Categoria } from "@/types/api";
 import { Button, Chip, Drawer, Input } from "@/components/ui";
 import { mensajeError } from "@/lib/errores";
+import { TALLAS_NUMERICAS, TALLAS_ROPA, TALLA_UNICA, TAMANOS_GENERICOS } from "@/lib/enums";
 import { useEliminarCategoria, useGuardarCategoria } from "../hooks";
 
 /** Juegos de tallas frecuentes para no escribirlas una por una. */
 const PRESETS: { label: string; tallas: string[] }[] = [
-  { label: "Ropa", tallas: ["CH", "M", "G", "XG"] },
+  { label: "Ropa", tallas: TALLAS_ROPA },
   { label: "Ropa extendida", tallas: ["XCH", "CH", "M", "G", "XG", "XXG"] },
-  { label: "Numérica", tallas: ["3", "5", "7", "9", "11", "13"] },
+  { label: "Numérica", tallas: TALLAS_NUMERICAS },
   { label: "Calzado", tallas: ["22", "23", "24", "25", "26"] },
-  { label: "Única", tallas: ["Única"] },
+  { label: "Tamaños (bolsas)", tallas: TAMANOS_GENERICOS },
+  { label: "Única", tallas: TALLA_UNICA },
 ];
 
 /** Alta y edición de categoría: nombre + su juego de tallas. */
@@ -26,9 +28,16 @@ export function CategoriaDrawer({ categoria, onClose }: { categoria: Categoria |
   const valido = nombre.trim().length >= 2 && tallas.length > 0;
 
   function agregar() {
-    const t = nueva.trim().toUpperCase();
-    if (!t) return;
-    if (t.length > 6) return toast.error("Máximo 6 caracteres por talla.");
+    const bruto = nueva.trim().replace(/\s+/g, " ");
+    if (!bruto) return;
+    // Palabras de tamaño (chica/mediana/grande/única) se capitalizan; códigos cortos, en mayúsculas.
+    const esPalabra = /^(chica|mediana|grande|[úu]nica)$/i.test(bruto);
+    const t = esPalabra
+      ? /^[úu]nica$/i.test(bruto)
+        ? "Única"
+        : bruto.charAt(0).toUpperCase() + bruto.slice(1).toLowerCase()
+      : bruto.toUpperCase();
+    if (t.length > (esPalabra ? 10 : 6)) return toast.error(`Máximo ${esPalabra ? 10 : 6} caracteres por talla.`);
     if (!tallas.includes(t)) setTallas([...tallas, t]);
     setNueva("");
   }

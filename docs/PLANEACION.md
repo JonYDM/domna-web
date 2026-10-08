@@ -33,8 +33,14 @@
 
 ## Pendiente de decidir con la dueña (antes del backend)
 - ¿Catálogo y precios **públicos** (link de Instagram) o **solo con cuenta**? En la demo se cambia en Demo.
-- ¿Login con Google, con teléfono + código SMS, o ambos? (El SMS tiene costo por mensaje.)
+- ~~¿Login con Google, con teléfono + código SMS, o ambos?~~ **Decidido:** auth propia (registro con
+  nombre, apellidos, teléfono +52, correo y **PIN de 6 dígitos**; recuperación por **correo**; sin
+  Google ni SMS). Ver [`NUEVAS-FEATURES.md`](NUEVAS-FEATURES.md).
 - Aviso de privacidad (LFPDPPP) al guardar nombre, correo y teléfono.
+
+> **Siguiente tanda de cambios:** [`NUEVAS-FEATURES.md`](NUEVAS-FEATURES.md) (auth propia, rol cajera,
+> ganancia y métricas por sucursal, tamaños genéricos, carrito, POS/venta en físico con escáner de
+> código de barras). Se ejecuta justo antes del backend.
 
 ## Avisos: cómo crece en el backend
 1. **In-app (hecho en la demo):** los avisos se derivan del estado de los pedidos; solo se guarda cuáles leyó

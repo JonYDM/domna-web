@@ -27,6 +27,13 @@ export interface DbState {
   clientas: Clienta[];
   apartados: ApartadoEntidad[];
   folioSeq: number;
+  /**
+   * PIN de acceso por clienta (6 dígitos). En la demo se guarda tal cual; en el backend es un
+   * hash BCrypt. No viaja al front (no es parte de `Clienta`).
+   */
+  pins: Record<string, string>;
+  /** Tokens de recuperación de PIN por correo: token → { clientaId, expira (ISO) }. */
+  recuperaciones: Record<string, { clientaId: string; expira: string }>;
   /** Avisos leídos por clienta (ids). Los avisos en sí se derivan del estado. */
   avisosLeidos: Record<string, string[]>;
   /** Historial de cambios de stock (entradas, conteos, mermas, traspasos). */
@@ -34,7 +41,7 @@ export interface DbState {
 }
 
 /** Subir al cambiar la forma de los datos: la demo se reinicia con el seed nuevo. */
-export const DB_VERSION = 7;
+export const DB_VERSION = 10;
 const KEY = "domna.demo.db";
 
 export function cargar(): DbState | null {
