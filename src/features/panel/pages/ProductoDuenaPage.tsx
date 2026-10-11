@@ -1,6 +1,7 @@
 import { Link, useLocation, useParams } from "react-router-dom";
+import { useState } from "react";
 import toast from "react-hot-toast";
-import { Eye, EyeOff, Store } from "lucide-react";
+import { Eye, EyeOff, Pencil, Store } from "lucide-react";
 import { PrendaImagen } from "@/components/ilustraciones/PrendaImagen";
 import { EmptyState } from "@/components/molecules/EmptyState";
 import { PrecioTag } from "@/components/molecules/PrecioTag";
@@ -21,6 +22,7 @@ import { mensajeError } from "@/lib/errores";
 import { useCategorias, useProducto } from "@/features/catalogo/hooks";
 import { useCambiarEstadoProducto, useCambiarPermiteApartado } from "../hooks";
 import { EditorStock } from "../components/EditorStock";
+import { EditarProductoDrawer } from "../components/EditarProductoDrawer";
 
 /** Ficha de producto de la dueña: resumen, visibilidad, apartado y stock por variante. */
 export default function ProductoDuenaPage() {
@@ -32,6 +34,7 @@ export default function ProductoDuenaPage() {
   const categorias = useCategorias();
   const estado = useCambiarEstadoProducto();
   const permite = useCambiarPermiteApartado();
+  const [editando, setEditando] = useState(false);
 
   if (producto.isPending) {
     return (
@@ -106,6 +109,15 @@ export default function ProductoDuenaPage() {
               <PrecioTag precio={p.precio} precioAntes={p.precioAntes} />
               {/* Acciones de ícono */}
               <div className="-mr-2 flex shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setEditando(true)}
+                  title="Editar prenda"
+                  aria-label="Editar prenda"
+                  className="grid h-11 w-11 place-items-center rounded-full text-on-surface-variant hover:bg-surface-container hover:text-on-surface"
+                >
+                  <Pencil className="h-5 w-5" aria-hidden />
+                </button>
                 {p.activo && (
                   <Link
                     to={`/tienda/producto/${p.id}`}
@@ -171,6 +183,8 @@ export default function ProductoDuenaPage() {
       </section>
 
       <EditorStock key={p.id} producto={p} />
+
+      <EditarProductoDrawer producto={p} open={editando} onClose={() => setEditando(false)} />
     </div>
   );
 }

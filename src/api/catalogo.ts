@@ -3,6 +3,7 @@ import type {
   CategoriaInput,
   ColorCatalogo,
   ColorInput,
+  EditarProductoInput,
   FiltrosCatalogo,
   NuevoProductoInput,
   Producto,
@@ -189,6 +190,18 @@ export async function obtenerProducto(
 export async function crearProducto(input: NuevoProductoInput): Promise<Producto> {
   // El backend ignora/deriva campos extra; enviamos el input tal cual (incluye silueta por compat).
   return http.post<Producto>("/api/productos", input);
+}
+
+export async function editarProducto(id: string, input: EditarProductoInput): Promise<ProductoDetalle> {
+  const dto = await http.put<ProductoDto>(`/api/productos/${id}`, {
+    nombre: input.nombre,
+    descripcion: input.descripcion,
+    precio: input.precio,
+    costo: input.costo,
+    precioAntes: input.precioAntes ?? null,
+    permiteApartado: input.permiteApartado,
+  });
+  return aProductoDetalle(dto, Date.now());
 }
 
 export async function cambiarEstadoProducto(id: string, activo: boolean): Promise<void> {

@@ -3,6 +3,7 @@ import type {
   CategoriaInput,
   ColorCatalogo,
   ColorInput,
+  EditarProductoInput,
   FiltrosCatalogo,
   NuevoProductoInput,
   Producto,
@@ -29,6 +30,12 @@ export function obtenerProducto(id: string, opciones: { incluirInactivo?: boolea
 
 export function crearProducto(input: NuevoProductoInput): Promise<Producto> {
   return apiActiva ? real.crearProducto(input) : mock.crearProducto(input);
+}
+
+export function editarProducto(id: string, input: EditarProductoInput): Promise<ProductoDetalle> {
+  if (apiActiva) return real.editarProducto(id, input);
+  // Mock: aplica lo que soporta (permiteApartado) y devuelve el detalle actualizado.
+  return mock.cambiarPermiteApartado(id, input.permiteApartado).then(() => mock.obtenerProducto(id));
 }
 
 export function cambiarEstadoProducto(id: string, activo: boolean): Promise<void> {

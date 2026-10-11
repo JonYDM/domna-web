@@ -460,6 +460,16 @@ export interface NuevoProductoInput {
   imagenes?: { url: string; colorId?: string }[];
 }
 
+/** Edición de los campos simples de la prenda (no toca variantes ni stock). */
+export interface EditarProductoInput {
+  nombre: string;
+  descripcion: string;
+  precio: number;
+  costo: number;
+  precioAntes?: number;
+  permiteApartado: boolean;
+}
+
 // ── Avisos in-app (notificaciones de la clienta) ──
 
 export type TipoAviso = "por_vencer" | "vencido" | "abono" | "traslado" | "lista";

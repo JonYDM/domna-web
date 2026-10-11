@@ -46,7 +46,7 @@ export function NuevoProductoDrawer({ open, onClose, onCreado }: { open: boolean
 
   const categoria = categorias.data?.find((c) => c.id === categoriaElegida) ?? categorias.data?.[0];
   const categoriaId = categoria?.id ?? "";
-  const tallas = useMemo(() => tallasElegidas ?? categoria?.tallas ?? [], [tallasElegidas, categoria]);
+  const tallas = useMemo(() => tallasElegidas ?? [], [tallasElegidas]);
   // Colores elegidos del catálogo (en el orden en que se eligieron).
   const colores = useMemo(
     () =>
@@ -75,8 +75,9 @@ export function NuevoProductoDrawer({ open, onClose, onCreado }: { open: boolean
 
   function toggleTalla(t: string) {
     if (!categoria) return;
-    const base = tallas.includes(t) ? tallas.filter((x) => x !== t) : categoria.tallas.filter((x) => x === t || tallas.includes(x));
-    if (base.length === 0) return toast.error("Deja al menos una talla.");
+    const base = tallas.includes(t)
+      ? tallas.filter((x) => x !== t)
+      : categoria.tallas.filter((x) => x === t || tallas.includes(x));
     setTallasElegidas(base);
     setStock({ temixco: {}, azteca: {} });
     setCodigos({});
@@ -257,7 +258,7 @@ export function NuevoProductoDrawer({ open, onClose, onCreado }: { open: boolean
                 <fieldset>
                   <legend className="mb-1 text-label-lg">Tallas</legend>
                   <p className="mb-2 text-body-sm text-on-surface-variant">
-                    De la categoría <strong className="text-on-surface">{categoria?.nombre}</strong>. Apaga las que no tenga esta prenda.
+                    De la categoría <strong className="text-on-surface">{categoria?.nombre}</strong>. Elige las que tiene esta prenda.
                   </p>
                   <div className="flex flex-wrap gap-2">
                     {(categoria?.tallas ?? []).map((t) => (
