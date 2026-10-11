@@ -31,6 +31,13 @@
     (quitar foto; si queda 1 → reemplazar o quitar-con-confirmación que borra el color+variantes;
     no deja quitar si tiene apartados [preparado] ni el único color).
 - **Cards de catálogo y ficha de producto** rediseñadas estilo boutique editorial (menos "AI slop").
+- **Códigos QR por variante (autogenerados)**: al crear producto (o agregar color), el SERVIDOR
+  genera SIEMPRE un código único por variante (`DMN-xxxxxxxx`). Ya no se teclea/escanea en el alta.
+  - Ficha de dueña → botón "Códigos" → vista imprimible de QR por variante (cantidad por variante,
+    nombre+color+talla, `@media print` con guía de recorte, `window.print()`). Lib `qrcode`.
+  - El POS escanea el QR (`/api/productos/codigo/{codigo}`) → identifica la variante exacta y vende
+    sin teclear (estilo Zara). Verificado e2e en producción.
+  - Feedback premium al publicar: overlay "Generando los códigos de tu producto".
 
 ## Credenciales / cuentas sembradas (seed)
 - Dueña: Jessica — `777 460 2303` / PIN `010101`
