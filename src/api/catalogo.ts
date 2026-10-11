@@ -204,6 +204,22 @@ export async function agregarColor(id: string, input: AgregarColorInput): Promis
 }
 
 
+export async function quitarImagen(id: string, url: string): Promise<ProductoDetalle> {
+  const dto = await http.del<ProductoDto>(`/api/productos/${id}/imagenes`, { body: { url } });
+  return aProductoDetalle(dto, Date.now());
+}
+
+export async function agregarImagenesColor(id: string, colorId: string, urls: string[]): Promise<ProductoDetalle> {
+  const dto = await http.post<ProductoDto>(`/api/productos/${id}/colores/${colorId}/imagenes`, { urls });
+  return aProductoDetalle(dto, Date.now());
+}
+
+export async function quitarColor(id: string, colorId: string): Promise<ProductoDetalle> {
+  const dto = await http.del<ProductoDto>(`/api/productos/${id}/colores/${colorId}`);
+  return aProductoDetalle(dto, Date.now());
+}
+
+
 export async function editarProducto(id: string, input: EditarProductoInput): Promise<ProductoDetalle> {
   const dto = await http.put<ProductoDto>(`/api/productos/${id}`, {
     nombre: input.nombre,

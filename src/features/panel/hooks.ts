@@ -55,6 +55,23 @@ export function useAgregarColor(id: string) {
   });
 }
 
+/** Edición de la galería de un producto: quitar foto, agregar fotos a un color, quitar un color. */
+export function useGaleriaProducto(id: string) {
+  const qc = useQueryClient();
+  const invalidar = () => {
+    qc.invalidateQueries({ queryKey: qk.producto(id) });
+    qc.invalidateQueries({ queryKey: qk.productosTodos() });
+  };
+  return {
+    quitarImagen: useMutation({ mutationFn: (url: string) => cat.quitarImagen(id, url), onSuccess: invalidar }),
+    agregarImagenes: useMutation({
+      mutationFn: ({ colorId, urls }: { colorId: string; urls: string[] }) => cat.agregarImagenesColor(id, colorId, urls),
+      onSuccess: invalidar,
+    }),
+    quitarColor: useMutation({ mutationFn: (colorId: string) => cat.quitarColor(id, colorId), onSuccess: invalidar }),
+  };
+}
+
 export function useCambiarEstadoProducto() {
   const qc = useQueryClient();
   return useMutation({

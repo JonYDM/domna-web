@@ -44,6 +44,17 @@ export function agregarColor(id: string, input: AgregarColorInput): Promise<Prod
   return real.agregarColor(id, input); // solo API real (el mock no soporta agregar variantes)
 }
 
+/** Edición de galería (solo API real). */
+export function quitarImagen(id: string, url: string): Promise<ProductoDetalle> {
+  return real.quitarImagen(id, url);
+}
+export function agregarImagenesColor(id: string, colorId: string, urls: string[]): Promise<ProductoDetalle> {
+  return real.agregarImagenesColor(id, colorId, urls);
+}
+export function quitarColor(id: string, colorId: string): Promise<ProductoDetalle> {
+  return real.quitarColor(id, colorId);
+}
+
 export function cambiarEstadoProducto(id: string, activo: boolean): Promise<void> {
   return apiActiva ? real.cambiarEstadoProducto(id, activo) : mock.cambiarEstadoProducto(id, activo);
 }

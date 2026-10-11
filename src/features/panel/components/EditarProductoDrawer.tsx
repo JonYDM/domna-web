@@ -6,6 +6,7 @@ import { Button, Drawer, Input, Interruptor, Textarea } from "@/components/ui";
 import { mensajeError } from "@/lib/errores";
 import { useEditarProducto } from "../hooks";
 import { AgregarColorForm } from "./AgregarColorForm";
+import { GaleriaColorEditor } from "./GaleriaColorEditor";
 
 /**
  * Edición de los campos simples de una prenda (nombre, descripción, precio, costo, oferta, apartable).
@@ -115,37 +116,10 @@ export function EditarProductoDrawer({
           descripcion="Apágalo para venderla solo de contado."
         />
 
-        {/* Colores actuales y sus fotos. */}
+        {/* Colores actuales y sus fotos (editable: quitar/reemplazar/agregar). */}
         <div className="border-t border-outline-variant/60 pt-4">
           <p className="mb-2.5 text-label-lg">Colores y fotos</p>
-          <div className="flex flex-col gap-3">
-            {producto.colores.map((c) => {
-              const fotos = producto.imagenes.filter((i) => i.colorId === c.id);
-              return (
-                <div key={c.id} className="flex items-start gap-3">
-                  <span className="mt-0.5 flex shrink-0 items-center gap-1.5">
-                    <span className="h-5 w-5 rounded-full border border-on-surface/10" style={{ backgroundColor: c.hex }} aria-hidden />
-                    <span className="text-body-sm">{c.nombre}</span>
-                  </span>
-                  {fotos.length > 0 ? (
-                    <div className="flex flex-wrap gap-1.5">
-                      {fotos.map((f, i) => (
-                        <img
-                          key={i}
-                          src={f.url}
-                          alt={`${c.nombre} ${i + 1}`}
-                          loading="lazy"
-                          className="h-16 w-12 rounded-md object-cover ring-1 ring-black/5"
-                        />
-                      ))}
-                    </div>
-                  ) : (
-                    <span className="text-body-sm text-on-surface-variant">Sin fotos</span>
-                  )}
-                </div>
-              );
-            })}
-          </div>
+          <GaleriaColorEditor producto={producto} />
         </div>
 
         {/* Agregar color: crea variantes nuevas (color × tallas) con sus fotos. */}
