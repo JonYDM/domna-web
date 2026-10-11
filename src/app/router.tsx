@@ -1,5 +1,4 @@
 import { createBrowserRouter } from "react-router-dom";
-import { AccesoStaffPage } from "@/features/auth/pages/AccesoStaffPage";
 import { PaginaError } from "@/components/organisms/PaginaError";
 import {
   ApartadoClientaPage,
@@ -46,7 +45,6 @@ export const router = createBrowserRouter([
     ),
     errorElement: <PaginaError tipo="error" />,
   },
-  { path: "/acceso", element: <AccesoStaffPage />, errorElement: <PaginaError tipo="error" /> },
   {
     path: "/presentacion",
     element: (

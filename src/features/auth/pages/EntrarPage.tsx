@@ -9,8 +9,8 @@ import { BotonInstalar } from "@/components/organisms/BotonInstalar";
 import { mensajeError } from "@/lib/errores";
 import { formatTelefonoInput } from "@/lib/format";
 import { useSesion } from "../sesion";
-import { useConfirmarRecuperacion, useLoginConPin, useRegistrar, useSolicitarRecuperacion } from "../hooks";
-import { usandoApi, existeTelefono } from "@/api/authSelector";
+import { useConfirmarRecuperacion, useRegistrar, useSolicitarRecuperacion } from "../hooks";
+import { usandoApi, existeTelefono, loginUnificado } from "@/api/authSelector";
 import { nombreConocido, recordarNombre } from "../conocidas";
 import { BotonPresentacion } from "@/features/presentacion/BotonPresentacion";
 
@@ -79,9 +79,8 @@ export default function EntrarPage() {
   const [params] = useSearchParams();
   const destino = destinoSeguro(params.get("volver"));
   const navigate = useNavigate();
-  const { entrarComoClienta } = useSesion();
+  const { entrarComoClienta, entrarStaff } = useSesion();
 
-  const login = useLoginConPin();
   const registro = useRegistrar();
   const solicitar = useSolicitarRecuperacion();
   const confirmar = useConfirmarRecuperacion();
@@ -95,6 +94,8 @@ export default function EntrarPage() {
   const [noExiste, setNoExiste] = useState(false);
   /** Consultando al servidor si el teléfono existe (spinner del botón Continuar). */
   const [verificando, setVerificando] = useState(false);
+  /** Enviando el login (del keypad del PIN). */
+  const [entrando, setEntrando] = useState(false);
   /** Sub-paso del registro: primero los datos, luego el keypad para crear el PIN. */
   const [pasoPinReg, setPasoPinReg] = useState(false);
 
@@ -143,17 +144,26 @@ export default function EntrarPage() {
   }
 
 
-  function entrar(pinValor: string = pin) {
-    login.mutate(
-      { telefono: tel, pin: pinValor },
-      {
-        onSuccess: (c) => terminar(c, `¡Hola, ${c.nombre}!`),
-        onError: (e) => {
-          toast.error(mensajeError(e));
-          setPin(""); // vacía el keypad para reintentar
-        },
-      },
-    );
+  async function entrar(pinValor: string = pin) {
+    setEntrando(true);
+    try {
+      const s = await loginUnificado(tel, pinValor);
+      recordarNombre(tel, s.nombre); // saludo por nombre la próxima vez en este equipo
+      if (s.rol === "duena" || s.rol === "cajera") {
+        entrarStaff({ rol: s.rol, nombre: s.nombre, clientaId: s.clientaId, sucursal: s.sucursal });
+        toast.success(`¡Hola, ${s.nombre.split(" ")[0]}!`);
+        navigate(s.rol === "duena" ? "/app" : "/caja", { replace: true });
+      } else {
+        entrarComoClienta({ id: s.clientaId, nombre: s.nombre });
+        toast.success(`¡Hola, ${s.nombre.split(" ")[0]}!`);
+        navigate(destino, { replace: true });
+      }
+    } catch (e) {
+      toast.error(mensajeError(e));
+      setPin(""); // vacía el keypad para reintentar
+    } finally {
+      setEntrando(false);
+    }
   }
 
   function registrar(pinValor: string = pin) {
@@ -313,10 +323,9 @@ export default function EntrarPage() {
             <PinPad
               value={pin}
               onChange={setPin}
-              error={login.isError}
               onComplete={(p) => entrar(p)}
             />
-            {login.isPending && <p className="text-body-sm text-on-surface-variant">Entrando…</p>}
+            {entrando && <p className="text-body-sm text-on-surface-variant">Entrando…</p>}
             <button
               type="button"
               onClick={() => cambiarFase("recuperar")}
@@ -481,9 +490,6 @@ export default function EntrarPage() {
           <p className="text-body-sm text-on-surface-variant">
             Al continuar aceptas el aviso de privacidad de Jesly Boutique.
           </p>
-          <Link to="/acceso" className="mt-3 inline-block text-label-md text-on-surface-variant/80 transition-colors hover:text-on-surface">
-            Soy del equipo
-          </Link>
         </div>
       </div>
     </main>

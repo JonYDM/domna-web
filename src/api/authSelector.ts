@@ -38,6 +38,18 @@ export function loginStaff(telefono: string, pin: string): Promise<real.SesionSt
   return real.loginStaff(telefono, pin);
 }
 
+/**
+ * Login UNIFICADO: una sola pantalla para todos. Devuelve el rol real para rutear
+ * (clienta → tienda, dueña → /app, cajera → /caja).
+ * - API real: usa el login que ya trae el rol del token/DTO.
+ * - Mock: solo hay clientas, así que mapea a rol "clienta".
+ */
+export async function loginUnificado(telefono: string, pin: string): Promise<real.SesionStaff> {
+  if (apiActiva) return real.loginStaff(telefono, pin);
+  const c = await mock.loginConPin(telefono, pin);
+  return { rol: "clienta", nombre: c.nombre, clientaId: c.id };
+}
+
 export function solicitarRecuperacion(email: string): Promise<{ token: string | null }> {
   return apiActiva ? real.solicitarRecuperacion(email) : mock.solicitarRecuperacion(email);
 }
