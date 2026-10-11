@@ -85,7 +85,13 @@ export default function InventarioPage() {
                 to={`${base}/inventario/${p.id}`}
                 className="flex items-center gap-3 rounded-2xl bg-surface-container-lowest p-2.5 pr-3 shadow-soft hover:shadow-lift"
               >
-                <PrendaImagen silueta={p.silueta} hex={p.colores[0].hex} alt="" className="w-14 shrink-0 rounded-xl" />
+                <PrendaImagen
+                  silueta={p.silueta}
+                  hex={p.colores[0].hex}
+                  url={p.imagenes.find((i) => i.colorId === p.colores[0].id)?.url ?? p.imagenes[0]?.url}
+                  alt=""
+                  className="w-14 shrink-0 rounded-xl"
+                />
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-label-lg">{p.nombre}</p>
                   <p className="tabular text-body-sm text-on-surface-variant">
