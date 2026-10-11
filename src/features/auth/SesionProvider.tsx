@@ -1,4 +1,6 @@
 import { useCallback, useMemo, useState, type ReactNode } from "react";
+import type { SucursalId } from "@/types/api";
+import { cerrarSesion } from "@/api/authSelector";
 import { SesionContext, STORAGE_SESION, USUARIAS_DEMO, type Rol, type Sesion } from "./sesion";
 
 function leer(): Sesion | null {
@@ -21,19 +23,26 @@ export function SesionProvider({ children }: { children: ReactNode }) {
 
   const entrar = useCallback((rol: Rol) => guardar(USUARIAS_DEMO[rol]), [guardar]);
 
+  const entrarStaff = useCallback(
+    (s: { rol: Rol; nombre: string; clientaId?: string; sucursal?: SucursalId }) =>
+      guardar({ rol: s.rol, nombre: s.nombre.split(" ")[0], clientaId: s.clientaId, sucursal: s.sucursal }),
+    [guardar],
+  );
+
   const entrarComoClienta = useCallback(
     (c: { id: string; nombre: string }) => guardar({ rol: "clienta", nombre: c.nombre.split(" ")[0], clientaId: c.id }),
     [guardar],
   );
 
   const salir = useCallback(() => {
+    cerrarSesion(); // borra el JWT si la API real está activa
     localStorage.removeItem(STORAGE_SESION);
     setSesion(null);
   }, []);
 
   const valor = useMemo(
-    () => ({ sesion, entrar, entrarComoClienta, salir }),
-    [sesion, entrar, entrarComoClienta, salir],
+    () => ({ sesion, entrar, entrarStaff, entrarComoClienta, salir }),
+    [sesion, entrar, entrarStaff, entrarComoClienta, salir],
   );
   return <SesionContext.Provider value={valor}>{children}</SesionContext.Provider>;
 }

@@ -1,5 +1,6 @@
 export { Button, ButtonLink, type ButtonProps } from "./Button";
 export { Input, Textarea } from "./Input";
+export { PinPad } from "./PinPad";
 export { Select } from "./Select";
 export { Badge } from "./Badge";
 export { Chip } from "./Chip";

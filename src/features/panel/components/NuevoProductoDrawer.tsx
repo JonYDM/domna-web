@@ -5,13 +5,14 @@ import type { Silueta, SucursalId } from "@/types/api";
 import { Button, Chip, Drawer, Input, Interruptor, Pasos, Select, Textarea } from "@/components/ui";
 import { cn } from "@/lib/cn";
 import { esClaro } from "@/lib/color";
-import { SILUETAS } from "@/lib/enums";
 import { mensajeError } from "@/lib/errores";
 import { useCategorias, useColores, useConfig } from "@/features/catalogo/hooks";
 import { EscanerCodigo } from "@/features/pos/EscanerCodigo";
 import { useCrearProducto, useGuardarColor } from "../hooks";
 import { ResumenProducto } from "./ResumenProducto";
 import { CamposColor } from "./ColorDrawer";
+import { CargaImagenProducto } from "./CargaImagenProducto";
+import type { ImagenProcesada } from "@/lib/imagen";
 
 /** Alta de producto en pasos: datos → colores y tallas → stock (matriz) → precio y publicar. */
 export function NuevoProductoDrawer({ open, onClose, onCreado }: { open: boolean; onClose: () => void; onCreado: (id: string) => void }) {
@@ -23,8 +24,10 @@ export function NuevoProductoDrawer({ open, onClose, onCreado }: { open: boolean
 
   const [nombre, setNombre] = useState("");
   const [descripcion, setDescripcion] = useState("");
+  /** Foto procesada en el cliente (WebP + color + fondo). Aún no se sube (Fase 2 = R2). */
+  const [imagen, setImagen] = useState<ImagenProcesada | null>(null);
   const [categoriaElegida, setCategoriaElegida] = useState<string | null>(null);
-  const [silueta, setSilueta] = useState<Silueta>("vestido");
+  const [silueta] = useState<Silueta>("vestido");
   const [colorIds, setColorIds] = useState<string[]>([]);
   /** null = todas las tallas de la categoría. */
   const [tallasElegidas, setTallasElegidas] = useState<string[] | null>(null);
@@ -153,6 +156,7 @@ export function NuevoProductoDrawer({ open, onClose, onCreado }: { open: boolean
             valido: nombre.trim().length >= 3,
             contenido: (
               <div className="flex flex-col gap-4">
+                <CargaImagenProducto imagen={imagen} onImagen={setImagen} />
                 <Input label="Nombre" value={nombre} onChange={(e) => setNombre(e.target.value)} placeholder="Vestido midi Lucía" autoFocus />
                 <Select
                   label="Categoría"
@@ -164,12 +168,6 @@ export function NuevoProductoDrawer({ open, onClose, onCreado }: { open: boolean
                     setCodigos({});
                   }}
                   opciones={(categorias.data ?? []).map((c) => ({ value: c.id, label: c.nombre }))}
-                />
-                <Select
-                  label="Tipo de prenda (para la ilustración)"
-                  value={silueta}
-                  onChange={(e) => setSilueta(e.target.value as Silueta)}
-                  opciones={SILUETAS.map((s) => ({ value: s.id, label: s.nombre }))}
                 />
                 <Textarea label="Descripción (opcional)" value={descripcion} onChange={(e) => setDescripcion(e.target.value)} placeholder="Tela, corte, ocasión…" />
               </div>
@@ -434,10 +432,14 @@ export function NuevoProductoDrawer({ open, onClose, onCreado }: { open: boolean
                   totalPiezas={totalPiezas}
                   permiteApartado={permiteApartado}
                   anticipoPct={config.data?.anticipoPct ?? 50}
+                  imagenPreview={imagen?.preview}
+                  imagenFondo={imagen?.fondoDegradado}
                 />
                 <p className="flex items-start gap-2 text-body-sm text-on-surface-variant">
                   <ImagePlus className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
-                  Las fotos reales se suben en la siguiente versión; mientras tanto se muestra la ilustración en cada color.
+                  {imagen
+                    ? "Tu foto ya está optimizada (WebP) con su fondo a juego. Se guardará al publicar cuando conectemos el almacenamiento."
+                    : "Agrega una foto en el primer paso; mientras tanto se muestra la ilustración en cada color."}
                 </p>
               </div>
             ),

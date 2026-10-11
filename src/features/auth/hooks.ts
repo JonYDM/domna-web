@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { RegistroClientaInput } from "@/types/api";
 import { qk } from "@/lib/queryKeys";
-import * as api from "@/mock/server";
+import * as api from "@/api/authSelector";
 
 /** Acceso de clientas. Toda mutación agrega/actualiza clientas → invalida el módulo de la dueña. */
 function useInvalidarClientas() {

@@ -16,6 +16,8 @@ export interface SesionValor {
   sesion: Sesion | null;
   /** Entrar con un rol de demo (la dueña, la cajera, o María como clienta de ejemplo). */
   entrar: (rol: Rol) => void;
+  /** Entrar como staff real (rol, nombre y sucursal vienen del backend). */
+  entrarStaff: (s: { rol: Rol; nombre: string; clientaId?: string; sucursal?: SucursalId }) => void;
   /** Entrar como una clienta concreta (tras registro o login con PIN). */
   entrarComoClienta: (clienta: { id: string; nombre: string }) => void;
   salir: () => void;

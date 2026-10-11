@@ -1,5 +1,5 @@
 import { createBrowserRouter } from "react-router-dom";
-import { BienvenidaPage } from "@/features/auth/pages/BienvenidaPage";
+import { AccesoStaffPage } from "@/features/auth/pages/AccesoStaffPage";
 import { PaginaError } from "@/components/organisms/PaginaError";
 import {
   ApartadoClientaPage,
@@ -37,7 +37,16 @@ import {
  * - /app/*     panel de la dueña
  */
 export const router = createBrowserRouter([
-  { path: "/", element: <BienvenidaPage />, errorElement: <PaginaError tipo="error" /> },
+  {
+    path: "/",
+    element: (
+      <S>
+        <EntrarPage />
+      </S>
+    ),
+    errorElement: <PaginaError tipo="error" />,
+  },
+  { path: "/acceso", element: <AccesoStaffPage />, errorElement: <PaginaError tipo="error" /> },
   {
     path: "/presentacion",
     element: (

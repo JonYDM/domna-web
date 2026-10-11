@@ -21,6 +21,10 @@ interface ResumenProductoProps {
   totalPiezas: number;
   permiteApartado: boolean;
   anticipoPct: number;
+  /** Foto procesada (recortada/optimizada) para la vista previa; si falta, se usa la ilustración. */
+  imagenPreview?: string;
+  /** Fondo degradado generado del tono de la foto. */
+  imagenFondo?: string;
 }
 
 /** Vista previa del alta: cómo se verá en la tienda + resumen de lo que se va a publicar. */
@@ -45,12 +49,21 @@ export function ResumenProducto(p: ResumenProductoProps) {
       <p className="text-label-sm uppercase text-on-surface-variant">Así se verá en la tienda</p>
 
       <div className="flex gap-3">
-        <PrendaImagen
-          silueta={p.silueta}
-          hex={color?.hex ?? "#D9C4A5"}
-          alt={`Vista previa en ${color?.nombre ?? "color"}`}
-          className="w-24 shrink-0 rounded-xl"
-        />
+        {p.imagenPreview ? (
+          <div
+            className="aspect-[3/4] w-24 shrink-0 overflow-hidden rounded-xl bg-surface-container"
+            style={p.imagenFondo ? { background: p.imagenFondo } : undefined}
+          >
+            <img src={p.imagenPreview} alt="Vista previa de la prenda" className="h-full w-full object-contain" />
+          </div>
+        ) : (
+          <PrendaImagen
+            silueta={p.silueta}
+            hex={color?.hex ?? "#D9C4A5"}
+            alt={`Vista previa en ${color?.nombre ?? "color"}`}
+            className="w-24 shrink-0 rounded-xl"
+          />
+        )}
         <div className="flex min-w-0 flex-1 flex-col gap-1">
           <p className="text-body-sm text-on-surface-variant">
             {p.categoria}
