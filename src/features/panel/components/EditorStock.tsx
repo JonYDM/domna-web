@@ -109,15 +109,13 @@ export function EditorStock({ producto: p }: { producto: ProductoDetalle }) {
 
   return (
     <section aria-label="Stock por variante" className={cn("rounded-2xl bg-surface-container-lowest p-4 shadow-soft", hayCambios && "mb-28")}>
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <h2 className="text-label-lg">Stock por variante</h2>
-          <p className="text-body-sm text-on-surface-variant">Edita y guarda todo junto. Las apartadas no se pueden quitar.</p>
-        </div>
+      <div>
+        <h2 className="text-label-lg">Stock por variante</h2>
+        <p className="text-body-sm text-on-surface-variant">Edita y guarda todo junto. Las apartadas no se pueden quitar.</p>
       </div>
 
-      {/* Colores: un solo control segmentado (no píldoras sueltas compitiendo con las acciones). */}
-      <div className="no-scrollbar -mx-4 mt-3 flex gap-1 overflow-x-auto rounded-2xl bg-surface-container p-1 px-4 sm:px-1" role="tablist" aria-label="Color">
+      {/* Colores: chips de texto simples, sin caja contenedora. */}
+      <div className="no-scrollbar -mx-4 mt-3 flex gap-1 overflow-x-auto px-4" role="tablist" aria-label="Color">
         {p.colores.map((c) => {
           const vs = p.variantes.filter((v) => v.colorId === c.id);
           const disp = vs.reduce((n, v) => n + dispFinal(v), 0);
@@ -131,49 +129,36 @@ export function EditorStock({ producto: p }: { producto: ProductoDetalle }) {
               aria-selected={activo}
               onClick={() => setColorId(c.id)}
               className={cn(
-                "relative inline-flex h-10 shrink-0 items-center gap-1.5 rounded-xl px-3 text-label-md transition-colors",
-                activo ? "bg-surface-container-lowest text-on-surface shadow-soft" : "text-on-surface-variant hover:text-on-surface",
+                "relative inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border px-3 text-label-md transition-colors",
+                activo ? "border-tinta text-on-surface" : "border-transparent text-on-surface-variant hover:border-outline-variant",
               )}
             >
-              <span className="h-4 w-4 rounded-full border border-on-surface/15" style={{ backgroundColor: c.hex }} aria-hidden />
+              <span className="h-3.5 w-3.5 rounded-full border border-on-surface/15" style={{ backgroundColor: c.hex }} aria-hidden />
               {c.nombre}
-              <span className="tabular text-on-surface-variant">{disp}</span>
-              {editado && <span className="absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-primary" aria-label="con cambios" />}
+              <span className="tabular">{disp}</span>
+              {editado && <span className="absolute -right-0.5 -top-0.5 h-1.5 w-1.5 rounded-full bg-primary" aria-label="con cambios" />}
             </button>
           );
         })}
       </div>
 
-      {/* Atajos del color: texto, no otra fila de píldoras. */}
-      <div className="mt-2 flex items-center gap-4 px-1">
-        {SUCURSALES.map((s) => (
-          <button
-            key={s.id}
-            type="button"
-            onClick={() => atajoSumar(s.id)}
-            aria-label={`Sumar una pieza a cada talla en ${s.nombre}`}
-            className="text-label-md text-primary hover:underline"
-          >
-            +1 todas · {s.nombre}
-          </button>
-        ))}
-        <button
-          type="button"
-          onClick={atajoAgotar}
-          className="text-label-md text-on-surface-variant hover:underline"
-        >
-          Agotar color
-        </button>
-      </div>
-
-      {/* Matriz talla × sucursal */}
-      <div className="mt-3" role="table" aria-label="Stock del color seleccionado">
-        <div role="row" className="grid grid-cols-[2.25rem_1fr_1fr_2.75rem] items-end gap-2 pb-1.5 text-label-md text-on-surface-variant">
-          <span role="columnheader">Talla</span>
+      {/* Matriz talla × sucursal. El atajo "+1" vive en el encabezado de cada sucursal. */}
+      <div className="mt-4" role="table" aria-label="Stock del color seleccionado">
+        <div role="row" className="grid grid-cols-[2.25rem_1fr_1fr_2.75rem] items-center gap-2 pb-1.5">
+          <span role="columnheader" className="text-label-md text-on-surface-variant">Talla</span>
           {SUCURSALES.map((s) => (
-            <span key={s.id} role="columnheader" className="text-center">
-              {s.nombre}
-            </span>
+            <div key={s.id} role="columnheader" className="flex items-center justify-center gap-1.5">
+              <span className="text-label-md text-on-surface-variant">{s.nombre}</span>
+              <button
+                type="button"
+                onClick={() => atajoSumar(s.id)}
+                aria-label={`Sumar una pieza a cada talla en ${s.nombre}`}
+                title={`Sumar 1 a cada talla en ${s.nombre}`}
+                className="grid h-5 w-5 place-items-center rounded-full text-primary hover:bg-primary-soft"
+              >
+                <Plus className="h-3 w-3" aria-hidden />
+              </button>
+            </div>
           ))}
           <span role="columnheader" className="sr-only">
             Mover
@@ -210,6 +195,10 @@ export function EditorStock({ producto: p }: { producto: ProductoDetalle }) {
           </div>
         ))}
       </div>
+
+      <button type="button" onClick={atajoAgotar} className="mt-2 text-label-md text-on-surface-variant hover:underline">
+        Agotar este color
+      </button>
 
       {reabastecera && (
         <p className="mt-2 flex items-start gap-2 rounded-xl bg-success-container px-3 py-2.5 text-body-sm text-success">
