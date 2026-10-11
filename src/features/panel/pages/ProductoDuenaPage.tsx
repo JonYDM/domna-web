@@ -6,7 +6,6 @@ import { PrendaImagen } from "@/components/ilustraciones/PrendaImagen";
 import { EmptyState } from "@/components/molecules/EmptyState";
 import { PrecioTag } from "@/components/molecules/PrecioTag";
 import {
-  Badge,
   Breadcrumb,
   BreadcrumbItem,
   BreadcrumbLink,
@@ -94,83 +93,88 @@ export default function ProductoDuenaPage() {
       </Breadcrumb>
 
       <section className="overflow-hidden rounded-2xl bg-surface-container-lowest shadow-soft">
-        <div className="flex flex-col gap-4 p-4 sm:flex-row">
+        <div className="relative mx-auto max-w-sm sm:max-w-none">
           <PrendaImagen
             silueta={p.silueta}
             hex={p.colores[0].hex}
             url={p.imagenes.find((i) => i.colorId === p.colores[0].id)?.url ?? p.imagenes[0]?.url}
             alt=""
-            className={cn("w-32 shrink-0 rounded-xl sm:w-36", !p.activo && "opacity-50 grayscale")}
+            prioridad
+            className={cn("w-full rounded-none sm:mx-auto sm:max-w-xs", !p.activo && "opacity-50 grayscale")}
           />
-          <div className="flex min-w-0 flex-1 flex-col">
-            <p className="text-label-sm uppercase tracking-wide text-on-surface-variant">{categoria}</p>
-            <h1 className="mt-0.5 font-marca text-headline-md leading-tight">{p.nombre}</h1>
-            <div className="mt-1.5">
-              <PrecioTag precio={p.precio} precioAntes={p.precioAntes} />
-            </div>
-            <div className="mt-2 flex flex-wrap gap-1.5">
-              <Badge
-                tono={p.activo ? "success" : "warning"}
-                icono={<span className={cn("h-1.5 w-1.5 rounded-full", p.activo ? "bg-success" : "bg-warning")} aria-hidden />}
-              >
-                {p.activo ? "Visible" : "Oculta"}
-              </Badge>
-              {p.nuevo && <Badge tono="primary">Nuevo</Badge>}
-              {p.reabastecido && <Badge tono="success">De vuelta</Badge>}
-              {!p.permiteApartado && <Badge>Solo de contado</Badge>}
-            </div>
+          {!p.activo && (
+            <span className="absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full bg-tinta/90 px-3 py-1 text-label-md text-on-primary backdrop-blur">
+              <EyeOff className="h-3.5 w-3.5" aria-hidden />
+              Oculta de la tienda
+            </span>
+          )}
+        </div>
 
-            {/* Acciones con etiqueta (no solo íconos sueltos). */}
-            <div className="mt-auto flex flex-wrap gap-2 pt-3">
-              <button
-                type="button"
-                onClick={() => setEditando(true)}
-                className="inline-flex h-10 items-center gap-1.5 rounded-full bg-tinta px-4 text-label-lg text-on-primary hover:bg-tinta-hover"
+        <div className="p-4 sm:p-5">
+          <p className="text-label-sm uppercase tracking-wide text-on-surface-variant">{categoria}</p>
+          <div className="mt-0.5 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+            <h1 className="font-marca text-headline-lg leading-tight">{p.nombre}</h1>
+            {(p.nuevo || p.reabastecido || !p.permiteApartado) && (
+              <span className="text-label-md text-primary">
+                {p.nuevo ? "Nuevo" : p.reabastecido ? "De vuelta en stock" : "Solo de contado"}
+              </span>
+            )}
+          </div>
+          <div className="mt-1.5">
+            <PrecioTag precio={p.precio} precioAntes={p.precioAntes} />
+          </div>
+
+          {/* Acción primaria + secundarias (sin pastillas compitiendo todas con el mismo peso). */}
+          <div className="mt-4 flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setEditando(true)}
+              className="inline-flex h-11 flex-1 items-center justify-center gap-1.5 rounded-xl bg-tinta text-label-lg text-on-primary hover:bg-tinta-hover sm:flex-none sm:px-6"
+            >
+              <Pencil className="h-4 w-4" aria-hidden />
+              Editar
+            </button>
+            {p.activo && (
+              <Link
+                to={`/tienda/producto/${p.id}`}
+                aria-label="Ver en tienda"
+                title="Ver en tienda"
+                className="grid h-11 w-11 shrink-0 place-items-center rounded-xl text-on-surface-variant hover:bg-surface-container"
               >
-                <Pencil className="h-4 w-4" aria-hidden />
-                Editar
-              </button>
-              {p.activo && (
-                <Link
-                  to={`/tienda/producto/${p.id}`}
-                  className="inline-flex h-10 items-center gap-1.5 rounded-full border border-outline-variant px-4 text-label-lg text-on-surface hover:bg-surface-container"
-                >
-                  <Store className="h-4 w-4" aria-hidden />
-                  Ver en tienda
-                </Link>
-              )}
-              <button
-                type="button"
-                onClick={() => setImprimiendo(true)}
-                className="inline-flex h-10 items-center gap-1.5 rounded-full border border-outline-variant px-4 text-label-lg text-on-surface hover:bg-surface-container"
-              >
-                <QrCode className="h-4 w-4" aria-hidden />
-                Códigos
-              </button>
-              <button
-                type="button"
-                onClick={alternarVisible}
-                disabled={estado.isPending}
-                className="inline-flex h-10 items-center gap-1.5 rounded-full border border-outline-variant px-4 text-label-lg text-on-surface-variant hover:bg-surface-container disabled:opacity-50"
-              >
-                {p.activo ? <EyeOff className="h-4 w-4" aria-hidden /> : <Eye className="h-4 w-4" aria-hidden />}
-                {p.activo ? "Ocultar" : "Mostrar"}
-              </button>
-            </div>
+                <Store className="h-5 w-5" aria-hidden />
+              </Link>
+            )}
+            <button
+              type="button"
+              onClick={() => setImprimiendo(true)}
+              aria-label="Imprimir códigos QR"
+              title="Imprimir códigos QR"
+              className="grid h-11 w-11 shrink-0 place-items-center rounded-xl text-on-surface-variant hover:bg-surface-container"
+            >
+              <QrCode className="h-5 w-5" aria-hidden />
+            </button>
+            <button
+              type="button"
+              onClick={alternarVisible}
+              disabled={estado.isPending}
+              aria-label={p.activo ? "Ocultar de la tienda" : "Mostrar en la tienda"}
+              title={p.activo ? "Ocultar de la tienda" : "Mostrar en la tienda"}
+              className="grid h-11 w-11 shrink-0 place-items-center rounded-xl text-on-surface-variant hover:bg-surface-container disabled:opacity-50"
+            >
+              {p.activo ? <EyeOff className="h-5 w-5" aria-hidden /> : <Eye className="h-5 w-5" aria-hidden />}
+            </button>
           </div>
         </div>
 
-        {/* Resumen de existencias, sobrio (sin cajas de métricas con divisores). */}
-        <div className="flex flex-wrap items-center gap-x-5 gap-y-1 border-t border-outline-variant/50 px-4 py-3 text-body-sm">
-          <span className={cn("tabular", disponibles === 0 && "text-error")}>
-            <strong className="text-on-surface">{disponibles}</strong> <span className="text-on-surface-variant">disponibles</span>
-          </span>
-          <span className="tabular text-on-surface-variant"><strong className="text-on-surface">{apartadas}</strong> apartadas</span>
-          <span className="tabular text-on-surface-variant"><strong className="text-on-surface">{fisico}</strong> en tiendas</span>
-          {agotadas > 0 && <span className="tabular text-warning">{agotadas} agotadas</span>}
+        {/* Resumen de existencias: fila tipográfica simple, sin cajas de métricas. */}
+        <div className="flex flex-wrap items-baseline gap-x-6 gap-y-1 border-t border-outline-variant/50 px-4 py-3 sm:px-5">
+          <Cifra valor={disponibles} etiqueta="disponibles" alerta={disponibles === 0} />
+          <Cifra valor={apartadas} etiqueta="apartadas" />
+          <Cifra valor={fisico} etiqueta="en tiendas" />
+          {agotadas > 0 && <Cifra valor={agotadas} etiqueta={agotadas === 1 ? "talla agotada" : "tallas agotadas"} alerta />}
         </div>
 
-        <div className="border-t border-outline-variant/50 p-4">
+        <div className="border-t border-outline-variant/50 px-4 py-3.5 sm:px-5">
           <Interruptor
             checked={p.permiteApartado}
             disabled={permite.isPending}
@@ -192,5 +196,15 @@ export default function ProductoDuenaPage() {
 
       {imprimiendo && <EtiquetasQR producto={p} onClose={() => setImprimiendo(false)} />}
     </div>
+  );
+}
+
+/** Una cifra del resumen de existencias: número al peso, etiqueta discreta. */
+function Cifra({ valor, etiqueta, alerta }: { valor: number; etiqueta: string; alerta?: boolean }) {
+  return (
+    <p className="text-body-sm">
+      <span className={cn("tabular text-label-lg", alerta && valor > 0 && "text-error")}>{valor}</span>{" "}
+      <span className="text-on-surface-variant">{etiqueta}</span>
+    </p>
   );
 }

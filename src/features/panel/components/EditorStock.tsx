@@ -116,8 +116,8 @@ export function EditorStock({ producto: p }: { producto: ProductoDetalle }) {
         </div>
       </div>
 
-      {/* Colores */}
-      <div className="no-scrollbar -mx-4 mt-3 flex gap-2 overflow-x-auto px-4" role="tablist" aria-label="Color">
+      {/* Colores: un solo control segmentado (no píldoras sueltas compitiendo con las acciones). */}
+      <div className="no-scrollbar -mx-4 mt-3 flex gap-1 overflow-x-auto rounded-2xl bg-surface-container p-1 px-4 sm:px-1" role="tablist" aria-label="Color">
         {p.colores.map((c) => {
           const vs = p.variantes.filter((v) => v.colorId === c.id);
           const disp = vs.reduce((n, v) => n + dispFinal(v), 0);
@@ -131,36 +131,36 @@ export function EditorStock({ producto: p }: { producto: ProductoDetalle }) {
               aria-selected={activo}
               onClick={() => setColorId(c.id)}
               className={cn(
-                "relative inline-flex h-11 shrink-0 items-center gap-2 rounded-full border pl-1.5 pr-3.5 text-label-lg transition-colors",
-                activo ? "border-tinta bg-tinta text-on-primary" : "border-outline-variant bg-surface-container-lowest hover:bg-surface-container-low",
+                "relative inline-flex h-10 shrink-0 items-center gap-1.5 rounded-xl px-3 text-label-md transition-colors",
+                activo ? "bg-surface-container-lowest text-on-surface shadow-soft" : "text-on-surface-variant hover:text-on-surface",
               )}
             >
-              <span className="h-7 w-7 rounded-full border border-on-surface/15" style={{ backgroundColor: c.hex }} aria-hidden />
+              <span className="h-4 w-4 rounded-full border border-on-surface/15" style={{ backgroundColor: c.hex }} aria-hidden />
               {c.nombre}
-              <span className={cn("tabular text-body-sm", activo ? "text-on-primary/80" : "text-on-surface-variant")}>{disp}</span>
-              {editado && <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-primary" aria-label="con cambios" />}
+              <span className="tabular text-on-surface-variant">{disp}</span>
+              {editado && <span className="absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-primary" aria-label="con cambios" />}
             </button>
           );
         })}
       </div>
 
-      {/* Atajos del color */}
-      <div className="no-scrollbar -mx-4 mt-3 flex gap-2 overflow-x-auto px-4" role="toolbar" aria-label="Atajos del color">
+      {/* Atajos del color: texto, no otra fila de píldoras. */}
+      <div className="mt-2 flex items-center gap-4 px-1">
         {SUCURSALES.map((s) => (
           <button
             key={s.id}
             type="button"
             onClick={() => atajoSumar(s.id)}
             aria-label={`Sumar una pieza a cada talla en ${s.nombre}`}
-            className="inline-flex h-9 shrink-0 items-center gap-1 rounded-full bg-surface-container px-3 text-label-md text-on-surface hover:bg-surface-container-high"
+            className="text-label-md text-primary hover:underline"
           >
-            <Plus className="h-3.5 w-3.5" aria-hidden />1 todas · {s.nombre}
+            +1 todas · {s.nombre}
           </button>
         ))}
         <button
           type="button"
           onClick={atajoAgotar}
-          className="inline-flex h-9 shrink-0 items-center rounded-full px-3 text-label-md text-on-surface-variant hover:bg-surface-container"
+          className="text-label-md text-on-surface-variant hover:underline"
         >
           Agotar color
         </button>
