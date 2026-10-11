@@ -456,8 +456,8 @@ export interface NuevoProductoInput {
   permiteApartado: boolean;
   /** Código de barras por variante: codigoBarras[talla][colorIndex] (opcional). */
   codigoBarras?: Record<string, (string | undefined)[]>;
-  /** Fotos ya subidas a R2 (URL pública), opcionalmente ligadas a un color. */
-  imagenes?: { url: string; colorId?: string }[];
+  /** Fotos ya subidas a R2 (URL pública). Se ligan a un color por su índice y con su orden. */
+  imagenes?: { url: string; colorIndex?: number; orden: number }[];
 }
 
 /** Edición de los campos simples de la prenda (no toca variantes ni stock). */
@@ -468,6 +468,15 @@ export interface EditarProductoInput {
   costo: number;
   precioAntes?: number;
   permiteApartado: boolean;
+}
+
+/** Agregar un color a un producto existente, con sus tallas, stock por sucursal y fotos (URLs R2). */
+export interface AgregarColorInput {
+  color: { nombre: string; hex: string; familia: FamiliaColor };
+  tallas: string[];
+  /** stock[sucursal][talla] = [cantidad]. */
+  stock: Record<SucursalId, Record<string, number[]>>;
+  fotos?: string[];
 }
 
 // ── Avisos in-app (notificaciones de la clienta) ──

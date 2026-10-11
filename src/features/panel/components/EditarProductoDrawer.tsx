@@ -1,9 +1,11 @@
 import { useState } from "react";
 import toast from "react-hot-toast";
+import { Plus } from "lucide-react";
 import type { ProductoDetalle } from "@/types/api";
 import { Button, Drawer, Input, Interruptor, Textarea } from "@/components/ui";
 import { mensajeError } from "@/lib/errores";
 import { useEditarProducto } from "../hooks";
+import { AgregarColorForm } from "./AgregarColorForm";
 
 /**
  * Edición de los campos simples de una prenda (nombre, descripción, precio, costo, oferta, apartable).
@@ -27,6 +29,7 @@ export function EditarProductoDrawer({
   const [enOferta, setEnOferta] = useState(producto.precioAntes != null);
   const [precioAntes, setPrecioAntes] = useState(producto.precioAntes != null ? String(producto.precioAntes) : "");
   const [permiteApartado, setPermiteApartado] = useState(producto.permiteApartado);
+  const [agregandoColor, setAgregandoColor] = useState(false);
 
   const nPrecio = Number(precio);
   const nCosto = Number(costo) || 0;
@@ -111,6 +114,30 @@ export function EditarProductoDrawer({
           label="Se puede apartar"
           descripcion="Apágalo para venderla solo de contado."
         />
+
+        {/* Agregar color: crea variantes nuevas (color × tallas) con sus fotos. */}
+        <div className="border-t border-outline-variant/60 pt-4">
+          {agregandoColor ? (
+            <div className="flex flex-col gap-3">
+              <div className="flex items-center justify-between">
+                <p className="text-label-lg">Agregar un color</p>
+                <button type="button" onClick={() => setAgregandoColor(false)} className="text-label-md text-on-surface-variant hover:text-on-surface">
+                  Cancelar
+                </button>
+              </div>
+              <AgregarColorForm producto={producto} onListo={() => setAgregandoColor(false)} />
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setAgregandoColor(true)}
+              className="inline-flex h-10 items-center gap-1.5 rounded-full px-2 text-label-lg text-primary-strong hover:bg-primary-soft"
+            >
+              <Plus className="h-4 w-4" aria-hidden />
+              Agregar un color (con sus fotos y tallas)
+            </button>
+          )}
+        </div>
 
         <div className="mt-2 flex gap-2">
           <Button variant="ghost" onClick={onClose}>

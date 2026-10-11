@@ -26,6 +26,8 @@ export interface ImagenProcesada {
   pesoKb: number;
   /** La prenda está recortada sin fondo (PNG/WebP con transparencia). */
   transparente: boolean;
+  /** Archivo original (para quitar fondo después, sin re-elegir). */
+  originalFile?: File;
 }
 
 const MAX_LADO_FUENTE = 2000; // tope para no procesar imágenes gigantes del celular
@@ -152,7 +154,7 @@ export async function procesarImagenProducto(file: File): Promise<ImagenProcesad
     throw new Error("Elige un archivo de imagen.");
   }
   const img = await cargarImagen(file);
-  return procesarImagen(img);
+  return procesarImagen(img, { originalFile: file });
 }
 
 /**
@@ -168,13 +170,13 @@ export async function quitarFondoYProcesar(file: File): Promise<ImagenProcesada>
   // Devuelve un PNG con transparencia (la prenda recortada).
   const recortada = await removeBackground(file, { output: { format: "image/png" } });
   const img = await cargarBlob(recortada);
-  return procesarImagen(img, { transparente: true });
+  return procesarImagen(img, { transparente: true, originalFile: file });
 }
 
 /** Núcleo compartido: a partir de un HTMLImageElement genera color, fondo y WebP por tamaño. */
 async function procesarImagen(
   img: HTMLImageElement,
-  opciones: { transparente?: boolean } = {},
+  opciones: { transparente?: boolean; originalFile?: File } = {},
 ): Promise<ImagenProcesada> {
   // Canvas chico solo para el análisis de color (rápido).
   const canvasColor = dibujarEscalado(img, 160);
@@ -192,7 +194,15 @@ async function procesarImagen(
 
   const preview = await blobADataUrl(webp[800]);
   const pesoKb = Math.round(webp[800].size / 1024);
-  return { webp, preview, colorDominante, fondoDegradado, pesoKb, transparente: !!opciones.transparente };
+  return {
+    webp,
+    preview,
+    colorDominante,
+    fondoDegradado,
+    pesoKb,
+    transparente: !!opciones.transparente,
+    originalFile: opciones.originalFile,
+  };
 }
 
 function blobADataUrl(blob: Blob): Promise<string> {

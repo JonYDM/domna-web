@@ -11,9 +11,9 @@ import { EscanerCodigo } from "@/features/pos/EscanerCodigo";
 import { useCrearProducto, useGuardarColor } from "../hooks";
 import { ResumenProducto } from "./ResumenProducto";
 import { CamposColor } from "./ColorDrawer";
-import { CargaImagenProducto } from "./CargaImagenProducto";
+import { FotosPorColor } from "./FotosPorColor";
 import type { ImagenProcesada } from "@/lib/imagen";
-import { subirImagenProducto } from "@/api/imagenes";
+import { subirFotosPorColor } from "@/api/imagenes";
 
 /** Alta de producto en pasos: datos → colores y tallas → stock (matriz) → precio y publicar. */
 export function NuevoProductoDrawer({ open, onClose, onCreado }: { open: boolean; onClose: () => void; onCreado: (id: string) => void }) {
@@ -25,8 +25,8 @@ export function NuevoProductoDrawer({ open, onClose, onCreado }: { open: boolean
 
   const [nombre, setNombre] = useState("");
   const [descripcion, setDescripcion] = useState("");
-  /** Foto procesada en el cliente (WebP + color + fondo). Aún no se sube (Fase 2 = R2). */
-  const [imagen, setImagen] = useState<ImagenProcesada | null>(null);
+  /** Fotos por color (modelo Zara): fotosPorColor[indiceColor] = fotos de ese color. Máx 5 c/u. */
+  const [fotosPorColor, setFotosPorColor] = useState<ImagenProcesada[][]>([]);
   const [categoriaElegida, setCategoriaElegida] = useState<string | null>(null);
   const [silueta] = useState<Silueta>("vestido");
   const [colorIds, setColorIds] = useState<string[]>([]);
@@ -122,12 +122,13 @@ export function NuevoProductoDrawer({ open, onClose, onCreado }: { open: boolean
 
   async function publicar() {
     try {
-      // Si hay foto, se sube a R2 primero (carpeta por id temporal) y se obtiene su URL pública.
-      let imagenes: { url: string; colorId?: string }[] | undefined;
-      if (imagen) {
+      // Sube las fotos agrupadas por color a R2 (carpeta por id temporal) y arma imagenes[].
+      let imagenes: { url: string; colorIndex: number; orden: number }[] | undefined;
+      const hayFotos = fotosPorColor.some((f) => f && f.length > 0);
+      if (hayFotos) {
         const idTemporal = `tmp-${Date.now().toString(36)}`;
-        const url = await subirImagenProducto(idTemporal, imagen);
-        if (url) imagenes = [{ url }];
+        const subidas = await subirFotosPorColor(idTemporal, fotosPorColor);
+        if (subidas.length > 0) imagenes = subidas;
       }
       const p = await crear.mutateAsync({
         nombre,
@@ -163,7 +164,6 @@ export function NuevoProductoDrawer({ open, onClose, onCreado }: { open: boolean
             valido: nombre.trim().length >= 3,
             contenido: (
               <div className="flex flex-col gap-4">
-                <CargaImagenProducto imagen={imagen} onImagen={setImagen} />
                 <Input label="Nombre" value={nombre} onChange={(e) => setNombre(e.target.value)} placeholder="Vestido midi Lucía" autoFocus />
                 <Select
                   label="Categoría"
@@ -267,6 +267,14 @@ export function NuevoProductoDrawer({ open, onClose, onCreado }: { open: boolean
                       </Chip>
                     ))}
                   </div>
+                </fieldset>
+
+                <fieldset>
+                  <legend className="mb-1 text-label-lg">Fotos por color</legend>
+                  <p className="mb-2 text-body-sm text-on-surface-variant">
+                    Hasta 5 por color. En la tienda, la galería cambia al elegir cada color.
+                  </p>
+                  <FotosPorColor colores={colores} fotos={fotosPorColor} onChange={setFotosPorColor} />
                 </fieldset>
               </div>
             ),
@@ -439,14 +447,14 @@ export function NuevoProductoDrawer({ open, onClose, onCreado }: { open: boolean
                   totalPiezas={totalPiezas}
                   permiteApartado={permiteApartado}
                   anticipoPct={config.data?.anticipoPct ?? 50}
-                  imagenPreview={imagen?.preview}
-                  imagenFondo={imagen?.fondoDegradado}
+                  imagenPreview={fotosPorColor[0]?.[0]?.preview}
+                  imagenFondo={fotosPorColor[0]?.[0]?.fondoDegradado}
                 />
                 <p className="flex items-start gap-2 text-body-sm text-on-surface-variant">
                   <ImagePlus className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
-                  {imagen
-                    ? "Tu foto ya está optimizada (WebP) con su fondo a juego. Se guardará al publicar cuando conectemos el almacenamiento."
-                    : "Agrega una foto en el primer paso; mientras tanto se muestra la ilustración en cada color."}
+                  {fotosPorColor.some((f) => f && f.length > 0)
+                    ? "Tus fotos ya están optimizadas (WebP). Se suben al publicar; la galería cambiará al elegir cada color."
+                    : "Sube fotos por color en el paso de colores; mientras tanto se muestra la ilustración."}
                 </p>
               </div>
             ),

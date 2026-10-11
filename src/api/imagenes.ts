@@ -54,3 +54,31 @@ export async function subirImagenProducto(
   const principal = firma.subidas.find((s) => s.tamano === "800") ?? firma.subidas[0];
   return principal?.urlPublica ?? null;
 }
+
+/** Una foto a guardar en el producto, ligada a un color por su índice y con su orden. */
+export interface FotoSubida {
+  url: string;
+  colorIndex: number;
+  orden: number;
+}
+
+/**
+ * Sube VARIAS fotos agrupadas por color (modelo tipo Zara) y devuelve las entradas listas para
+ * mandar en imagenes[] al crear el producto. `porColor[i]` = fotos del color de índice i.
+ * Respeta el máximo por color en el llamador. Secuencial por color para no saturar la red.
+ */
+export async function subirFotosPorColor(
+  productoId: string,
+  porColor: ImagenProcesada[][],
+): Promise<FotoSubida[]> {
+  if (!apiActiva) return [];
+  const resultado: FotoSubida[] = [];
+  for (let colorIndex = 0; colorIndex < porColor.length; colorIndex++) {
+    const fotos = porColor[colorIndex] ?? [];
+    for (let orden = 0; orden < fotos.length; orden++) {
+      const url = await subirImagenProducto(productoId, fotos[orden]);
+      if (url) resultado.push({ url, colorIndex, orden });
+    }
+  }
+  return resultado;
+}

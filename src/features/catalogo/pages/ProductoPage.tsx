@@ -136,7 +136,12 @@ export default function ProductoPage() {
           hex={color.hex}
           nombre={p.nombre}
           colorNombre={color.nombre}
-          urls={p.imagenes.filter((i) => !i.colorId || i.colorId === colorId).map((i) => i.url)}
+          urls={(() => {
+            const propias = p.imagenes.filter((i) => i.colorId === colorId).map((i) => i.url);
+            if (propias.length > 0) return propias;
+            // Si este color no tiene fotos propias, usa las generales (sin color asignado).
+            return p.imagenes.filter((i) => !i.colorId).map((i) => i.url);
+          })()}
         />
 
         <div className="flex min-w-0 flex-col gap-6">

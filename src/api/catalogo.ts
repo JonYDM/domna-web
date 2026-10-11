@@ -1,6 +1,7 @@
 import type {
   Categoria,
   CategoriaInput,
+  AgregarColorInput,
   ColorCatalogo,
   ColorInput,
   EditarProductoInput,
@@ -191,6 +192,17 @@ export async function crearProducto(input: NuevoProductoInput): Promise<Producto
   // El backend ignora/deriva campos extra; enviamos el input tal cual (incluye silueta por compat).
   return http.post<Producto>("/api/productos", input);
 }
+
+export async function agregarColor(id: string, input: AgregarColorInput): Promise<ProductoDetalle> {
+  const dto = await http.post<ProductoDto>(`/api/productos/${id}/colores`, {
+    color: input.color,
+    tallas: input.tallas,
+    stock: input.stock,
+    fotos: input.fotos ?? [],
+  });
+  return aProductoDetalle(dto, Date.now());
+}
+
 
 export async function editarProducto(id: string, input: EditarProductoInput): Promise<ProductoDetalle> {
   const dto = await http.put<ProductoDto>(`/api/productos/${id}`, {

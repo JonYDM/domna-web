@@ -3,6 +3,7 @@ import type {
   CategoriaInput,
   ColorCatalogo,
   ColorInput,
+  AgregarColorInput,
   EditarProductoInput,
   FiltrosCatalogo,
   NuevoProductoInput,
@@ -36,6 +37,11 @@ export function editarProducto(id: string, input: EditarProductoInput): Promise<
   if (apiActiva) return real.editarProducto(id, input);
   // Mock: aplica lo que soporta (permiteApartado) y devuelve el detalle actualizado.
   return mock.cambiarPermiteApartado(id, input.permiteApartado).then(() => mock.obtenerProducto(id));
+}
+
+/** Agregar un color (con fotos, tallas y stock) a un producto. Requiere la API real. */
+export function agregarColor(id: string, input: AgregarColorInput): Promise<ProductoDetalle> {
+  return real.agregarColor(id, input); // solo API real (el mock no soporta agregar variantes)
 }
 
 export function cambiarEstadoProducto(id: string, activo: boolean): Promise<void> {

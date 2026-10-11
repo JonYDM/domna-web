@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { CambioStock, CategoriaInput, ColorInput, EditarProductoInput, FiltroClientas, FiltroMetricas, MotivoAjuste, NuevaClientaInput, NuevoProductoInput, SucursalId } from "@/types/api";
+import type { CambioStock, CategoriaInput, ColorInput, AgregarColorInput, EditarProductoInput, FiltroClientas, FiltroMetricas, MotivoAjuste, NuevaClientaInput, NuevoProductoInput, SucursalId } from "@/types/api";
 import { qk } from "@/lib/queryKeys";
 import * as api from "@/mock/server";
 import * as cat from "@/api/catalogoSelector";
@@ -35,6 +35,18 @@ export function useEditarProducto(id: string) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (input: EditarProductoInput) => cat.editarProducto(id, input),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: qk.producto(id) });
+      qc.invalidateQueries({ queryKey: qk.productosTodos() });
+      qc.invalidateQueries({ queryKey: qk.metricasTodos() });
+    },
+  });
+}
+
+export function useAgregarColor(id: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: AgregarColorInput) => cat.agregarColor(id, input),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: qk.producto(id) });
       qc.invalidateQueries({ queryKey: qk.productosTodos() });
