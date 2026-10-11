@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { CambioStock, CategoriaInput, ColorInput, FiltroClientas, FiltroMetricas, MotivoAjuste, NuevaClientaInput, NuevoProductoInput, SucursalId } from "@/types/api";
 import { qk } from "@/lib/queryKeys";
 import * as api from "@/mock/server";
+import * as cat from "@/api/catalogoSelector";
 
 export function useMetricas(filtro: FiltroMetricas = {}) {
   const sucursal = filtro.sucursal ?? "todas";
@@ -21,7 +22,7 @@ export function useCorteDia(sucursal: SucursalId) {
 export function useCrearProducto() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (input: NuevoProductoInput) => api.crearProducto(input),
+    mutationFn: (input: NuevoProductoInput) => cat.crearProducto(input),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: qk.productosTodos() });
       qc.invalidateQueries({ queryKey: qk.categorias() }); // cambia el conteo de prendas
@@ -33,7 +34,7 @@ export function useCrearProducto() {
 export function useCambiarEstadoProducto() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, activo }: { id: string; activo: boolean }) => api.cambiarEstadoProducto(id, activo),
+    mutationFn: ({ id, activo }: { id: string; activo: boolean }) => cat.cambiarEstadoProducto(id, activo),
     onSuccess: (_d, v) => {
       qc.invalidateQueries({ queryKey: qk.productosTodos() });
       qc.invalidateQueries({ queryKey: qk.producto(v.id) });
@@ -45,7 +46,7 @@ export function useCambiarEstadoProducto() {
 export function useCambiarPermiteApartado() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, permite }: { id: string; permite: boolean }) => api.cambiarPermiteApartado(id, permite),
+    mutationFn: ({ id, permite }: { id: string; permite: boolean }) => cat.cambiarPermiteApartado(id, permite),
     onSuccess: (_d, v) => {
       qc.invalidateQueries({ queryKey: qk.productosTodos() });
       qc.invalidateQueries({ queryKey: qk.producto(v.id) });
@@ -128,7 +129,7 @@ export function useControlesDemo() {
 export function useGuardarCategoria() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, input }: { id: string | null; input: CategoriaInput }) => api.guardarCategoria(id, input),
+    mutationFn: ({ id, input }: { id: string | null; input: CategoriaInput }) => cat.guardarCategoria(id, input),
     onSuccess: () => qc.invalidateQueries({ queryKey: qk.categorias() }),
   });
 }
@@ -136,7 +137,7 @@ export function useGuardarCategoria() {
 export function useEliminarCategoria() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => api.eliminarCategoria(id),
+    mutationFn: (id: string) => cat.eliminarCategoria(id),
     onSuccess: () => qc.invalidateQueries({ queryKey: qk.categorias() }),
   });
 }
@@ -144,7 +145,7 @@ export function useEliminarCategoria() {
 export function useGuardarColor() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, input }: { id: string | null; input: ColorInput }) => api.guardarColor(id, input),
+    mutationFn: ({ id, input }: { id: string | null; input: ColorInput }) => cat.guardarColor(id, input),
     onSuccess: () => qc.invalidateQueries({ queryKey: qk.colores() }),
   });
 }
@@ -152,7 +153,7 @@ export function useGuardarColor() {
 export function useEliminarColor() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => api.eliminarColor(id),
+    mutationFn: (id: string) => cat.eliminarColor(id),
     onSuccess: () => qc.invalidateQueries({ queryKey: qk.colores() }),
   });
 }
