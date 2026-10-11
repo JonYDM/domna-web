@@ -22,7 +22,7 @@ export function BotonInstalar({ className, compacto = false }: { className?: str
       return;
     }
     const ok = await instalar();
-    if (ok) toast.success("¡Listo! Domna quedó en tu pantalla de inicio.");
+    if (ok) toast.success("¡Listo! Jesly Boutique quedó en tu pantalla de inicio.");
   }
 
   return (
@@ -30,7 +30,7 @@ export function BotonInstalar({ className, compacto = false }: { className?: str
       <button
         type="button"
         onClick={onClick}
-        aria-label="Instalar la app Domna"
+        aria-label="Instalar la app de Jesly Boutique"
         className={cn(
           "inline-flex items-center gap-1.5 rounded-full border border-outline-variant bg-surface-container-lowest px-3 text-label-md text-on-surface transition-colors hover:bg-surface-container",
           compacto ? "h-9" : "h-10",
@@ -44,7 +44,7 @@ export function BotonInstalar({ className, compacto = false }: { className?: str
       <Drawer
         open={instructivo}
         onClose={() => setInstructivo(false)}
-        title="Instala Domna en tu iPhone"
+        title="Instala Jesly Boutique en tu iPhone"
         descripcion="Para abrirla como app, en dos pasos desde Safari:"
       >
         <ol className="flex flex-col gap-3">
@@ -65,7 +65,7 @@ export function BotonInstalar({ className, compacto = false }: { className?: str
           </li>
         </ol>
         <p className="mt-4 rounded-xl bg-surface-container-low px-3 py-2.5 text-body-sm text-on-surface-variant">
-          Así Domna se abre a pantalla completa, como una app, y guarda tus pedidos.
+          Así Jesly Boutique se abre a pantalla completa, como una app, y guarda tus pedidos.
         </p>
         <Button className="mt-4" size="lg" fullWidth onClick={() => setInstructivo(false)}>
           Entendido

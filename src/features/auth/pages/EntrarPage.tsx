@@ -3,7 +3,6 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import { KeyRound, Mail } from "lucide-react";
 import type { Clienta } from "@/types/api";
-import { Logo } from "@/components/ilustraciones/Logo";
 import { Button, Input, PinPad } from "@/components/ui";
 import { BotonInstalar } from "@/components/organisms/BotonInstalar";
 import { mensajeError } from "@/lib/errores";
@@ -237,9 +236,9 @@ export default function EntrarPage() {
           <BotonPresentacion />
         </header>
 
-        {/* Marca: aquí irá el logo/nombre del tenant (white-label). Sin Domi en el login. */}
+        {/* Marca del tenant (white-label): nombre de la boutique, sin logo de Domna. */}
         <div className="anim-sube mt-7">
-          <Logo className="text-[32px]" />
+          <p className="font-marca text-[32px] leading-none text-on-surface">Jesly Boutique</p>
           <h1 className="mt-6 whitespace-pre-line font-marca text-[2.1rem] leading-[1.08] tracking-[-0.02em] text-on-surface">
             {fase === "login" && !pasoPin && "Qué gusto\nverte de nuevo."}
             {fase === "login" && pasoPin && (saludoNombre ? `Hola,\n${saludoNombre} 👋` : "Escribe\ntu PIN.")}

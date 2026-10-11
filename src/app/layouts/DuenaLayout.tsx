@@ -1,8 +1,6 @@
 import { useState } from "react";
 import { Link, Outlet, useNavigate } from "react-router-dom";
 import { AlertTriangle, ClipboardList, FlaskConical, LayoutDashboard, Menu, Package, Palette, Store, Tags, Users } from "lucide-react";
-import { DomiImagen } from "@/components/ilustraciones/DomiImagen";
-import { Logo } from "@/components/ilustraciones/Logo";
 import { BottomNav, TopNav, type ItemNav } from "@/components/organisms/Navegacion";
 import { PerfilMenu } from "@/components/organisms/PerfilMenu";
 import { useMetricas } from "@/features/panel/hooks";
@@ -40,12 +38,8 @@ export default function DuenaLayout() {
       <header className="sticky top-0 z-30 border-b border-outline-variant/60 bg-surface">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4">
           <Link to="/app" className="flex min-w-0 items-center gap-2" aria-label="Ir al inicio del panel">
-            <DomiImagen ancho={40} prioridad />
-            <span className="flex flex-col leading-tight">
-              <Logo className="text-[20px]" />
-              <span className="text-label-sm uppercase text-on-surface-variant">
-                {config.data?.nombre ?? "Jesly Boutique"}
-              </span>
+            <span className="truncate font-marca text-headline-sm text-on-surface">
+              {config.data?.nombre ?? "Jesly Boutique"}
             </span>
           </Link>
           <TopNav items={items} />

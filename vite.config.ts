@@ -4,19 +4,20 @@ import { VitePWA } from "vite-plugin-pwa";
 import path from "node:path";
 
 // - Alias "@" → src.
-// - PWA instalable con identidad Domna. No cachea /api (cuando exista el backend).
+// - PWA instalable con identidad del tenant (white-label): hoy configurada para Jesly Boutique.
+// No cachea /api (cuando exista el backend).
 export default defineConfig({
   plugins: [
     react(),
     VitePWA({
       registerType: "autoUpdate",
-      includeAssets: ["favicon.svg", "apple-touch-icon.png"],
+      includeAssets: ["favicon-jesly.png", "apple-touch-icon.png"],
       manifest: {
-        name: "Domna — Tu estilo, apartado para ti",
-        short_name: "Domna",
+        name: "Jesly Boutique — Tu estilo, apartado para ti",
+        short_name: "Jesly Boutique",
         description: "Catálogo y apartados de tu boutique favorita.",
-        theme_color: "#FBF7F4",
-        background_color: "#FBF7F4",
+        theme_color: "#FF228C",
+        background_color: "#FF228C",
         display: "standalone",
         orientation: "portrait",
         lang: "es-MX",
