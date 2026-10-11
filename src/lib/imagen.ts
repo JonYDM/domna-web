@@ -30,8 +30,6 @@ export interface ImagenProcesada {
   originalFile?: File;
 }
 
-const MAX_LADO_FUENTE = 2000; // tope para no procesar imágenes gigantes del celular
-
 /** Carga un File en un HTMLImageElement. */
 function cargarImagen(file: File): Promise<HTMLImageElement> {
   return cargarBlob(file);
@@ -65,6 +63,38 @@ function dibujarEscalado(img: HTMLImageElement, anchoDestino: number): HTMLCanva
   const ctx = canvas.getContext("2d")!;
   ctx.imageSmoothingQuality = "high";
   ctx.drawImage(img, 0, 0, w, h);
+  return canvas;
+}
+
+/**
+ * Encuadra la imagen en un lienzo 3:4 UNIFORME (ancho × ancho·4/3), centrada sin recortar (contain).
+ * El espacio sobrante se rellena con el fondo degradado del tono, para que todas las fotos midan
+ * igual aunque vengan de capturas de distintos tamaños. Si la imagen es transparente (recortada),
+ * la prenda queda flotando sobre su fondo a juego.
+ */
+function encuadrar34(img: HTMLImageElement, anchoDestino: number, colorFondo: string): HTMLCanvasElement {
+  const w = anchoDestino;
+  const h = Math.round((anchoDestino * 4) / 3);
+  const canvas = document.createElement("canvas");
+  canvas.width = w;
+  canvas.height = h;
+  const ctx = canvas.getContext("2d")!;
+  ctx.imageSmoothingQuality = "high";
+
+  // Fondo degradado (mismo criterio que fondoDegradadoDe, pero pintado en el canvas).
+  const rgb = aRgb(colorFondo);
+  const grad = ctx.createLinearGradient(0, 0, w, h);
+  grad.addColorStop(0, aclarar(rgb, 0.85));
+  grad.addColorStop(1, aclarar(rgb, 0.7));
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, w, h);
+
+  // Imagen centrada (contain) con un pequeño margen para que respire.
+  const margen = 0.92;
+  const escala = Math.min((w * margen) / img.naturalWidth, (h * margen) / img.naturalHeight);
+  const iw = img.naturalWidth * escala;
+  const ih = img.naturalHeight * escala;
+  ctx.drawImage(img, (w - iw) / 2, (h - ih) / 2, iw, ih);
   return canvas;
 }
 
@@ -183,12 +213,11 @@ async function procesarImagen(
   const colorDominante = colorDominanteDe(canvasColor);
   const fondoDegradado = fondoDegradadoDe(colorDominante);
 
-  // WebP por tamaño (sin agrandar más allá del original ni del tope de fuente).
-  // Si la prenda está recortada (transparente), conservamos el canal alfa.
-  const anchoMax = Math.min(img.naturalWidth, MAX_LADO_FUENTE);
+  // WebP por tamaño, TODOS encuadrados en 3:4 uniforme (misma proporción) sobre el fondo del tono.
+  // Si la prenda viene recortada (transparente), queda flotando sobre su fondo a juego.
   const webp = {} as Record<TamanoImagen, Blob>;
   for (const t of TAMANOS_IMAGEN) {
-    const canvas = dibujarEscalado(img, Math.min(t, anchoMax));
+    const canvas = encuadrar34(img, t, colorDominante);
     webp[t] = await aWebp(canvas, opciones.transparente ? 0.9 : 0.82);
   }
 
