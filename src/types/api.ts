@@ -456,6 +456,8 @@ export interface NuevoProductoInput {
   permiteApartado: boolean;
   /** Código de barras por variante: codigoBarras[talla][colorIndex] (opcional). */
   codigoBarras?: Record<string, (string | undefined)[]>;
+  /** Fotos ya subidas a R2 (URL pública), opcionalmente ligadas a un color. */
+  imagenes?: { url: string; colorId?: string }[];
 }
 
 // ── Avisos in-app (notificaciones de la clienta) ──

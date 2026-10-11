@@ -13,6 +13,7 @@ import { ResumenProducto } from "./ResumenProducto";
 import { CamposColor } from "./ColorDrawer";
 import { CargaImagenProducto } from "./CargaImagenProducto";
 import type { ImagenProcesada } from "@/lib/imagen";
+import { subirImagenProducto } from "@/api/imagenes";
 
 /** Alta de producto en pasos: datos → colores y tallas → stock (matriz) → precio y publicar. */
 export function NuevoProductoDrawer({ open, onClose, onCreado }: { open: boolean; onClose: () => void; onCreado: (id: string) => void }) {
@@ -118,9 +119,16 @@ export function NuevoProductoDrawer({ open, onClose, onCreado }: { open: boolean
     });
   }
 
-  function publicar() {
-    crear.mutate(
-      {
+  async function publicar() {
+    try {
+      // Si hay foto, se sube a R2 primero (carpeta por id temporal) y se obtiene su URL pública.
+      let imagenes: { url: string; colorId?: string }[] | undefined;
+      if (imagen) {
+        const idTemporal = `tmp-${Date.now().toString(36)}`;
+        const url = await subirImagenProducto(idTemporal, imagen);
+        if (url) imagenes = [{ url }];
+      }
+      const p = await crear.mutateAsync({
         nombre,
         descripcion,
         categoriaId,
@@ -132,15 +140,13 @@ export function NuevoProductoDrawer({ open, onClose, onCreado }: { open: boolean
         stock,
         permiteApartado,
         codigoBarras: codigos,
-      },
-      {
-        onSuccess: (p) => {
-          toast.success("¡Prenda publicada!");
-          onCreado(p.id);
-        },
-        onError: (e) => toast.error(mensajeError(e)),
-      },
-    );
+        imagenes,
+      });
+      toast.success("¡Prenda publicada!");
+      onCreado(p.id);
+    } catch (e) {
+      toast.error(mensajeError(e));
+    }
   }
 
 

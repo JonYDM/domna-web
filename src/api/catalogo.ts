@@ -45,6 +45,7 @@ interface ProductoDto {
     codigoBarras?: string | null;
     stock: Record<string, number>;
   }[];
+  imagenes?: { url: string; colorId?: string | null }[];
   creado: string;
   reabastecidoEl?: string | null;
 }
@@ -94,7 +95,7 @@ function aProductoDetalle(p: ProductoDto, ahora: number): ProductoDetalle {
     permiteApartado: p.permiteApartado,
     colores: p.colores.map((c) => ({ ...c, familia: c.familia as ColorCatalogo["familia"] })),
     tallas: p.tallas,
-    imagenes: [], // hasta la Fase 2 (R2); por ahora sin fotos → la UI usa la ilustración
+    imagenes: (p.imagenes ?? []).map((i) => ({ url: i.url, colorId: i.colorId ?? undefined })),
     creado: p.creado,
     reabastecidoEl: p.reabastecidoEl ?? undefined,
     nuevo,
