@@ -93,6 +93,7 @@ export default function ProductoDuenaPage() {
           <PrendaImagen
             silueta={p.silueta}
             hex={p.colores[0].hex}
+            url={p.imagenes.find((i) => i.colorId === p.colores[0].id)?.url ?? p.imagenes[0]?.url}
             alt=""
             className={cn("w-24 shrink-0 rounded-xl sm:w-28", !p.activo && "opacity-50 grayscale")}
           />
