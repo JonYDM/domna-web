@@ -1,7 +1,7 @@
 import { Link, useLocation, useParams } from "react-router-dom";
 import { useState } from "react";
 import toast from "react-hot-toast";
-import { Eye, EyeOff, Pencil, Store } from "lucide-react";
+import { Eye, EyeOff, Pencil, QrCode, Store } from "lucide-react";
 import { PrendaImagen } from "@/components/ilustraciones/PrendaImagen";
 import { EmptyState } from "@/components/molecules/EmptyState";
 import { PrecioTag } from "@/components/molecules/PrecioTag";
@@ -23,6 +23,7 @@ import { useCategorias, useProducto } from "@/features/catalogo/hooks";
 import { useCambiarEstadoProducto, useCambiarPermiteApartado } from "../hooks";
 import { EditorStock } from "../components/EditorStock";
 import { EditarProductoDrawer } from "../components/EditarProductoDrawer";
+import { EtiquetasQR } from "../components/EtiquetasQR";
 
 /** Ficha de producto de la dueña: resumen, visibilidad, apartado y stock por variante. */
 export default function ProductoDuenaPage() {
@@ -35,6 +36,7 @@ export default function ProductoDuenaPage() {
   const estado = useCambiarEstadoProducto();
   const permite = useCambiarPermiteApartado();
   const [editando, setEditando] = useState(false);
+  const [imprimiendo, setImprimiendo] = useState(false);
 
   if (producto.isPending) {
     return (
@@ -139,6 +141,14 @@ export default function ProductoDuenaPage() {
               )}
               <button
                 type="button"
+                onClick={() => setImprimiendo(true)}
+                className="inline-flex h-10 items-center gap-1.5 rounded-full border border-outline-variant px-4 text-label-lg text-on-surface hover:bg-surface-container"
+              >
+                <QrCode className="h-4 w-4" aria-hidden />
+                Códigos
+              </button>
+              <button
+                type="button"
                 onClick={alternarVisible}
                 disabled={estado.isPending}
                 className="inline-flex h-10 items-center gap-1.5 rounded-full border border-outline-variant px-4 text-label-lg text-on-surface-variant hover:bg-surface-container disabled:opacity-50"
@@ -179,6 +189,8 @@ export default function ProductoDuenaPage() {
       <EditorStock key={p.id} producto={p} />
 
       <EditarProductoDrawer producto={p} open={editando} onClose={() => setEditando(false)} />
+
+      {imprimiendo && <EtiquetasQR producto={p} onClose={() => setImprimiendo(false)} />}
     </div>
   );
 }

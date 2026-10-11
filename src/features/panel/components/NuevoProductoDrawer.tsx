@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { ImagePlus, Minus, Plus, ScanLine, X } from "lucide-react";
+import { ImagePlus, Minus, Plus, QrCode, X } from "lucide-react";
 import toast from "react-hot-toast";
 import type { Silueta, SucursalId } from "@/types/api";
 import { Button, Chip, Drawer, Input, Interruptor, Pasos, Select, Textarea } from "@/components/ui";
@@ -7,7 +7,6 @@ import { cn } from "@/lib/cn";
 import { esClaro } from "@/lib/color";
 import { mensajeError } from "@/lib/errores";
 import { useCategorias, useColores, useConfig } from "@/features/catalogo/hooks";
-import { EscanerCodigo } from "@/features/pos/EscanerCodigo";
 import { useCrearProducto, useGuardarColor } from "../hooks";
 import { ResumenProducto } from "./ResumenProducto";
 import { CamposColor } from "./ColorDrawer";
@@ -35,10 +34,6 @@ export function NuevoProductoDrawer({ open, onClose, onCreado }: { open: boolean
   const [sucursal, setSucursal] = useState<SucursalId>("temixco");
   /** Stock independiente por sucursal: stock[sucursal][talla][colorIndex]. */
   const [stock, setStock] = useState<Record<SucursalId, Record<string, number[]>>>({ temixco: {}, azteca: {} });
-  /** Código de barras por celda: codigos[talla][colorIndex]. */
-  const [codigos, setCodigos] = useState<Record<string, (string | undefined)[]>>({});
-  /** Celda que se está escaneando: { talla, ci } o null. */
-  const [escaneando, setEscaneando] = useState<{ talla: string; ci: number } | null>(null);
   const [precio, setPrecio] = useState("");
   const [costo, setCosto] = useState("");
   const [permiteApartado, setPermiteApartado] = useState(true);
@@ -70,7 +65,6 @@ export function NuevoProductoDrawer({ open, onClose, onCreado }: { open: boolean
   function toggleColor(id: string) {
     setColorIds((ids) => (ids.includes(id) ? ids.filter((x) => x !== id) : [...ids, id]));
     setStock({ temixco: {}, azteca: {} });
-    setCodigos({});
   }
 
   function toggleTalla(t: string) {
@@ -80,7 +74,6 @@ export function NuevoProductoDrawer({ open, onClose, onCreado }: { open: boolean
       : categoria.tallas.filter((x) => x === t || tallas.includes(x));
     setTallasElegidas(base);
     setStock({ temixco: {}, azteca: {} });
-    setCodigos({});
   }
 
   function crearColorRapido() {
@@ -92,7 +85,6 @@ export function NuevoProductoDrawer({ open, onClose, onCreado }: { open: boolean
           setColorIds((ids) => [...ids, c.id]);
           setFormColor(null);
           setStock({ temixco: {}, azteca: {} });
-          setCodigos({});
           toast.success(`“${c.nombre}” agregado a tus colores`);
         },
         onError: (e) => toast.error(mensajeError(e)),
@@ -112,14 +104,6 @@ export function NuevoProductoDrawer({ open, onClose, onCreado }: { open: boolean
   }
 
   /** Fija el código de barras de una celda (talla×color). */
-  function setCodigo(t: string, ci: number, valor: string) {
-    setCodigos((s) => {
-      const fila = [...(s[t] ?? colores.map(() => undefined))];
-      fila[ci] = valor.trim() || undefined;
-      return { ...s, [t]: fila };
-    });
-  }
-
   async function publicar() {
     try {
       // Sube las fotos agrupadas por color a R2 (carpeta por id temporal) y arma imagenes[].
@@ -141,7 +125,6 @@ export function NuevoProductoDrawer({ open, onClose, onCreado }: { open: boolean
         tallas,
         stock,
         permiteApartado,
-        codigoBarras: codigos,
         imagenes,
       });
       toast.success("¡Prenda publicada!");
@@ -154,6 +137,16 @@ export function NuevoProductoDrawer({ open, onClose, onCreado }: { open: boolean
 
   return (
     <Drawer open={open} onClose={onClose} title="Nuevo producto">
+      {crear.isPending && (
+        <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-3 bg-surface/85 backdrop-blur-sm">
+          <span className="relative grid h-16 w-16 place-items-center">
+            <span className="absolute inset-0 animate-ping rounded-2xl bg-primary/20" />
+            <QrCode className="h-9 w-9 text-primary" aria-hidden />
+          </span>
+          <p className="font-marca text-headline-sm">Generando los códigos de tu producto</p>
+          <p className="text-body-sm text-on-surface-variant">Creamos un QR único por talla y color…</p>
+        </div>
+      )}
       <Pasos
         guardando={crear.isPending}
         textoFinal="Publicar"
@@ -172,7 +165,6 @@ export function NuevoProductoDrawer({ open, onClose, onCreado }: { open: boolean
                     setCategoriaElegida(e.target.value);
                     setTallasElegidas(null);
                     setStock({ temixco: {}, azteca: {} });
-                    setCodigos({});
                   }}
                   opciones={(categorias.data ?? []).map((c) => ({ value: c.id, label: c.nombre }))}
                 />
@@ -358,42 +350,10 @@ export function NuevoProductoDrawer({ open, onClose, onCreado }: { open: boolean
                 </div>
                 <p className="tabular text-body-sm text-on-surface-variant">{totalPiezas} piezas en total</p>
 
-                <fieldset className="border-t border-outline-variant/50 pt-3">
-                  <legend className="mb-1 text-label-lg">Códigos de barras (opcional)</legend>
-                  <p className="mb-2 text-body-sm text-on-surface-variant">
-                    Escanea o escribe el código de cada talla y color. Sirve para vender en caja escaneando.
-                  </p>
-                  <div className="flex flex-col gap-2">
-                    {tallas.flatMap((t) =>
-                      colores.map((c, ci) => (
-                        <div key={`${t}-${c.nombre}`} className="flex items-center gap-2">
-                          <span className="flex w-24 shrink-0 items-center gap-1.5 text-body-sm">
-                            <span className="h-3 w-3 shrink-0 rounded-full border border-on-surface/10" style={{ backgroundColor: c.hex }} aria-hidden />
-                            <span className="truncate">{t}</span>
-                          </span>
-                          <div className="flex-1">
-                            <Input
-                              label=""
-                              inputMode="numeric"
-                              value={codigos[t]?.[ci] ?? ""}
-                              onChange={(e) => setCodigo(t, ci, e.target.value)}
-                              placeholder="Código"
-                            />
-                          </div>
-                          <Button
-                            type="button"
-                            variant="soft"
-                            size="sm"
-                            onClick={() => setEscaneando({ talla: t, ci })}
-                            aria-label={`Escanear código ${c.nombre} ${t}`}
-                          >
-                            <ScanLine className="h-4 w-4" aria-hidden />
-                          </Button>
-                        </div>
-                      )),
-                    )}
-                  </div>
-                </fieldset>
+                <p className="flex items-start gap-2 rounded-xl bg-primary-soft px-3 py-2.5 text-body-sm text-primary-on-soft">
+                  <QrCode className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+                  Al publicar, generamos un código QR único para cada talla y color. Luego podrás imprimirlos y pegarlos en tus etiquetas para vender escaneando en caja.
+                </p>
               </div>
             ),
           },
@@ -460,22 +420,6 @@ export function NuevoProductoDrawer({ open, onClose, onCreado }: { open: boolean
             ),
           },
         ]}
-      />
-
-      <EscanerCodigo
-        open={!!escaneando}
-        onClose={() => setEscaneando(null)}
-        titulo="Escanear código del producto"
-        onSimular={() => {
-          // Demo: genera un EAN-13 de ejemplo (prefijo 750 = MX).
-          const codigo = `750${String(Math.floor(Math.random() * 1_000_000_0000)).padStart(10, "0")}`;
-          if (escaneando) setCodigo(escaneando.talla, escaneando.ci, codigo);
-          setEscaneando(null);
-        }}
-        onCodigo={(codigo) => {
-          if (escaneando) setCodigo(escaneando.talla, escaneando.ci, codigo);
-          setEscaneando(null);
-        }}
       />
     </Drawer>
   );

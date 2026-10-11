@@ -318,3 +318,30 @@
 .anim-sube {
   animation: sube 360ms ease-out both;
 }
+
+/* ── Impresión de etiquetas QR ── */
+@media print {
+  /* Oculta todo lo que no sea la hoja de etiquetas. */
+  body * {
+    visibility: hidden;
+  }
+  .zona-impresion,
+  .zona-impresion * {
+    visibility: visible;
+  }
+  .zona-impresion {
+    position: absolute;
+    inset: 0;
+    margin: 0;
+    max-width: none;
+    padding: 8mm;
+    gap: 4mm;
+  }
+  .no-print {
+    display: none !important;
+  }
+  .etiqueta {
+    border: 1px dashed #bbb; /* guía de recorte */
+    break-inside: avoid;
+  }
+}
