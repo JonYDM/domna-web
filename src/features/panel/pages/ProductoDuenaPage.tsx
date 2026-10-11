@@ -91,62 +91,22 @@ export default function ProductoDuenaPage() {
         </BreadcrumbList>
       </Breadcrumb>
 
-      <section className="rounded-2xl bg-surface-container-lowest shadow-soft">
-        <div className="flex gap-4 p-4">
+      <section className="overflow-hidden rounded-2xl bg-surface-container-lowest shadow-soft">
+        <div className="flex flex-col gap-4 p-4 sm:flex-row">
           <PrendaImagen
             silueta={p.silueta}
             hex={p.colores[0].hex}
             url={p.imagenes.find((i) => i.colorId === p.colores[0].id)?.url ?? p.imagenes[0]?.url}
             alt=""
-            className={cn("w-24 shrink-0 rounded-xl sm:w-28", !p.activo && "opacity-50 grayscale")}
+            className={cn("w-32 shrink-0 rounded-xl sm:w-36", !p.activo && "opacity-50 grayscale")}
           />
-          <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-            <div className="min-w-0">
-              <p className="text-label-sm uppercase text-on-surface-variant">{categoria}</p>
-              <h1 className="line-clamp-3 font-marca text-headline-sm sm:text-headline-md">{p.nombre}</h1>
-            </div>
-            <div className="flex items-center justify-between gap-2">
+          <div className="flex min-w-0 flex-1 flex-col">
+            <p className="text-label-sm uppercase tracking-wide text-on-surface-variant">{categoria}</p>
+            <h1 className="mt-0.5 font-marca text-headline-md leading-tight">{p.nombre}</h1>
+            <div className="mt-1.5">
               <PrecioTag precio={p.precio} precioAntes={p.precioAntes} />
-              {/* Acciones de ícono */}
-              <div className="-mr-2 flex shrink-0">
-                <button
-                  type="button"
-                  onClick={() => setEditando(true)}
-                  title="Editar prenda"
-                  aria-label="Editar prenda"
-                  className="grid h-11 w-11 place-items-center rounded-full text-on-surface-variant hover:bg-surface-container hover:text-on-surface"
-                >
-                  <Pencil className="h-5 w-5" aria-hidden />
-                </button>
-                {p.activo && (
-                  <Link
-                    to={`/tienda/producto/${p.id}`}
-                    title="Ver en la tienda"
-                    aria-label="Ver en la tienda"
-                    className="grid h-11 w-11 place-items-center rounded-full text-on-surface-variant hover:bg-surface-container hover:text-on-surface"
-                  >
-                    <Store className="h-5 w-5" aria-hidden />
-                  </Link>
-                )}
-                <button
-                  type="button"
-                  onClick={alternarVisible}
-                  disabled={estado.isPending}
-                  title={p.activo ? "Ocultar de la tienda" : "Mostrar en la tienda"}
-                  aria-label={p.activo ? "Ocultar de la tienda" : "Mostrar en la tienda"}
-                  aria-pressed={!p.activo}
-                  className={cn(
-                    "grid h-11 w-11 place-items-center rounded-full transition-colors disabled:opacity-50",
-                    p.activo
-                      ? "text-on-surface-variant hover:bg-warning-container hover:text-warning"
-                      : "bg-warning-container text-warning hover:brightness-95",
-                  )}
-                >
-                  {p.activo ? <EyeOff className="h-5 w-5" aria-hidden /> : <Eye className="h-5 w-5" aria-hidden />}
-                </button>
-              </div>
             </div>
-            <div className="mt-0.5 flex flex-wrap gap-1.5">
+            <div className="mt-2 flex flex-wrap gap-1.5">
               <Badge
                 tono={p.activo ? "success" : "warning"}
                 icono={<span className={cn("h-1.5 w-1.5 rounded-full", p.activo ? "bg-success" : "bg-warning")} aria-hidden />}
@@ -157,14 +117,48 @@ export default function ProductoDuenaPage() {
               {p.reabastecido && <Badge tono="success">De vuelta</Badge>}
               {!p.permiteApartado && <Badge>Solo de contado</Badge>}
             </div>
+
+            {/* Acciones con etiqueta (no solo íconos sueltos). */}
+            <div className="mt-auto flex flex-wrap gap-2 pt-3">
+              <button
+                type="button"
+                onClick={() => setEditando(true)}
+                className="inline-flex h-10 items-center gap-1.5 rounded-full bg-tinta px-4 text-label-lg text-on-primary hover:bg-tinta-hover"
+              >
+                <Pencil className="h-4 w-4" aria-hidden />
+                Editar
+              </button>
+              {p.activo && (
+                <Link
+                  to={`/tienda/producto/${p.id}`}
+                  className="inline-flex h-10 items-center gap-1.5 rounded-full border border-outline-variant px-4 text-label-lg text-on-surface hover:bg-surface-container"
+                >
+                  <Store className="h-4 w-4" aria-hidden />
+                  Ver en tienda
+                </Link>
+              )}
+              <button
+                type="button"
+                onClick={alternarVisible}
+                disabled={estado.isPending}
+                className="inline-flex h-10 items-center gap-1.5 rounded-full border border-outline-variant px-4 text-label-lg text-on-surface-variant hover:bg-surface-container disabled:opacity-50"
+              >
+                {p.activo ? <EyeOff className="h-4 w-4" aria-hidden /> : <Eye className="h-4 w-4" aria-hidden />}
+                {p.activo ? "Ocultar" : "Mostrar"}
+              </button>
+            </div>
           </div>
         </div>
 
-        <dl className="grid grid-cols-3 divide-x divide-outline-variant/50 border-t border-outline-variant/50 text-center">
-          <Cifra titulo="Disponibles" valor={disponibles} tono={disponibles === 0 ? "error" : undefined} />
-          <Cifra titulo="Apartadas" valor={apartadas} />
-          <Cifra titulo="En tiendas" valor={fisico} detalle={agotadas ? `${agotadas} agotadas` : undefined} />
-        </dl>
+        {/* Resumen de existencias, sobrio (sin cajas de métricas con divisores). */}
+        <div className="flex flex-wrap items-center gap-x-5 gap-y-1 border-t border-outline-variant/50 px-4 py-3 text-body-sm">
+          <span className={cn("tabular", disponibles === 0 && "text-error")}>
+            <strong className="text-on-surface">{disponibles}</strong> <span className="text-on-surface-variant">disponibles</span>
+          </span>
+          <span className="tabular text-on-surface-variant"><strong className="text-on-surface">{apartadas}</strong> apartadas</span>
+          <span className="tabular text-on-surface-variant"><strong className="text-on-surface">{fisico}</strong> en tiendas</span>
+          {agotadas > 0 && <span className="tabular text-warning">{agotadas} agotadas</span>}
+        </div>
 
         <div className="border-t border-outline-variant/50 p-4">
           <Interruptor
@@ -185,16 +179,6 @@ export default function ProductoDuenaPage() {
       <EditorStock key={p.id} producto={p} />
 
       <EditarProductoDrawer producto={p} open={editando} onClose={() => setEditando(false)} />
-    </div>
-  );
-}
-
-function Cifra({ titulo, valor, detalle, tono }: { titulo: string; valor: number; detalle?: string; tono?: "error" }) {
-  return (
-    <div className="px-2 py-3">
-      <dt className="text-label-sm uppercase text-on-surface-variant">{titulo}</dt>
-      <dd className={cn("tabular text-headline-md", tono === "error" && "text-error")}>{valor}</dd>
-      {detalle && <dd className="text-[11px] text-on-surface-variant">{detalle}</dd>}
     </div>
   );
 }
