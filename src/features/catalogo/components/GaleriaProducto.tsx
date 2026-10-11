@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import type { Silueta } from "@/types/api";
 import { PrendaImagen, type VistaPrenda } from "@/components/ilustraciones/PrendaImagen";
+import { VisorImagen } from "@/components/organisms/VisorImagen";
 import { cn } from "@/lib/cn";
 
 const VISTAS: { id: VistaPrenda; label: string }[] = [
@@ -20,8 +21,10 @@ interface GaleriaProps {
 /** Galería con swipe (scroll-snap) en móvil y miniaturas en escritorio. Cambia con el color. */
 export function GaleriaProducto({ silueta, hex, nombre, colorNombre, urls = [] }: GaleriaProps) {
   const [indice, setIndice] = useState(0);
+  const [visorAbierto, setVisorAbierto] = useState(false);
   const pista = useRef<HTMLDivElement>(null);
   const slides = urls.length ? urls.map((u, i) => ({ id: `${i}`, url: u, vista: "frente" as VistaPrenda, label: `Foto ${i + 1}` })) : VISTAS.map((v) => ({ ...v, url: undefined, vista: v.id }));
+  const hayFotos = urls.length > 0;
 
   function ir(i: number) {
     const el = pista.current;
@@ -44,14 +47,32 @@ export function GaleriaProducto({ silueta, hex, nombre, colorNombre, urls = [] }
         >
           {slides.map((s, i) => (
             <div key={s.id} className="w-full shrink-0 snap-center" aria-label={`${i + 1} de ${slides.length}`}>
-              <PrendaImagen
-                silueta={silueta}
-                hex={hex}
-                vista={s.vista}
-                url={s.url}
-                alt={`${nombre} en ${colorNombre}, ${s.label.toLowerCase()}`}
-                prioridad={i === 0}
-              />
+              {hayFotos ? (
+                <button
+                  type="button"
+                  onClick={() => { setIndice(i); setVisorAbierto(true); }}
+                  aria-label={`Ampliar foto ${i + 1} de ${nombre}`}
+                  className="block w-full cursor-zoom-in focus-visible:outline-none"
+                >
+                  <PrendaImagen
+                    silueta={silueta}
+                    hex={hex}
+                    vista={s.vista}
+                    url={s.url}
+                    alt={`${nombre} en ${colorNombre}, ${s.label.toLowerCase()}`}
+                    prioridad={i === 0}
+                  />
+                </button>
+              ) : (
+                <PrendaImagen
+                  silueta={silueta}
+                  hex={hex}
+                  vista={s.vista}
+                  url={s.url}
+                  alt={`${nombre} en ${colorNombre}, ${s.label.toLowerCase()}`}
+                  prioridad={i === 0}
+                />
+              )}
             </div>
           ))}
         </div>
@@ -81,6 +102,15 @@ export function GaleriaProducto({ silueta, hex, nombre, colorNombre, urls = [] }
           </button>
         ))}
       </div>
+
+      {visorAbierto && hayFotos && (
+        <VisorImagen
+          imagenes={urls}
+          indice={indice}
+          alt={`${nombre} en ${colorNombre}`}
+          onClose={() => setVisorAbierto(false)}
+        />
+      )}
     </div>
   );
 }
