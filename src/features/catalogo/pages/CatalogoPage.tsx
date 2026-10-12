@@ -1,6 +1,5 @@
 import { useRef, useState } from "react";
 import { RefreshCw, SlidersHorizontal, Sparkles, X } from "lucide-react";
-import { Domi } from "@/components/ilustraciones/Domi";
 import { BarraBusqueda } from "@/components/molecules/BarraBusqueda";
 import { EmptyState } from "@/components/molecules/EmptyState";
 import { Button, Chip } from "@/components/ui";
@@ -69,17 +68,16 @@ export default function CatalogoPage() {
     <div className="flex flex-col gap-4">
       <AvisoUrgente />
       {!hayFiltros && (
-        <section className="lunares relative overflow-hidden rounded-3xl bg-primary-soft px-5 py-5">
+        <section className="relative overflow-hidden rounded-3xl bg-primary-soft px-5 py-5">
           <p className="text-label-sm uppercase text-primary-on-soft">
             {sesion?.rol === "clienta" ? `Hola, ${sesion.nombre}` : config.data?.nombre}
           </p>
           <h1 className="mt-1 max-w-[15rem] font-marca text-headline-lg text-on-surface sm:max-w-md">
             Cómprala hoy o apártala
           </h1>
-          <p className="mt-1.5 max-w-[11rem] text-body-md text-on-surface-variant sm:max-w-md">
+          <p className="mt-1.5 max-w-[16rem] text-body-md text-on-surface-variant sm:max-w-md">
             Con el {config.data?.anticipoPct ?? 50}% te la guardamos {config.data?.vigenciaConAnticipoDias ?? 15} días.
           </p>
-          <Domi size={92} expresion="guino" className="absolute -bottom-2 right-2" />
         </section>
       )}
 

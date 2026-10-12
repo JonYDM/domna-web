@@ -2,7 +2,6 @@ import { Link } from "react-router-dom";
 import { AlertTriangle, ChevronRight, ClipboardList, Coins, PackageCheck, Plus, TrendingUp, Users, Wallet } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import type { SucursalId } from "@/types/api";
-import { Domi } from "@/components/ilustraciones/Domi";
 import { PrendaImagen } from "@/components/ilustraciones/PrendaImagen";
 import { EmptyState } from "@/components/molecules/EmptyState";
 import { Button, ButtonLink, Chip, Skeleton } from "@/components/ui";
@@ -30,14 +29,11 @@ export default function DashboardPage() {
 
   return (
     <div className="flex flex-col gap-5">
-      <section className="flex items-center gap-4">
-        <Domi size={64} expresion="feliz" />
-        <div>
-          <p className="text-body-sm text-on-surface-variant">{fechaHoyLarga()}</p>
-          <h1 className="font-marca text-headline-lg">
-            {saludo()}, {sesion?.nombre}
-          </h1>
-        </div>
+      <section>
+        <p className="text-body-sm text-on-surface-variant">{fechaHoyLarga()}</p>
+        <h1 className="font-marca text-headline-lg">
+          {saludo()}, {sesion?.nombre}
+        </h1>
       </section>
 
       <div className="flex gap-2">

@@ -3,15 +3,15 @@ import { Button, ButtonLink } from "@/components/ui";
 import { EmptyState } from "@/components/molecules/EmptyState";
 import { mensajeError } from "@/lib/errores";
 
-/** 404 y errores inesperados del router, con Domi. */
+/** 404 y errores inesperados del router. */
 export function PaginaError({ tipo }: { tipo: "404" | "error" }) {
   return (
-    <main className="lunares grid min-h-dvh place-items-center bg-surface">
+    <main className="grid min-h-dvh place-items-center bg-surface">
       {tipo === "404" ? (
         <EmptyState
           expresion="curiosa"
           titulo="Esta página no existe"
-          texto="Domi buscó por todos lados y no la encontró."
+          texto="Revisa el enlace o vuelve al inicio."
           accion={<ButtonLink to="/">Volver al inicio</ButtonLink>}
         />
       ) : (

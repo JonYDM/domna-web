@@ -1,7 +1,5 @@
 import { Link, useParams, useSearchParams } from "react-router-dom";
-import { ChevronLeft } from "lucide-react";
-import { Domi } from "@/components/ilustraciones/Domi";
-import { ConfetiLunares } from "@/components/feedback/ConfetiLunares";
+import { CheckCircle2, ChevronLeft } from "lucide-react";
 import { EmptyState } from "@/components/molecules/EmptyState";
 import { ButtonLink, Skeleton } from "@/components/ui";
 import { formatFecha, formatMXN } from "@/lib/format";
@@ -44,10 +42,11 @@ export default function ApartadoClientaPage() {
   return (
     <div className="mx-auto flex max-w-lg flex-col gap-4">
       {nuevo ? (
-        <section className="lunares relative flex flex-col items-center overflow-hidden rounded-3xl bg-primary-soft px-5 pb-6 pt-8 text-center">
-          <ConfetiLunares />
+        <section className="relative flex flex-col items-center overflow-hidden rounded-3xl bg-primary-soft px-5 pb-6 pt-8 text-center">
           <div className="anim-pop">
-            <Domi size={128} expresion="enamorada" animar="vuela" titulo={compra ? "Domi celebra tu compra" : "Domi celebra tu apartado"} />
+            <span className="grid h-20 w-20 place-items-center rounded-full bg-surface-container-lowest text-success shadow-soft">
+              <CheckCircle2 className="h-10 w-10" aria-hidden />
+            </span>
           </div>
           <h1 className="anim-sube mt-4 font-marca text-headline-lg" style={{ animationDelay: "250ms" }}>
             {compra ? "¡Es tuya!" : "¡Apartado listo!"}
