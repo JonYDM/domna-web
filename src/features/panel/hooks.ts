@@ -130,15 +130,6 @@ export function useGuardarStock(productoId: string) {
   });
 }
 
-export function useMoverStock(productoId: string) {
-  const invalidar = useInvalidarStock(productoId);
-  return useMutation({
-    mutationFn: ({ varianteId, desde, cantidad }: { varianteId: string; desde: SucursalId; cantidad: number }) =>
-      api.moverStock(varianteId, desde, cantidad),
-    onSuccess: invalidar,
-  });
-}
-
 
 // ── Clientas ──
 
@@ -168,17 +159,6 @@ export function useCrearClienta() {
   });
 }
 
-/** Controles de la demo: cambian todo → se invalida toda la caché. */
-export function useControlesDemo() {
-  const qc = useQueryClient();
-  const todo = () => qc.invalidateQueries();
-  return {
-    avanzar: useMutation({ mutationFn: (dias: number) => api.demoAvanzarDias(dias), onSuccess: todo }),
-    suspender: useMutation({ mutationFn: (s: boolean) => api.demoSuspender(s), onSuccess: todo }),
-    reiniciar: useMutation({ mutationFn: api.demoReiniciar, onSuccess: todo }),
-    catalogoPublico: useMutation({ mutationFn: (p: boolean) => api.demoCatalogoPublico(p), onSuccess: todo }),
-  };
-}
 
 // ── Personal (equipo): la dueña ve el staff y da de alta cajeras ──
 

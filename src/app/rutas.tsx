@@ -47,7 +47,6 @@ export const ApartadosPage = lazyConReintento(() => import("@/features/panel/pag
 export const ApartadoDuenaPage = lazyConReintento(() => import("@/features/panel/pages/ApartadoDuenaPage"));
 export const InventarioPage = lazyConReintento(() => import("@/features/panel/pages/InventarioPage"));
 export const ProductoDuenaPage = lazyConReintento(() => import("@/features/panel/pages/ProductoDuenaPage"));
-export const DemoPage = lazyConReintento(() => import("@/features/panel/pages/DemoPage"));
 export const PersonalPage = lazyConReintento(() => import("@/features/panel/pages/PersonalPage"));
 export const CategoriasPage = lazyConReintento(() => import("@/features/panel/pages/CategoriasPage"));
 export const ColoresPage = lazyConReintento(() => import("@/features/panel/pages/ColoresPage"));

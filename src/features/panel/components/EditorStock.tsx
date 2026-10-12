@@ -1,14 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { useBlocker } from "react-router-dom";
 import toast from "react-hot-toast";
-import { ArrowLeftRight, Minus, Plus, RefreshCw } from "lucide-react";
+import { Minus, Plus, RefreshCw } from "lucide-react";
 import type { CambioStock, ProductoDetalle, SucursalId, VarianteDisponible } from "@/types/api";
 import { Button, Drawer } from "@/components/ui";
 import { cn } from "@/lib/cn";
 import { mensajeError } from "@/lib/errores";
 import { useGuardarStock } from "../hooks";
 import { GuardarStockDrawer, type CambioVista } from "./GuardarStockDrawer";
-import { MoverStockDrawer } from "./MoverStockDrawer";
 
 const SUCURSALES: { id: SucursalId; nombre: string }[] = [
   { id: "temixco", nombre: "Temixco" },
@@ -21,14 +20,12 @@ const clave = (varianteId: string, s: SucursalId) => `${varianteId}|${s}`;
  * Editor de stock por variante:
  * 1. Borrador: se edita con +/− o escribiendo y NADA se guarda hasta confirmar (un solo request).
  * 2. Motivo obligatorio al guardar (historial de movimientos).
- * 3. Mover piezas disponibles entre sucursales.
- * 4. Un color a la vez; cada celda muestra físico, apartadas y disponibles; atajos por color.
+ * 3. Un color a la vez; cada celda muestra físico, apartadas y disponibles; atajos por color.
  */
 export function EditorStock({ producto: p }: { producto: ProductoDetalle }) {
   const [colorId, setColorId] = useState(p.colores[0].id);
   const [borrador, setBorrador] = useState<Record<string, number>>({});
   const [confirmar, setConfirmar] = useState(false);
-  const [mover, setMover] = useState<VarianteDisponible | null>(null);
   const guardar = useGuardarStock(p.id);
 
   const valor = (v: VarianteDisponible, s: SucursalId) => borrador[clave(v.id, s)] ?? v.stock[s];
@@ -144,7 +141,7 @@ export function EditorStock({ producto: p }: { producto: ProductoDetalle }) {
 
       {/* Matriz talla × sucursal. El atajo "+1" vive en el encabezado de cada sucursal. */}
       <div className="mt-4" role="table" aria-label="Stock del color seleccionado">
-        <div role="row" className="grid grid-cols-[2.25rem_1fr_1fr_2.75rem] items-center gap-2 pb-1.5">
+        <div role="row" className="grid grid-cols-[2.25rem_1fr_1fr] items-center gap-2 pb-1.5">
           <span role="columnheader" className="text-label-md text-on-surface-variant">Talla</span>
           {SUCURSALES.map((s) => (
             <div key={s.id} role="columnheader" className="flex items-center justify-center gap-1.5">
@@ -160,12 +157,9 @@ export function EditorStock({ producto: p }: { producto: ProductoDetalle }) {
               </button>
             </div>
           ))}
-          <span role="columnheader" className="sr-only">
-            Mover
-          </span>
         </div>
         {variantes.map((v) => (
-          <div key={v.id} role="row" className="grid grid-cols-[2.25rem_1fr_1fr_2.75rem] items-start gap-2 border-t border-outline-variant/40 py-2.5">
+          <div key={v.id} role="row" className="grid grid-cols-[2.25rem_1fr_1fr] items-start gap-2 border-t border-outline-variant/40 py-2.5">
             <span role="rowheader" className="pt-2.5 text-label-lg">
               {v.talla}
             </span>
@@ -180,18 +174,6 @@ export function EditorStock({ producto: p }: { producto: ProductoDetalle }) {
                 onCambiar={(n) => fijar(v, s.id, n)}
               />
             ))}
-            <div role="cell" className="flex justify-center">
-              <button
-                type="button"
-                onClick={() => setMover(v)}
-                disabled={hayCambios || v.disponible === 0}
-                title={hayCambios ? "Guarda o descarta tus cambios para mover piezas" : "Mover entre sucursales"}
-                aria-label={`Mover talla ${v.talla} entre sucursales`}
-                className="grid h-11 w-11 place-items-center rounded-full text-on-surface-variant hover:bg-surface-container disabled:opacity-30"
-              >
-                <ArrowLeftRight className="h-4 w-4" aria-hidden />
-              </button>
-            </div>
           </div>
         ))}
       </div>
@@ -233,16 +215,6 @@ export function EditorStock({ producto: p }: { producto: ProductoDetalle }) {
         guardando={guardar.isPending}
         onGuardar={onGuardar}
       />
-
-      {mover && (
-        <MoverStockDrawer
-          key={mover.id}
-          productoId={p.id}
-          variante={mover}
-          colorNombre={p.colores.find((c) => c.id === mover.colorId)?.nombre ?? ""}
-          onClose={() => setMover(null)}
-        />
-      )}
 
       {blocker.state === "blocked" && (
         <Drawer open onClose={() => blocker.reset()} title="Tienes cambios sin guardar">
