@@ -142,6 +142,15 @@
   animation: sube 360ms ease-out both;
 }
 
+/* Esfera difuminada de marca (app shell): rosa pleno al centro, se desvanece hacia afuera. */
+.orbe-marca {
+  background: radial-gradient(
+    closest-side,
+    theme("colors.orbe") 0%,
+    theme("colors.orbe") 52%,
+    transparent 100%
+  );
+}
 /* ── Impresión de etiquetas QR ── */
 @media print {
   /* Oculta todo lo que no sea la hoja de etiquetas. */

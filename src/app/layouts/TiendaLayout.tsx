@@ -14,14 +14,16 @@ import { useAvisos } from "@/features/avisos/hooks";
 import { AvisosPopover } from "@/features/avisos/components/AvisosPopover";
 import { useSesion } from "@/features/auth/sesion";
 import { enCurso } from "@/lib/enums";
+import { CristalEncabezado, FondoShell, MarcaNombre } from "@/components/organisms/MarcaShell";
 import { DockTienda } from "./DockTienda";
 
-/** Portal de la clienta (app shell): encabezado sobrio, dock flotante en móvil, nav superior en escritorio. */
+/** Portal de la clienta (app shell): encabezado translúcido, dock flotante en móvil, nav superior en escritorio. */
 export default function TiendaLayout() {
   const { sesion, salir } = useSesion();
   const navigate = useNavigate();
   const [perfilAbierto, setPerfilAbierto] = useState(false);
   const config = useConfig();
+  const nombreBoutique = config.data?.nombre ?? "Jesly Boutique";
   const clienta = useClienta(sesion?.rol === "clienta" ? sesion.clientaId : undefined);
   const apartados = useMisApartados(sesion?.clientaId);
   const activos = apartados.data?.filter(enCurso).length ?? 0;
@@ -56,13 +58,13 @@ export default function TiendaLayout() {
 
   return (
     <CarritoProvider clientaId={sesion?.rol === "clienta" ? sesion.clientaId : undefined}>
-      <div className="min-h-dvh bg-surface">
-        <header className="sticky top-0 z-30 border-b border-outline-variant/60 bg-surface">
-          <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-3 px-4">
-            <Link to="/tienda" className="flex min-w-0 items-center gap-2" aria-label="Ir al catálogo">
-              <span className="truncate font-marca text-headline-sm text-on-surface">
-                {config.data?.nombre ?? "Jesly Boutique"}
-              </span>
+      <div className="relative isolate min-h-dvh bg-surface">
+        <FondoShell nombre={nombreBoutique} />
+        <header className="sticky top-0 z-30">
+          <CristalEncabezado />
+          <div className="relative mx-auto flex h-16 max-w-6xl items-center justify-between gap-3 px-4">
+            <Link to="/tienda" className="flex min-w-0 items-center gap-2" aria-label={`${nombreBoutique}, ir al catálogo`}>
+              <MarcaNombre nombre={nombreBoutique} />
             </Link>
             <TopNav items={items} />
             <div className="flex items-center gap-1">

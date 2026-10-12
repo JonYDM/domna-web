@@ -9,6 +9,7 @@ import { FabProvider } from "@/features/panel/FabContext";
 import { useMetricas } from "@/features/panel/hooks";
 import { useSesion } from "@/features/auth/sesion";
 import { useConfig } from "@/features/catalogo/hooks";
+import { CristalEncabezado, FondoShell, MarcaNombre } from "@/components/organisms/MarcaShell";
 
 /** Panel de la dueña. Móvil: dock flotante con FAB contextual. Escritorio: nav superior. */
 export default function DuenaLayout() {
@@ -17,6 +18,7 @@ export default function DuenaLayout() {
   const [perfilAbierto, setPerfilAbierto] = useState(false);
   const metricas = useMetricas();
   const config = useConfig();
+  const nombreBoutique = config.data?.nombre ?? "Jesly Boutique";
 
   const inicio: ItemNav = { to: "/app", label: "Inicio", icono: LayoutDashboard, end: true };
   const pedidos: ItemNav = { to: "/app/apartados", label: "Pedidos", icono: ClipboardList, contador: metricas.data?.porVencer };
@@ -35,18 +37,18 @@ export default function DuenaLayout() {
 
   return (
     <FabProvider>
-      <div className="min-h-dvh bg-surface">
-        <header className="sticky top-0 z-30 border-b border-outline-variant/60 bg-surface">
-          <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4">
-            <Link to="/app" className="flex min-w-0 items-center gap-2" aria-label="Ir al inicio del panel">
-              <span className="truncate font-marca text-headline-sm text-on-surface">
-                {config.data?.nombre ?? "Jesly Boutique"}
-              </span>
+      <div className="relative isolate min-h-dvh bg-surface">
+        <FondoShell nombre={nombreBoutique} />
+        <header className="sticky top-0 z-30">
+          <CristalEncabezado />
+          <div className="relative mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4">
+            <Link to="/app" className="flex min-w-0 items-center gap-2" aria-label={`${nombreBoutique}, ir al inicio del panel`}>
+              <MarcaNombre nombre={nombreBoutique} />
             </Link>
             <TopNav items={items} />
             <PerfilMenu
               nombre={sesion?.nombre ?? "Jesly"}
-              subtitulo={`Dueña · ${config.data?.nombre ?? "Jesly Boutique"}`}
+              subtitulo={`Dueña · ${nombreBoutique}`}
               pendientes={metricas.data?.porVencer}
               open={perfilAbierto}
               onOpenChange={setPerfilAbierto}

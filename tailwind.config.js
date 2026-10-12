@@ -30,6 +30,8 @@ export default {
           "on-soft": "#9B1C30", // texto sobre primary-soft
         },
         "on-primary": "#FFFFFF",
+        // Color de marca de la boutique (el rosa del ícono de la PWA). Hoy fijo; por boutique vendrá de la config.
+        orbe: "#FF228C",
         tinta: {
           DEFAULT: "#1F1D21", // botón secundario elegante (no negro puro, alineado a on-surface)
           hover: "#3A353C",
