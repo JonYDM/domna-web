@@ -18,9 +18,9 @@ interface ProductoCardProps {
 }
 
 /**
- * Card de producto, dirección editorial (boutique de lujo tipo Zara): la foto ocupa el protagonismo
- * en un marco de esquinas sutiles; debajo, tipografía fina y sparse (nombre, precio, un rastro de
- * color). Las marcas (Nuevo / oferta / agotado) son texto en versalitas con tracking, no píldoras.
+ * Card de producto: la foto manda, en un marco de esquinas sutiles; debajo, nombre, precio y un
+ * rastro de color. Las marcas (oferta / nuevo / de vuelta / agotado) son etiquetas pequeñas y
+ * neutras, en texto normal, sobre la foto.
  */
 export const ProductoCard = memo(function ProductoCard({
   producto: p,
@@ -66,7 +66,7 @@ export const ProductoCard = memo(function ProductoCard({
         {etiqueta && (
           <span
             className={cn(
-              "absolute left-3 top-3 text-[10px] font-semibold uppercase tracking-[0.14em]",
+              "absolute left-2 top-2 rounded-md bg-surface/90 px-1.5 py-0.5 text-label-md",
               etiqueta.clase,
             )}
           >
@@ -75,27 +75,27 @@ export const ProductoCard = memo(function ProductoCard({
         )}
         {agotado && (
           <div className="absolute inset-0 grid place-items-center bg-surface/55">
-            <span className="text-[11px] font-semibold uppercase tracking-[0.2em] text-on-surface">Agotado</span>
+            <span className="rounded-md bg-surface/90 px-2.5 py-1 text-label-lg text-on-surface">Agotado</span>
           </div>
         )}
         {pocas && (
-          <span className="absolute bottom-3 left-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-on-surface-variant">
+          <span className="absolute bottom-2 left-2 rounded-md bg-surface/90 px-1.5 py-0.5 text-label-md text-on-surface-variant">
             Últimas piezas
           </span>
         )}
       </div>
 
-      {/* Pie: sparse y fino. Nombre, precio discreto, un rastro de swatches. */}
-      <div className="mt-3 flex flex-col gap-1">
-        <h3 className="truncate text-[13px] leading-tight tracking-wide text-on-surface">{p.nombre}</h3>
-        <div className="flex items-baseline gap-2 tabular text-[13px]">
+      {/* Pie: sobrio. Nombre, precio y un rastro de swatches. */}
+      <div className="mt-2.5 flex flex-col gap-1">
+        <h3 className="truncate text-body-md leading-tight text-on-surface">{p.nombre}</h3>
+        <div className="flex items-baseline gap-2 tabular text-body-md">
           {p.precioAntes ? (
             <>
-              <span className="text-on-surface">{formatMXN(p.precio)}</span>
-              <span className="text-[11px] text-on-surface-variant line-through">{formatMXN(p.precioAntes)}</span>
+              <span className="font-medium text-on-surface">{formatMXN(p.precio)}</span>
+              <span className="text-body-sm text-on-surface-variant line-through">{formatMXN(p.precioAntes)}</span>
             </>
           ) : (
-            <span className="text-on-surface">{formatMXN(p.precio)}</span>
+            <span className="font-medium text-on-surface">{formatMXN(p.precio)}</span>
           )}
         </div>
         {p.colores.length > 1 && (

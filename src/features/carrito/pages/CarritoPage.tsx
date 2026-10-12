@@ -72,7 +72,7 @@ export default function CarritoPage() {
   }
 
   return (
-    <div className="pb-32 md:pb-0">
+    <div className="pb-12 md:pb-0">
       <h1 className="mb-4 font-marca text-headline-lg">Tu carrito</h1>
 
       <div className="grid gap-6 lg:grid-cols-[1fr_380px] lg:items-start">
@@ -238,9 +238,9 @@ export default function CarritoPage() {
         </aside>
       </div>
 
-      {/* CTA: barra fija al alcance del pulgar en móvil; en desktop vive en el flujo del aside. */}
+      {/* CTA: tarjeta flotante sobre el dock en móvil; en desktop vive en el flujo del aside. */}
       {esClienta && (
-        <div className="pb-safe fixed inset-x-0 bottom-16 z-30 border-t border-outline-variant/60 bg-surface-container-lowest p-3 md:static md:border-0 md:bg-transparent md:p-0">
+        <div className="fixed inset-x-3 bottom-[5.75rem] z-30 rounded-2xl border border-outline-variant/60 bg-surface-container-lowest p-2.5 shadow-lift md:static md:inset-auto md:rounded-none md:border-0 md:bg-transparent md:p-0 md:shadow-none">
           <Button
             size="lg"
             fullWidth

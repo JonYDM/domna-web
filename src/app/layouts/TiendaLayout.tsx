@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, Navigate, Outlet, useLocation, useNavigate } from "react-router-dom";
-import { ArrowLeftRight, ShoppingBag, Store } from "lucide-react";
-import { BottomNav, TopNav, type ItemNav } from "@/components/organisms/Navegacion";
+import { ShoppingBag, Store } from "lucide-react";
+import { TopNav, type ItemNav } from "@/components/organisms/Navegacion";
 import { PerfilMenu } from "@/components/organisms/PerfilMenu";
 import { EmptyState } from "@/components/molecules/EmptyState";
 import { ButtonLink } from "@/components/ui";
@@ -14,8 +14,9 @@ import { useAvisos } from "@/features/avisos/hooks";
 import { AvisosPopover } from "@/features/avisos/components/AvisosPopover";
 import { useSesion } from "@/features/auth/sesion";
 import { enCurso } from "@/lib/enums";
+import { DockTienda } from "./DockTienda";
 
-/** Portal de la clienta: header sólido (sin blur), nav inferior en móvil. */
+/** Portal de la clienta (app shell): encabezado sobrio, dock flotante en móvil, nav superior en escritorio. */
 export default function TiendaLayout() {
   const { sesion, salir } = useSesion();
   const navigate = useNavigate();
@@ -27,10 +28,10 @@ export default function TiendaLayout() {
   const avisos = useAvisos(sesion?.rol === "clienta" ? sesion.clientaId : undefined);
   const sinLeer = avisos.data?.filter((a) => !a.leido).length ?? 0;
 
+  // Navegación de escritorio. En móvil el dock reemplaza a este menú.
   const items: ItemNav[] = [
     { to: "/tienda", label: "Catálogo", icono: Store, end: true },
     { to: "/tienda/apartados", label: "Mis pedidos", icono: ShoppingBag, contador: activos },
-    { to: "/", label: "Cambiar rol", icono: ArrowLeftRight, end: true },
   ];
 
   const location = useLocation();
@@ -66,7 +67,9 @@ export default function TiendaLayout() {
             <TopNav items={items} />
             <div className="flex items-center gap-1">
               <BotonInstalar compacto className="hidden sm:inline-flex" />
-              <CarritoIcono />
+              <div className="hidden md:block">
+                <CarritoIcono />
+              </div>
               {sesion?.rol === "clienta" && sesion.clientaId && (
                 <PerfilMenu
                   nombre={clienta.data?.nombre ?? sesion.nombre}
@@ -91,10 +94,10 @@ export default function TiendaLayout() {
             </div>
           </div>
         </header>
-        <main className="mx-auto max-w-6xl px-4 pb-28 pt-4 md:pb-12">
+        <main className="mx-auto max-w-6xl px-4 pb-36 pt-4 md:pb-12">
           <Outlet />
         </main>
-        <BottomNav items={items} />
+        <DockTienda pedidosActivos={activos} />
       </div>
     </CarritoProvider>
   );

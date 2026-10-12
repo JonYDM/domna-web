@@ -3,7 +3,7 @@ import { Link, Outlet, useNavigate } from "react-router-dom";
 import { AlertTriangle, ClipboardList, LayoutDashboard, Menu, Package, Palette, Store, Tags, UserCog, Users } from "lucide-react";
 import { TopNav, type ItemNav } from "@/components/organisms/Navegacion";
 import { PerfilMenu } from "@/components/organisms/PerfilMenu";
-import { Dock } from "@/features/panel/components/Dock";
+import { Dock } from "@/components/organisms/Dock";
 import { FabFlotante } from "@/features/panel/components/FabFlotante";
 import { FabProvider } from "@/features/panel/FabContext";
 import { useMetricas } from "@/features/panel/hooks";
@@ -29,8 +29,9 @@ export default function DuenaLayout() {
   ];
   const mas: ItemNav = { to: "/app/mas", label: "Más", icono: Menu, menu: subMas };
   const items: ItemNav[] = [inicio, pedidos, inventario, clientas, mas];
-  // Dock móvil: Inicio va centrado y elevado (prop aparte); el resto se reparte en la fila.
-  const itemsDock = [pedidos, inventario, clientas];
+  // Dock móvil: Inicio va al centro, elevado; el resto se reparte a sus lados.
+  const dockIzquierda = [pedidos, inventario];
+  const dockDerecha = [clientas];
 
   return (
     <FabProvider>
@@ -88,7 +89,7 @@ export default function DuenaLayout() {
         <main className="mx-auto max-w-6xl px-4 pb-40 pt-5 md:pb-12">
           <Outlet />
         </main>
-        <Dock inicio={inicio} items={itemsDock} mas={{ label: mas.label, icono: mas.icono, items: subMas }} />
+        <Dock centro={inicio} izquierda={dockIzquierda} derecha={dockDerecha} mas={{ label: mas.label, icono: mas.icono, items: subMas }} />
         <FabFlotante />
       </div>
     </FabProvider>

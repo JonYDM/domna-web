@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { RefreshCw, SlidersHorizontal, Sparkles, X } from "lucide-react";
+import { SlidersHorizontal, X } from "lucide-react";
 import { BarraBusqueda } from "@/components/molecules/BarraBusqueda";
 import { EmptyState } from "@/components/molecules/EmptyState";
 import { Button, Chip } from "@/components/ui";
@@ -68,14 +68,10 @@ export default function CatalogoPage() {
     <div className="flex flex-col gap-4">
       <AvisoUrgente />
       {!hayFiltros && (
-        <section className="relative overflow-hidden rounded-3xl bg-primary-soft px-5 py-5">
-          <p className="text-label-sm uppercase text-primary-on-soft">
-            {sesion?.rol === "clienta" ? `Hola, ${sesion.nombre}` : config.data?.nombre}
-          </p>
-          <h1 className="mt-1 max-w-[15rem] font-marca text-headline-lg text-on-surface sm:max-w-md">
-            Cómprala hoy o apártala
-          </h1>
-          <p className="mt-1.5 max-w-[16rem] text-body-md text-on-surface-variant sm:max-w-md">
+        <section className="pt-1">
+          {sesion?.rol === "clienta" && <p className="text-body-md text-on-surface-variant">Hola, {sesion.nombre}</p>}
+          <h1 className="mt-0.5 font-marca text-headline-lg text-on-surface">Cómprala hoy o apártala</h1>
+          <p className="mt-1 max-w-md text-body-md text-on-surface-variant">
             Con el {config.data?.anticipoPct ?? 50}% te la guardamos {config.data?.vigenciaConAnticipoDias ?? 15} días.
           </p>
         </section>
@@ -103,7 +99,6 @@ export default function CatalogoPage() {
           <CarruselProductos
             titulo="Recién llegados"
             subtitulo={`Lo que entró en los últimos ${dias} días`}
-            icono={<Sparkles className="h-5 w-5 text-primary" aria-hidden />}
             productos={nuevos.data}
             cargando={nuevos.isPending}
             verTodo="?seccion=nuevos"
@@ -112,7 +107,6 @@ export default function CatalogoPage() {
           <CarruselProductos
             titulo="De vuelta en stock"
             subtitulo="Se habían agotado y ya regresaron"
-            icono={<RefreshCw className="h-5 w-5 text-primary" aria-hidden />}
             productos={reabastecidos.data}
             cargando={reabastecidos.isPending}
             verTodo="?seccion=reabastecidos"

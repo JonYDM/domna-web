@@ -77,39 +77,42 @@ function MasDock({ label, icono: Icono, items }: { label: string; icono: LucideI
 }
 
 /**
- * Dock flotante del panel de la dueña (mobile-first), efecto glassmorphism: isla translúcida con
- * blur fuerte y borde sutil, flotando sobre el contenido (no una barra sólida pegada al borde).
- * "Inicio" vive al centro, elevado, como ancla visual del dock. Solo navegación: el FAB de
- * "agregar" vive fuera, como botón flotante independiente (ver FabFlotante). Solo /app lo usa.
+ * Dock de navegación de la app (app shell, mobile-first), efecto glassmorphism: isla translúcida
+ * con blur fuerte y borde sutil, flotando sobre el contenido. El destino principal (`centro`)
+ * vive al medio, elevado, como ancla visual. `izquierda` y `derecha` reparten el resto; `mas`
+ * (opcional) agrega un menú con pantallas secundarias. Lo comparten el panel de la dueña y la
+ * tienda de la clienta. Solo navegación: el FAB de "agregar" es aparte (ver FabFlotante).
  */
 export function Dock({
-  inicio,
-  items,
+  centro,
+  izquierda,
+  derecha = [],
   mas,
 }: {
-  inicio: ItemDock;
-  items: ItemDock[];
-  mas: { label: string; icono: LucideIcon; items: SubItemDock[] };
+  centro: ItemDock;
+  izquierda: ItemDock[];
+  derecha?: ItemDock[];
+  mas?: { label: string; icono: LucideIcon; items: SubItemDock[] };
 }) {
   return (
     <nav aria-label="Navegación principal" className="pb-safe fixed inset-x-0 bottom-0 z-40 px-3 pb-3 md:hidden">
       <div className="relative mx-auto flex max-w-sm items-center justify-around rounded-[28px] border border-white/40 bg-white/55 px-1.5 shadow-lift backdrop-blur-xl backdrop-saturate-150">
-        {items.slice(0, 2).map((item) => (
+        {izquierda.map((item) => (
           <ItemBoton key={item.to} item={item} />
         ))}
 
-        {/* Hueco para Inicio, que flota elevado al centro. */}
+        {/* Hueco para el destino central, que flota elevado. */}
         <div className="w-16 shrink-0" aria-hidden />
 
-        {items.slice(2).map((item) => (
+        {derecha.map((item) => (
           <ItemBoton key={item.to} item={item} />
         ))}
-        <MasDock label={mas.label} icono={mas.icono} items={mas.items} />
+        {mas && <MasDock label={mas.label} icono={mas.icono} items={mas.items} />}
 
         <NavLink
-          to={inicio.to}
-          end={inicio.end}
-          aria-label={inicio.label}
+          to={centro.to}
+          end={centro.end}
+          aria-label={centro.label}
           className="absolute -top-6 left-1/2 flex -translate-x-1/2 flex-col items-center"
         >
           {({ isActive }) => (
@@ -120,10 +123,10 @@ export function Dock({
                   isActive ? "bg-primary-strong text-on-primary" : "bg-tinta text-on-primary",
                 )}
               >
-                <inicio.icono className="h-6 w-6" strokeWidth={2.2} aria-hidden />
+                <centro.icono className="h-6 w-6" strokeWidth={2.2} aria-hidden />
               </span>
               <span className={cn("mt-0.5 text-[10px] font-semibold leading-none", isActive ? "text-primary-strong" : "text-on-surface-variant")}>
-                {inicio.label}
+                {centro.label}
               </span>
             </>
           )}
