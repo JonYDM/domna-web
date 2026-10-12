@@ -3,7 +3,6 @@ import { NavLink, useLocation } from "react-router-dom";
 import * as Popover from "@radix-ui/react-popover";
 import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/cn";
-import { useFab } from "../fab";
 
 export interface ItemDock {
   to: string;
@@ -80,8 +79,8 @@ function MasDock({ label, icono: Icono, items }: { label: string; icono: LucideI
 /**
  * Dock flotante del panel de la dueña (mobile-first), efecto glassmorphism: isla translúcida con
  * blur fuerte y borde sutil, flotando sobre el contenido (no una barra sólida pegada al borde).
- * "Inicio" vive al centro, elevado, como ancla visual del dock. El FAB (acción "agregar" de la
- * pantalla activa) es un ítem más de la fila, a la derecha de Inicio. Solo /app usa este Dock.
+ * "Inicio" vive al centro, elevado, como ancla visual del dock. Solo navegación: el FAB de
+ * "agregar" vive fuera, como botón flotante independiente (ver FabFlotante). Solo /app lo usa.
  */
 export function Dock({
   inicio,
@@ -92,8 +91,6 @@ export function Dock({
   items: ItemDock[];
   mas: { label: string; icono: LucideIcon; items: SubItemDock[] };
 }) {
-  const fab = useFab();
-
   return (
     <nav aria-label="Navegación principal" className="pb-safe fixed inset-x-0 bottom-0 z-40 px-3 pb-3 md:hidden">
       <div className="relative mx-auto flex max-w-sm items-center justify-around rounded-[28px] border border-white/40 bg-white/55 px-1.5 shadow-lift backdrop-blur-xl backdrop-saturate-150">
@@ -107,7 +104,6 @@ export function Dock({
         {items.slice(2).map((item) => (
           <ItemBoton key={item.to} item={item} />
         ))}
-        {fab && <FabBoton icono={fab.icono} label={fab.label} onClick={fab.onClick} />}
         <MasDock label={mas.label} icono={mas.icono} items={mas.items} />
 
         <NavLink
@@ -134,20 +130,6 @@ export function Dock({
         </NavLink>
       </div>
     </nav>
-  );
-}
-
-function FabBoton({ icono: Icono, label, onClick }: { icono: LucideIcon; label: string; onClick: () => void }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-label={label}
-      className="flex h-12 w-12 flex-col items-center justify-center gap-0.5 rounded-full text-primary-strong transition-transform active:scale-95"
-    >
-      <Icono className="h-5 w-5" strokeWidth={2.2} aria-hidden />
-      <span className="text-[10px] font-semibold leading-none">{label}</span>
-    </button>
   );
 }
 

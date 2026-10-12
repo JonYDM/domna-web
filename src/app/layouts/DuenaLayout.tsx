@@ -4,6 +4,7 @@ import { AlertTriangle, ClipboardList, LayoutDashboard, Menu, Package, Palette, 
 import { TopNav, type ItemNav } from "@/components/organisms/Navegacion";
 import { PerfilMenu } from "@/components/organisms/PerfilMenu";
 import { Dock } from "@/features/panel/components/Dock";
+import { FabFlotante } from "@/features/panel/components/FabFlotante";
 import { FabProvider } from "@/features/panel/FabContext";
 import { useMetricas } from "@/features/panel/hooks";
 import { useSesion } from "@/features/auth/sesion";
@@ -88,6 +89,7 @@ export default function DuenaLayout() {
           <Outlet />
         </main>
         <Dock inicio={inicio} items={itemsDock} mas={{ label: mas.label, icono: mas.icono, items: subMas }} />
+        <FabFlotante />
       </div>
     </FabProvider>
   );
