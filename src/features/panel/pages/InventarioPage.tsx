@@ -5,6 +5,7 @@ import { PrendaImagen } from "@/components/ilustraciones/PrendaImagen";
 import { BarraBusqueda } from "@/components/molecules/BarraBusqueda";
 import { EmptyState } from "@/components/molecules/EmptyState";
 import { Badge, Chip, Skeleton } from "@/components/ui";
+import { cn } from "@/lib/cn";
 import { formatMXN } from "@/lib/format";
 import { mensajeError } from "@/lib/errores";
 import { STOCK_BAJO } from "@/lib/enums";
@@ -89,30 +90,47 @@ export default function InventarioPage() {
                 to={`${base}/inventario/${p.id}`}
                 className="flex gap-3 rounded-2xl bg-surface-container-lowest p-3 shadow-soft transition-shadow hover:shadow-lift"
               >
-                <PrendaImagen
-                  silueta={p.silueta}
-                  hex={p.colores[0].hex}
-                  url={p.imagenes.find((i) => i.colorId === p.colores[0].id)?.url ?? p.imagenes[0]?.url}
-                  alt=""
-                  className="w-20 shrink-0 rounded-xl"
-                />
+                <div className="relative shrink-0">
+                  <PrendaImagen
+                    silueta={p.silueta}
+                    hex={p.colores[0].hex}
+                    url={p.imagenes.find((i) => i.colorId === p.colores[0].id)?.url ?? p.imagenes[0]?.url}
+                    alt=""
+                    className={cn("w-20 rounded-xl", !p.activo && "opacity-50 grayscale")}
+                  />
+                  {!p.activo && (
+                    <span className="absolute left-1 top-1 rounded-full bg-tinta/85 px-1.5 py-0.5 text-[9px] font-bold uppercase text-on-primary backdrop-blur">
+                      Inactivo
+                    </span>
+                  )}
+                </div>
                 <div className="flex min-w-0 flex-1 flex-col">
                   <p className="truncate font-marca text-headline-sm leading-tight text-on-surface">{p.nombre}</p>
-                  <p className="mt-0.5 text-body-sm text-on-surface-variant">
-                    {p.colores.length} {p.colores.length === 1 ? "color" : "colores"}
-                  </p>
 
-                  {(!p.activo || p.disponibleTotal === 0 || p.disponibleTotal <= STOCK_BAJO || (p.activo && (p.nuevo || p.reabastecido))) && (
+                  {/* Colores reales (swatches), no "N colores" en texto. */}
+                  <div className="mt-1.5 flex items-center gap-1">
+                    {p.colores.slice(0, 5).map((c) => (
+                      <span
+                        key={c.id}
+                        className="h-4 w-4 shrink-0 rounded-full border border-on-surface/10"
+                        style={{ backgroundColor: c.hex }}
+                        title={c.nombre}
+                      />
+                    ))}
+                    {p.colores.length > 5 && (
+                      <span className="text-body-sm text-on-surface-variant">+{p.colores.length - 5}</span>
+                    )}
+                  </div>
+
+                  {p.activo && (p.disponibleTotal === 0 || p.disponibleTotal <= STOCK_BAJO || p.nuevo || p.reabastecido) && (
                     <div className="mt-1.5 flex flex-wrap gap-1.5">
-                      {!p.activo ? (
-                        <Badge>Inactivo</Badge>
-                      ) : p.disponibleTotal === 0 ? (
+                      {p.disponibleTotal === 0 ? (
                         <Badge tono="danger">Agotado</Badge>
                       ) : p.disponibleTotal <= STOCK_BAJO ? (
                         <Badge tono="warning">Stock bajo</Badge>
                       ) : null}
-                      {p.activo && p.nuevo && <Badge tono="primary">Nuevo</Badge>}
-                      {p.activo && p.reabastecido && <Badge tono="success">De vuelta</Badge>}
+                      {p.nuevo && <Badge tono="primary">Nuevo</Badge>}
+                      {p.reabastecido && <Badge tono="success">De vuelta</Badge>}
                     </div>
                   )}
 
