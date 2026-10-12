@@ -20,11 +20,16 @@ export default function InventarioPage() {
   // La cajera también usa el inventario (/caja); los enlaces respetan su base.
   const base = pathname.startsWith("/caja") ? "/caja" : "/app";
   const categoria = params.get("categoria") ?? undefined;
+  const soloInactivos = params.get("categoria") === "inactivos";
   const nuevo = params.get("nuevo") === "1";
   const [texto, setTexto] = useState("");
   const [busqueda, setBusqueda] = useState("");
   const timer = useRef<number>();
-  const productos = useProductos({ texto: busqueda || undefined, categoria, incluirInactivos: true });
+  const productos = useProductos({
+    texto: busqueda || undefined,
+    categoria: soloInactivos ? undefined : categoria,
+    incluirInactivos: true,
+  });
   const categorias = useCategorias();
 
   function param(k: string, v?: string) {
@@ -51,7 +56,7 @@ export default function InventarioPage() {
     timer.current = window.setTimeout(() => setBusqueda(v.trim()), 300);
   }
 
-  const lista = productos.data ?? [];
+  const lista = (productos.data ?? []).filter((p) => (soloInactivos ? !p.activo : p.activo));
 
   return (
     <div className="flex flex-col gap-4">
@@ -66,6 +71,9 @@ export default function InventarioPage() {
             {c.nombre}
           </Chip>
         ))}
+        <Chip activo={soloInactivos} onClick={() => param("categoria", "inactivos")}>
+          Inactivos
+        </Chip>
       </div>
 
       {productos.isError ? (
@@ -79,8 +87,14 @@ export default function InventarioPage() {
       ) : lista.length === 0 ? (
         <EmptyState
           expresion="curiosa"
-          titulo={busqueda || categoria ? "Sin resultados" : "Tu inventario está vacío"}
-          texto={busqueda || categoria ? "Prueba con otra búsqueda." : "Agrega tu primera prenda."}
+          titulo={soloInactivos ? "No tienes prendas inactivas" : busqueda || categoria ? "Sin resultados" : "Tu inventario está vacío"}
+          texto={
+            soloInactivos
+              ? "Las prendas que ocultes de la tienda aparecerán aquí."
+              : busqueda || categoria
+                ? "Prueba con otra búsqueda."
+                : "Agrega tu primera prenda."
+          }
         />
       ) : (
         <ul className="grid gap-2.5 md:grid-cols-2" style={{ opacity: productos.isPlaceholderData ? 0.6 : 1 }}>
