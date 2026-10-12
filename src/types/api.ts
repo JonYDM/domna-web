@@ -336,6 +336,7 @@ export interface Personal {
   sucursalCajera?: SucursalId;
   creada: string;
   ultimoAcceso?: string;
+  activo: boolean;
 }
 
 /** Alta de una cajera desde el panel de la dueña. */
@@ -343,6 +344,13 @@ export interface CrearCajeraInput {
   nombre: string;
   telefono: string;
   pin: string;
+  sucursal: SucursalId;
+}
+
+/** Edición de una cajera: nombre, teléfono y sucursal (el PIN se cambia aparte). */
+export interface EditarCajeraInput {
+  nombre: string;
+  telefono: string;
   sucursal: SucursalId;
 }
 

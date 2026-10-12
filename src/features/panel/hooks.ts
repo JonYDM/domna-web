@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { CambioStock, CategoriaInput, ColorInput, AgregarColorInput, CrearCajeraInput, EditarProductoInput, FiltroClientas, FiltroMetricas, MotivoAjuste, NuevaClientaInput, NuevoProductoInput, SucursalId } from "@/types/api";
+import type { CambioStock, CategoriaInput, ColorInput, AgregarColorInput, CrearCajeraInput, EditarCajeraInput, EditarProductoInput, FiltroClientas, FiltroMetricas, MotivoAjuste, NuevaClientaInput, NuevoProductoInput, SucursalId } from "@/types/api";
 import { qk } from "@/lib/queryKeys";
 import * as api from "@/mock/server";
 import * as cat from "@/api/catalogoSelector";
@@ -176,6 +176,32 @@ export function useCrearCajera() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (input: CrearCajeraInput) => personal.crearCajera(input),
+    onSuccess: () => qc.invalidateQueries({ queryKey: qk.personal() }),
+  });
+}
+
+export function useEditarCajera() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, input }: { id: string; input: EditarCajeraInput }) => personal.editarCajera(id, input),
+    onSuccess: () => qc.invalidateQueries({ queryKey: qk.personal() }),
+  });
+}
+
+export function useResetPinCajera() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, pin }: { id: string; pin: string }) => personal.resetPinCajera(id, pin),
+    onSuccess: () => qc.invalidateQueries({ queryKey: qk.personal() }),
+  });
+}
+
+/** Activa o desactiva el acceso de una cajera. */
+export function useActivarCajera() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, activo }: { id: string; activo: boolean }) =>
+      activo ? personal.activarCajera(id) : personal.desactivarCajera(id),
     onSuccess: () => qc.invalidateQueries({ queryKey: qk.personal() }),
   });
 }

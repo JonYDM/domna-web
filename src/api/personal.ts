@@ -1,4 +1,4 @@
-import type { CrearCajeraInput, Personal, Rol, SucursalId } from "@/types/api";
+import type { CrearCajeraInput, EditarCajeraInput, Personal, Rol, SucursalId } from "@/types/api";
 import { http } from "./http";
 
 /** DTO de clienta tal como lo devuelve el backend (igual al de auth.ts). */
@@ -10,6 +10,7 @@ interface ClientaDto {
   sucursalCajera?: string | null;
   creada: string;
   ultimoAcceso?: string | null;
+  activo: boolean;
 }
 
 function aPersonal(dto: ClientaDto): Personal {
@@ -21,6 +22,7 @@ function aPersonal(dto: ClientaDto): Personal {
     sucursalCajera: (dto.sucursalCajera as SucursalId) ?? undefined,
     creada: dto.creada,
     ultimoAcceso: dto.ultimoAcceso ?? undefined,
+    activo: dto.activo,
   };
 }
 
@@ -33,5 +35,29 @@ export async function listarPersonal(): Promise<Personal[]> {
 /** Da de alta una cajera: nombre, teléfono, PIN de 6 dígitos y su sucursal. */
 export async function crearCajera(input: CrearCajeraInput): Promise<Personal> {
   const dto = await http.post<ClientaDto>("/api/personal", input);
+  return aPersonal(dto);
+}
+
+/** Edita nombre, teléfono y sucursal de una cajera (p. ej. cambió de número). */
+export async function editarCajera(id: string, input: EditarCajeraInput): Promise<Personal> {
+  const dto = await http.put<ClientaDto>(`/api/personal/${id}`, input);
+  return aPersonal(dto);
+}
+
+/** Fija un PIN nuevo para una cajera que lo olvidó. */
+export async function resetPinCajera(id: string, pin: string): Promise<Personal> {
+  const dto = await http.post<ClientaDto>(`/api/personal/${id}/pin`, { pin });
+  return aPersonal(dto);
+}
+
+/** Bloquea el acceso de una cajera (conserva su historial). */
+export async function desactivarCajera(id: string): Promise<Personal> {
+  const dto = await http.post<ClientaDto>(`/api/personal/${id}/desactivar`);
+  return aPersonal(dto);
+}
+
+/** Restaura el acceso de una cajera desactivada. */
+export async function activarCajera(id: string): Promise<Personal> {
+  const dto = await http.post<ClientaDto>(`/api/personal/${id}/activar`);
   return aPersonal(dto);
 }
