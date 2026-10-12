@@ -72,48 +72,50 @@ export default function CarritoPage() {
   }
 
   return (
-    <div className="pb-24 md:pb-0">
+    <div className="pb-32 md:pb-0">
       <h1 className="mb-4 font-marca text-headline-lg">Tu carrito</h1>
 
       <div className="grid gap-6 lg:grid-cols-[1fr_380px] lg:items-start">
         {/* Líneas */}
         <ul className="flex flex-col gap-2">
           {lineas.map((l) => (
-            <li key={l.varianteId} className="flex items-center gap-3 rounded-2xl bg-surface-container-lowest p-3 shadow-soft">
-              <PrendaImagen silueta={l.silueta} hex={l.colorHex} alt="" className="w-16 shrink-0 rounded-xl" />
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-label-lg">{l.nombre}</p>
-                <p className="text-body-sm text-on-surface-variant">
-                  {l.colorNombre} · Talla {l.talla}
-                </p>
-                <div className="mt-0.5 flex items-center gap-2">
-                  <p className="tabular text-body-md font-semibold">{formatMXN(l.precio)}</p>
-                  {!l.permiteApartado && <Badge>Solo de contado</Badge>}
+            <li key={l.varianteId} className="flex flex-col gap-3 rounded-2xl bg-surface-container-lowest p-3 shadow-soft sm:flex-row sm:items-center">
+              <div className="flex gap-3">
+                <PrendaImagen silueta={l.silueta} hex={l.colorHex} alt="" className="w-16 shrink-0 rounded-xl" />
+                <div className="min-w-0 flex-1">
+                  <p className="line-clamp-2 text-label-lg leading-snug">{l.nombre}</p>
+                  <p className="text-body-sm text-on-surface-variant">
+                    {l.colorNombre} · Talla {l.talla}
+                  </p>
+                  <div className="mt-0.5 flex items-center gap-2">
+                    <p className="tabular text-body-md font-semibold">{formatMXN(l.precio)}</p>
+                    {!l.permiteApartado && <Badge>Solo de contado</Badge>}
+                  </div>
                 </div>
               </div>
-              <div className="flex flex-col items-end gap-2">
+              <div className="flex items-center justify-between gap-2 sm:flex-col sm:items-end">
                 <button
                   type="button"
                   onClick={() => quitar(l.varianteId)}
-                  className="grid h-8 w-8 place-items-center rounded-full text-on-surface-variant hover:bg-surface-container"
+                  className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-on-surface-variant hover:bg-surface-container"
                   aria-label={`Quitar ${l.nombre}`}
                 >
                   <Trash2 className="h-4 w-4" aria-hidden />
                 </button>
-                <div className="flex items-center rounded-lg border border-outline-variant">
+                <div className="flex shrink-0 items-center rounded-lg border border-outline-variant">
                   <button
                     type="button"
                     onClick={() => cambiarCantidad(l.varianteId, -1)}
-                    className="grid h-8 w-8 place-items-center text-on-surface-variant"
+                    className="grid h-9 w-9 place-items-center text-on-surface-variant"
                     aria-label={`Quitar uno de ${l.nombre}`}
                   >
                     <Minus className="h-4 w-4" aria-hidden />
                   </button>
-                  <span className="tabular w-6 text-center text-label-md">{l.cantidad}</span>
+                  <span className="tabular w-7 text-center text-label-md">{l.cantidad}</span>
                   <button
                     type="button"
                     onClick={() => cambiarCantidad(l.varianteId, 1)}
-                    className="grid h-8 w-8 place-items-center text-on-surface-variant"
+                    className="grid h-9 w-9 place-items-center text-on-surface-variant"
                     aria-label={`Agregar uno de ${l.nombre}`}
                   >
                     <Plus className="h-4 w-4" aria-hidden />
@@ -179,9 +181,11 @@ export default function CarritoPage() {
 
               <section className="rounded-2xl bg-surface-container-lowest p-4 shadow-soft">
                 <h2 className="mb-2 text-label-lg">¿Dónde lo recoges?</h2>
-                <div role="radiogroup" className="grid grid-cols-2 gap-2">
+                <div role="radiogroup" aria-label="Sucursal" className="flex flex-wrap gap-2">
                   {cfg?.sucursales.map((s) => (
-                    <OpcionRadio key={s.id} activo={entrega === s.id} onClick={() => setEntrega(s.id)} titulo={s.nombre.replace("Boutique ", "")} detalle="" />
+                    <Chip key={s.id} activo={entrega === s.id} onClick={() => setEntrega(s.id)}>
+                      {s.nombre.replace("Boutique ", "")}
+                    </Chip>
                   ))}
                 </div>
                 {c?.requiereTraslado && (
@@ -223,25 +227,6 @@ export default function CarritoPage() {
                 )}
               </section>
 
-              <Button
-                size="lg"
-                fullWidth
-                variant={compra ? "tinta" : "primary"}
-                loading={crear.isPending}
-                disabled={!c || !c.sucursalOrigen}
-                onClick={confirmar}
-              >
-                {!c
-                  ? "Calculando…"
-                  : !c.sucursalOrigen
-                    ? "Sin stock suficiente"
-                    : compra
-                      ? `Comprar y pagar ${formatMXN(c.anticipo)}`
-                      : c.anticipo > 0
-                        ? `Apartar y pagar ${formatMXN(c.anticipo)}`
-                        : "Apartar sin anticipo"}
-              </Button>
-
               {!compra && (
                 <p className="text-body-sm text-on-surface-variant">
                   Si el apartado vence sin liquidarse, las prendas regresan a la tienda y se suma un cargo de{" "}
@@ -252,6 +237,30 @@ export default function CarritoPage() {
           )}
         </aside>
       </div>
+
+      {/* CTA: barra fija al alcance del pulgar en móvil; en desktop vive en el flujo del aside. */}
+      {esClienta && (
+        <div className="pb-safe fixed inset-x-0 bottom-16 z-30 border-t border-outline-variant/60 bg-surface-container-lowest p-3 md:static md:border-0 md:bg-transparent md:p-0">
+          <Button
+            size="lg"
+            fullWidth
+            variant={compra ? "tinta" : "primary"}
+            loading={crear.isPending}
+            disabled={!c || !c.sucursalOrigen}
+            onClick={confirmar}
+          >
+            {!c
+              ? "Calculando…"
+              : !c.sucursalOrigen
+                ? "Sin stock suficiente"
+                : compra
+                  ? `Comprar y pagar ${formatMXN(c.anticipo)}`
+                  : c.anticipo > 0
+                    ? `Apartar y pagar ${formatMXN(c.anticipo)}`
+                    : "Apartar sin anticipo"}
+          </Button>
+        </div>
+      )}
 
       <div className="mt-6">
         <Link to="/tienda" className="inline-flex items-center gap-1.5 text-label-lg text-primary-strong hover:underline">
