@@ -28,8 +28,8 @@ export default function DuenaLayout() {
   ];
   const mas: ItemNav = { to: "/app/mas", label: "Más", icono: Menu, menu: subMas };
   const items: ItemNav[] = [inicio, pedidos, inventario, clientas, mas];
-  // Dock móvil: Pedidos e Inicio a la izquierda del FAB, Inventario y Clientas a la derecha.
-  const itemsDock = [pedidos, inicio, inventario, clientas];
+  // Dock móvil: Inicio va centrado y elevado (prop aparte); el resto se reparte en la fila.
+  const itemsDock = [pedidos, inventario, clientas];
 
   return (
     <FabProvider>
@@ -87,7 +87,7 @@ export default function DuenaLayout() {
         <main className="mx-auto max-w-6xl px-4 pb-32 pt-5 md:pb-12">
           <Outlet />
         </main>
-        <Dock items={itemsDock} mas={{ label: mas.label, icono: mas.icono, items: subMas }} base="/app" />
+        <Dock inicio={inicio} items={itemsDock} mas={{ label: mas.label, icono: mas.icono, items: subMas }} />
       </div>
     </FabProvider>
   );

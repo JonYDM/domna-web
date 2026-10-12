@@ -2,10 +2,8 @@ import { useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import * as Popover from "@radix-ui/react-popover";
 import type { LucideIcon } from "lucide-react";
-import { Plus } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { useFab } from "../fab";
-import { BusquedaDock } from "./BusquedaDock";
 
 export interface ItemDock {
   to: string;
@@ -80,42 +78,76 @@ function MasDock({ label, icono: Icono, items }: { label: string; icono: LucideI
 }
 
 /**
- * Dock flotante del panel de la dueña (mobile-first): isla elevada del borde con blur, no una
- * barra pegada al borde. El FAB central (acción "agregar" de la pantalla activa) sobresale por
- * encima; la lupa abre el buscador en popover. Solo /app usa este Dock (no toca BottomNav).
+ * Dock flotante del panel de la dueña (mobile-first), efecto glassmorphism: isla translúcida con
+ * blur fuerte y borde sutil, flotando sobre el contenido (no una barra sólida pegada al borde).
+ * "Inicio" vive al centro, elevado, como ancla visual del dock. El FAB (acción "agregar" de la
+ * pantalla activa) es un ítem más de la fila, a la derecha de Inicio. Solo /app usa este Dock.
  */
-export function Dock({ items, mas, base }: { items: ItemDock[]; mas: { label: string; icono: LucideIcon; items: SubItemDock[] }; base: string }) {
+export function Dock({
+  inicio,
+  items,
+  mas,
+}: {
+  inicio: ItemDock;
+  items: ItemDock[];
+  mas: { label: string; icono: LucideIcon; items: SubItemDock[] };
+}) {
   const fab = useFab();
-  const FabIcono = fab?.icono ?? Plus;
 
   return (
     <nav aria-label="Navegación principal" className="pb-safe fixed inset-x-0 bottom-0 z-40 px-3 pb-3 md:hidden">
-      <div className="relative mx-auto flex max-w-sm items-center justify-around rounded-[28px] border border-outline-variant/60 bg-surface-container-lowest/90 px-1.5 shadow-lift backdrop-blur-md">
+      <div className="relative mx-auto flex max-w-sm items-center justify-around rounded-[28px] border border-white/40 bg-white/55 px-1.5 shadow-lift backdrop-blur-xl backdrop-saturate-150">
         {items.slice(0, 2).map((item) => (
           <ItemBoton key={item.to} item={item} />
         ))}
 
-        {/* Hueco para el FAB, que flota encima. */}
+        {/* Hueco para Inicio, que flota elevado al centro. */}
         <div className="w-16 shrink-0" aria-hidden />
 
         {items.slice(2).map((item) => (
           <ItemBoton key={item.to} item={item} />
         ))}
-        <BusquedaDock base={base} />
+        {fab && <FabBoton icono={fab.icono} label={fab.label} onClick={fab.onClick} />}
         <MasDock label={mas.label} icono={mas.icono} items={mas.items} />
 
-        {fab && (
-          <button
-            type="button"
-            onClick={fab.onClick}
-            aria-label={fab.label}
-            className="absolute -top-6 left-1/2 grid h-14 w-14 -translate-x-1/2 place-items-center rounded-full bg-primary-strong text-on-primary shadow-primary-glow transition-transform active:scale-95"
-          >
-            <FabIcono className="h-6 w-6" strokeWidth={2.2} aria-hidden />
-          </button>
-        )}
+        <NavLink
+          to={inicio.to}
+          end={inicio.end}
+          aria-label={inicio.label}
+          className="absolute -top-6 left-1/2 flex -translate-x-1/2 flex-col items-center"
+        >
+          {({ isActive }) => (
+            <>
+              <span
+                className={cn(
+                  "grid h-14 w-14 place-items-center rounded-full shadow-primary-glow ring-4 ring-white/50 backdrop-blur-xl transition-transform active:scale-95",
+                  isActive ? "bg-primary-strong text-on-primary" : "bg-tinta text-on-primary",
+                )}
+              >
+                <inicio.icono className="h-6 w-6" strokeWidth={2.2} aria-hidden />
+              </span>
+              <span className={cn("mt-0.5 text-[10px] font-semibold leading-none", isActive ? "text-primary-strong" : "text-on-surface-variant")}>
+                {inicio.label}
+              </span>
+            </>
+          )}
+        </NavLink>
       </div>
     </nav>
+  );
+}
+
+function FabBoton({ icono: Icono, label, onClick }: { icono: LucideIcon; label: string; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={label}
+      className="flex h-12 w-12 flex-col items-center justify-center gap-0.5 rounded-full text-primary-strong transition-transform active:scale-95"
+    >
+      <Icono className="h-5 w-5" strokeWidth={2.2} aria-hidden />
+      <span className="text-[10px] font-semibold leading-none">{label}</span>
+    </button>
   );
 }
 
