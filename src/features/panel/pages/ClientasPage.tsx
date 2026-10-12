@@ -1,13 +1,14 @@
-import { memo, useRef, useState } from "react";
+import { memo, useCallback, useRef, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { ChevronRight, UserPlus } from "lucide-react";
 import type { ClientaResumen, FiltroClientas } from "@/types/api";
 import { BarraBusqueda } from "@/components/molecules/BarraBusqueda";
 import { EmptyState } from "@/components/molecules/EmptyState";
-import { Avatar, Badge, Button, Chip, Skeleton } from "@/components/ui";
+import { Avatar, Badge, Chip, Skeleton } from "@/components/ui";
 import { formatHace, formatMXN } from "@/lib/format";
 import { mensajeError } from "@/lib/errores";
 import { useClientas, useResumenClientas } from "../hooks";
+import { useRegistrarFab } from "../fab";
 import { NuevaClientaDrawer } from "../components/NuevaClientaDrawer";
 import { OrigenBadge } from "../components/OrigenBadge";
 
@@ -48,19 +49,22 @@ export default function ClientasPage() {
     timer.current = window.setTimeout(() => setBusqueda(v.trim()), 300);
   }
 
+  const abrirNueva = useCallback(() => {
+    setParams((p) => {
+      const n = new URLSearchParams(p);
+      n.set("nueva", "1");
+      return n;
+    }, { replace: true });
+  }, [setParams]);
+  useRegistrarFab("Nueva clienta", UserPlus, abrirNueva);
+
   const r = resumen.data;
   const lista = clientas.data ?? [];
   const pctRegistro = r && r.total ? Math.round((r.porOrigen.registro / r.total) * 100) : 0;
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between gap-3">
-        <h1 className="font-marca text-headline-lg">Clientas</h1>
-        <Button size="sm" onClick={() => param("nueva", "1")}>
-          <UserPlus className="h-4 w-4" aria-hidden />
-          Nueva
-        </Button>
-      </div>
+      <h1 className="font-marca text-headline-lg">Clientas</h1>
 
       {!r ? (
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">

@@ -1,14 +1,15 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import * as Popover from "@radix-ui/react-popover";
 import toast from "react-hot-toast";
 import { KeyRound, MoreVertical, Pencil, Power, UserPlus } from "lucide-react";
 import type { Personal } from "@/types/api";
 import { EmptyState } from "@/components/molecules/EmptyState";
-import { Avatar, Badge, Button, Skeleton } from "@/components/ui";
+import { Avatar, Badge, Skeleton } from "@/components/ui";
 import { formatHace } from "@/lib/format";
 import { mensajeError } from "@/lib/errores";
 import { cn } from "@/lib/cn";
 import { useActivarCajera, usePersonal } from "../hooks";
+import { useRegistrarFab } from "../fab";
 import { NuevaCajeraDrawer } from "../components/NuevaCajeraDrawer";
 import { ResetPinDrawer } from "../components/ResetPinDrawer";
 
@@ -22,17 +23,14 @@ export default function PersonalPage() {
   const [resetPin, setResetPin] = useState<Personal | null>(null);
   const lista = personal.data ?? [];
 
+  const abrirAlta = useCallback(() => setAlta(true), []);
+  useRegistrarFab("Nueva cajera", UserPlus, abrirAlta);
+
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <h1 className="font-marca text-headline-lg">Personal</h1>
-          <p className="text-body-sm text-on-surface-variant">Quién tiene acceso a tu tienda y a la caja.</p>
-        </div>
-        <Button size="sm" onClick={() => setAlta(true)}>
-          <UserPlus className="h-4 w-4" aria-hidden />
-          Nueva cajera
-        </Button>
+      <div>
+        <h1 className="font-marca text-headline-lg">Personal</h1>
+        <p className="text-body-sm text-on-surface-variant">Quién tiene acceso a tu tienda y a la caja.</p>
       </div>
 
       {personal.isError ? (

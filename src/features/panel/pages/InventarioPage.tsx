@@ -1,14 +1,15 @@
-import { useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { ChevronRight, Plus } from "lucide-react";
 import { PrendaImagen } from "@/components/ilustraciones/PrendaImagen";
 import { BarraBusqueda } from "@/components/molecules/BarraBusqueda";
 import { EmptyState } from "@/components/molecules/EmptyState";
-import { Badge, Button, Chip, Skeleton } from "@/components/ui";
+import { Badge, Chip, Skeleton } from "@/components/ui";
 import { formatMXN } from "@/lib/format";
 import { mensajeError } from "@/lib/errores";
 import { STOCK_BAJO } from "@/lib/enums";
 import { useCategorias, useProductos } from "@/features/catalogo/hooks";
+import { useRegistrarFab } from "../fab";
 import { NuevoProductoDrawer } from "../components/NuevoProductoDrawer";
 
 export default function InventarioPage() {
@@ -34,6 +35,15 @@ export default function InventarioPage() {
     }, { replace: true });
   }
 
+  const abrirNuevo = useCallback(() => {
+    setParams((p) => {
+      const n = new URLSearchParams(p);
+      n.set("nuevo", "1");
+      return n;
+    }, { replace: true });
+  }, [setParams]);
+  useRegistrarFab("Nuevo", Plus, abrirNuevo);
+
   function onTexto(v: string) {
     setTexto(v);
     window.clearTimeout(timer.current);
@@ -44,13 +54,7 @@ export default function InventarioPage() {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between gap-3">
-        <h1 className="font-marca text-headline-lg">Inventario</h1>
-        <Button size="sm" onClick={() => param("nuevo", "1")}>
-          <Plus className="h-4 w-4" aria-hidden />
-          Nuevo
-        </Button>
-      </div>
+      <h1 className="font-marca text-headline-lg">Inventario</h1>
       <BarraBusqueda valor={texto} onChange={onTexto} placeholder="Buscar prenda o color" />
       <div className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4" role="toolbar" aria-label="Categorías">
         <Chip activo={!categoria} onClick={() => param("categoria")}>
