@@ -218,7 +218,7 @@ export default function ProductoPage() {
       </div>
 
       {/* CTA flotante sobre el dock en móvil */}
-      <div className="fixed inset-x-3 bottom-[5.75rem] z-30 rounded-2xl border border-outline-variant/60 bg-surface-container-lowest p-2.5 shadow-lift md:hidden">
+      <div className="fixed inset-x-3 bottom-[calc(var(--dock-bottom)_+_5.25rem)] z-30 rounded-2xl border border-outline-variant/60 bg-surface-container-lowest p-2.5 shadow-lift md:hidden">
         <Acciones talla={talla} agotada={tallaAgotada} precio={p.precio} anticipo={anticipo} permiteApartado={p.permiteApartado} onAccion={setAccion} onAgregarCarrito={agregarAlCarrito} />
       </div>
 

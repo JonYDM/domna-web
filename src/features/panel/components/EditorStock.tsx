@@ -191,7 +191,7 @@ export function EditorStock({ producto: p }: { producto: ProductoDetalle }) {
 
       {/* Barra de cambios pendientes */}
       {hayCambios && (
-        <div className="fixed inset-x-0 bottom-[6.25rem] z-30 px-4 md:bottom-6">
+        <div className="fixed inset-x-0 bottom-[calc(var(--dock-bottom)_+_5.25rem)] z-30 px-4 md:bottom-6">
           <div className="anim-sube mx-auto flex max-w-3xl items-center gap-2 rounded-2xl bg-tinta p-2 pl-4 text-on-primary shadow-float">
             <span className="min-w-0 flex-1 text-label-lg">
               {cambios.length} {cambios.length === 1 ? "cambio" : "cambios"}

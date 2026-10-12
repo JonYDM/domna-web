@@ -15,7 +15,7 @@ export function FabFlotante() {
       type="button"
       onClick={fab.onClick}
       aria-label={fab.label}
-      className="fixed bottom-24 right-4 z-40 grid h-14 w-14 place-items-center rounded-full bg-primary-strong text-on-primary shadow-lift transition-all active:scale-95 md:hidden"
+      className="fixed bottom-[calc(var(--dock-bottom)_+_4.25rem)] right-4 z-40 grid h-14 w-14 place-items-center rounded-full bg-primary-strong text-on-primary shadow-lift transition-all active:scale-95 md:hidden"
     >
       <Icono className="h-6 w-6" aria-hidden />
     </button>

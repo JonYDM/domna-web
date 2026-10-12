@@ -95,8 +95,11 @@ export function Dock({
   mas?: { label: string; icono: LucideIcon; items: SubItemDock[] };
 }) {
   return (
-    <nav aria-label="Navegación principal" className="pb-safe fixed inset-x-0 bottom-0 z-40 px-3 pb-3 md:hidden">
-      <div className="relative mx-auto flex max-w-sm items-center justify-around rounded-[28px] border border-white/40 bg-white/55 px-1.5 shadow-lift backdrop-blur-xl backdrop-saturate-150">
+    <nav
+      aria-label="Navegación principal"
+      className="pointer-events-none fixed inset-x-0 bottom-[var(--dock-bottom)] z-40 flex justify-center px-5 md:hidden"
+    >
+      <div className="pointer-events-auto relative flex w-fit min-w-[17rem] max-w-full items-center justify-around gap-1 rounded-[28px] border border-white/40 bg-white/55 px-3 shadow-lift backdrop-blur-xl backdrop-saturate-150">
         {izquierda.map((item) => (
           <ItemBoton key={item.to} item={item} />
         ))}

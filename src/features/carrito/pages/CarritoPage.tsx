@@ -240,7 +240,7 @@ export default function CarritoPage() {
 
       {/* CTA: tarjeta flotante sobre el dock en móvil; en desktop vive en el flujo del aside. */}
       {esClienta && (
-        <div className="fixed inset-x-3 bottom-[5.75rem] z-30 rounded-2xl border border-outline-variant/60 bg-surface-container-lowest p-2.5 shadow-lift md:static md:inset-auto md:rounded-none md:border-0 md:bg-transparent md:p-0 md:shadow-none">
+        <div className="fixed inset-x-3 bottom-[calc(var(--dock-bottom)_+_5.25rem)] z-30 rounded-2xl border border-outline-variant/60 bg-surface-container-lowest p-2.5 shadow-lift md:static md:inset-auto md:rounded-none md:border-0 md:bg-transparent md:p-0 md:shadow-none">
           <Button
             size="lg"
             fullWidth

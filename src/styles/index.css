@@ -5,6 +5,14 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    /*
+     * Separación del dock respecto al borde inferior: nunca menos de 12 px y, en iPhone con
+     * indicador de inicio (o Safari con su barra abajo), la zona segura + 4 px. El dock flota
+     * sobre esa distancia en vez de pegarse al borde. Lo reutilizan las barras que van encima.
+     */
+    --dock-bottom: max(0.75rem, calc(env(safe-area-inset-bottom, 0px) + 0.25rem));
+  }
   html,
   body,
   #root {
