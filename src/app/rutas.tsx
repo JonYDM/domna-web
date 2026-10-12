@@ -26,6 +26,7 @@ export const ApartadoDuenaPage = lazy(() => import("@/features/panel/pages/Apart
 export const InventarioPage = lazy(() => import("@/features/panel/pages/InventarioPage"));
 export const ProductoDuenaPage = lazy(() => import("@/features/panel/pages/ProductoDuenaPage"));
 export const DemoPage = lazy(() => import("@/features/panel/pages/DemoPage"));
+export const PersonalPage = lazy(() => import("@/features/panel/pages/PersonalPage"));
 export const CategoriasPage = lazy(() => import("@/features/panel/pages/CategoriasPage"));
 export const ColoresPage = lazy(() => import("@/features/panel/pages/ColoresPage"));
 

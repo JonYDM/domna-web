@@ -327,6 +327,25 @@ export interface ResumenClientas {
   porOrigen: Record<OrigenClienta, number>;
 }
 
+/** Miembro del equipo con acceso al sistema: la dueña o una cajera (panel Personal). */
+export interface Personal {
+  id: string;
+  nombre: string;
+  telefono: string;
+  rol: Rol;
+  sucursalCajera?: SucursalId;
+  creada: string;
+  ultimoAcceso?: string;
+}
+
+/** Alta de una cajera desde el panel de la dueña. */
+export interface CrearCajeraInput {
+  nombre: string;
+  telefono: string;
+  pin: string;
+  sucursal: SucursalId;
+}
+
 export interface NuevaClientaInput {
   nombre: string;
   apellidos: string;

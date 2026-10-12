@@ -1,8 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { CambioStock, CategoriaInput, ColorInput, AgregarColorInput, EditarProductoInput, FiltroClientas, FiltroMetricas, MotivoAjuste, NuevaClientaInput, NuevoProductoInput, SucursalId } from "@/types/api";
+import type { CambioStock, CategoriaInput, ColorInput, AgregarColorInput, CrearCajeraInput, EditarProductoInput, FiltroClientas, FiltroMetricas, MotivoAjuste, NuevaClientaInput, NuevoProductoInput, SucursalId } from "@/types/api";
 import { qk } from "@/lib/queryKeys";
 import * as api from "@/mock/server";
 import * as cat from "@/api/catalogoSelector";
+import * as personal from "@/api/personal";
 
 export function useMetricas(filtro: FiltroMetricas = {}) {
   const sucursal = filtro.sucursal ?? "todas";
@@ -163,6 +164,20 @@ export function useControlesDemo() {
     reiniciar: useMutation({ mutationFn: api.demoReiniciar, onSuccess: todo }),
     catalogoPublico: useMutation({ mutationFn: (p: boolean) => api.demoCatalogoPublico(p), onSuccess: todo }),
   };
+}
+
+// ── Personal (equipo): la dueña ve el staff y da de alta cajeras ──
+
+export function usePersonal() {
+  return useQuery({ queryKey: qk.personal(), queryFn: personal.listarPersonal, staleTime: 30_000 });
+}
+
+export function useCrearCajera() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: CrearCajeraInput) => personal.crearCajera(input),
+    onSuccess: () => qc.invalidateQueries({ queryKey: qk.personal() }),
+  });
 }
 
 // ── Catálogo de atributos (categorías y colores) ──

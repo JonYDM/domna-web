@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, Outlet, useNavigate } from "react-router-dom";
-import { AlertTriangle, ClipboardList, FlaskConical, LayoutDashboard, Menu, Package, Palette, Store, Tags, Users } from "lucide-react";
+import { AlertTriangle, ClipboardList, LayoutDashboard, Menu, Package, Palette, Store, Tags, UserCog, Users } from "lucide-react";
 import { BottomNav, TopNav, type ItemNav } from "@/components/organisms/Navegacion";
 import { PerfilMenu } from "@/components/organisms/PerfilMenu";
 import { useMetricas } from "@/features/panel/hooks";
@@ -27,7 +27,7 @@ export default function DuenaLayout() {
     menu: [
       { to: "/app/categorias", label: "Categorías", descripcion: "Y sus tallas", icono: Tags },
       { to: "/app/colores", label: "Colores", descripcion: "Tu catálogo de colores", icono: Palette },
-      { to: "/app/demo", label: "Controles de la demo", descripcion: "Reloj, pausa y reinicio", icono: FlaskConical },
+      { to: "/app/personal", label: "Personal", descripcion: "Agrega cajeras y da acceso a tu equipo", icono: UserCog },
     ],
   };
   const items: ItemNav[] = [inicio, pedidos, inventario, clientas, mas];
