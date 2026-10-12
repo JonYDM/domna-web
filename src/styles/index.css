@@ -11,6 +11,17 @@
      * indicador de inicio (o Safari con su barra abajo), la zona segura + 4 px. El dock flota
      * sobre esa distancia en vez de pegarse al borde. Lo reutilizan las barras que van encima.
      */
+    /*
+     * Paleta de marca (white-label), como canales RGB. Valores por defecto: rosa de Jesly (matiz 331).
+     * Una boutique los sustituye con aplicarPaletaMarca() (src/lib/paletaMarca.ts); no usar hex sueltos.
+     */
+    --marca: 217 18 114; /* #D91272 */
+    --marca-strong: 199 10 101; /* #C70A65 */
+    --marca-hover: 158 10 82; /* #9E0A52 */
+    --marca-soft: 251 233 242; /* #FBE9F2 */
+    --marca-rubor: 255 179 215; /* #FFB3D7 */
+    --marca-on-soft: 129 14 69; /* #810E45 */
+    --marca-orbe: 255 34 140; /* #FF228C */
     --dock-bottom: max(0.75rem, calc(env(safe-area-inset-bottom, 0px) + 0.25rem));
   }
   html,
@@ -27,7 +38,7 @@
     text-rendering: optimizeLegibility;
   }
   ::selection {
-    background: rgba(224, 52, 75, 0.18);
+    background: rgb(var(--marca) / 0.18);
   }
   * {
     border-color: theme("colors.outline-variant");
@@ -58,7 +69,7 @@
   }
   /* Fondo de lunares sutil (motivo de marca). */
   .lunares {
-    background-image: radial-gradient(rgba(224, 52, 75, 0.09) 2.5px, transparent 3px);
+    background-image: radial-gradient(rgb(var(--marca) / 0.09) 2.5px, transparent 3px);
     background-size: 22px 22px;
   }
   .pb-safe {
@@ -142,14 +153,10 @@
   animation: sube 360ms ease-out both;
 }
 
-/* Esfera difuminada de marca (app shell): rosa pleno al centro, se desvanece hacia afuera. */
-.orbe-marca {
-  background: radial-gradient(
-    closest-side,
-    theme("colors.orbe") 0%,
-    theme("colors.orbe") 52%,
-    transparent 100%
-  );
+/* Halo de marca (app shell): cápsula rosa con desenfoque, pegada al nombre. */
+.halo-marca {
+  background: rgb(var(--marca-orbe));
+  filter: blur(12px);
 }
 /* ── Impresión de etiquetas QR ── */
 @media print {

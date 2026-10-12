@@ -59,9 +59,9 @@ export default function TiendaLayout() {
   return (
     <CarritoProvider clientaId={sesion?.rol === "clienta" ? sesion.clientaId : undefined}>
       <div className="relative isolate min-h-dvh bg-surface">
-        <FondoShell nombre={nombreBoutique} />
         <header className="sticky top-0 z-30">
           <CristalEncabezado />
+          <FondoShell nombre={nombreBoutique} />
           <div className="relative mx-auto flex h-16 max-w-6xl items-center justify-between gap-3 px-4">
             <Link to="/tienda" className="flex min-w-0 items-center gap-2" aria-label={`${nombreBoutique}, ir al catálogo`}>
               <MarcaNombre nombre={nombreBoutique} />

@@ -20,18 +20,20 @@ export default {
         "on-surface-variant": "#5C5560", // texto secundario (contraste AA sobre crema)
         outline: "#8D8590", // placeholders e íconos inactivos
         "outline-variant": "#DDD5D2", // bordes suaves
-        // ── Marca ──
+        // ── Marca (white-label) ──
+        // Se leen de variables CSS (src/styles/index.css) como canales RGB, para que cada boutique
+        // pueda sustituirlos en ejecución (src/lib/paletaMarca.ts) y siga funcionando `bg-primary/10`.
         primary: {
-          DEFAULT: "#E0344B", // rojo Domna: acentos, íconos, lunares
-          strong: "#CC2D44", // fondo de botones con texto blanco (contraste AA 4.9:1)
-          hover: "#B02639",
-          soft: "#F5E9EA", // rosa ceniza: fondos suaves, chips activos (menos candy que antes)
-          rubor: "#FFB8C2", // rosa rubor: detalles
-          "on-soft": "#9B1C30", // texto sobre primary-soft
+          DEFAULT: "rgb(var(--marca) / <alpha-value>)", // acentos, íconos, enlaces (AA sobre crema)
+          strong: "rgb(var(--marca-strong) / <alpha-value>)", // fondo de botones con texto blanco (AA)
+          hover: "rgb(var(--marca-hover) / <alpha-value>)",
+          soft: "rgb(var(--marca-soft) / <alpha-value>)", // fondos suaves, chips activos
+          rubor: "rgb(var(--marca-rubor) / <alpha-value>)", // detalles
+          "on-soft": "rgb(var(--marca-on-soft) / <alpha-value>)", // texto sobre primary-soft
         },
         "on-primary": "#FFFFFF",
-        // Color de marca de la boutique (el rosa del ícono de la PWA). Hoy fijo; por boutique vendrá de la config.
-        orbe: "#FF228C",
+        // Color de la marca tal cual (el del ícono de la PWA): halo del encabezado.
+        orbe: "rgb(var(--marca-orbe) / <alpha-value>)",
         tinta: {
           DEFAULT: "#1F1D21", // botón secundario elegante (no negro puro, alineado a on-surface)
           hover: "#3A353C",
@@ -69,7 +71,7 @@ export default {
         soft: "0 2px 10px -3px rgba(31,27,36,0.08), 0 1px 3px -1px rgba(31,27,36,0.04)",
         lift: "0 12px 28px -6px rgba(31,27,36,0.14), 0 4px 10px -2px rgba(31,27,36,0.05)",
         float: "0 24px 48px -12px rgba(31,27,36,0.28)",
-        "primary-glow": "0 8px 22px -6px rgba(224,52,75,0.45)",
+        "primary-glow": "0 8px 22px -6px rgb(var(--marca) / 0.45)",
       },
       transitionTimingFunction: {
         "out-expo": "cubic-bezier(0.16, 1, 0.3, 1)",

@@ -38,9 +38,9 @@ export default function DuenaLayout() {
   return (
     <FabProvider>
       <div className="relative isolate min-h-dvh bg-surface">
-        <FondoShell nombre={nombreBoutique} />
         <header className="sticky top-0 z-30">
           <CristalEncabezado />
+          <FondoShell nombre={nombreBoutique} />
           <div className="relative mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4">
             <Link to="/app" className="flex min-w-0 items-center gap-2" aria-label={`${nombreBoutique}, ir al inicio del panel`}>
               <MarcaNombre nombre={nombreBoutique} />
