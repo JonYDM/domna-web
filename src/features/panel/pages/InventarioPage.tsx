@@ -1,6 +1,6 @@
 import { useCallback, useRef, useState } from "react";
 import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
-import { ChevronRight, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import { PrendaImagen } from "@/components/ilustraciones/PrendaImagen";
 import { BarraBusqueda } from "@/components/molecules/BarraBusqueda";
 import { EmptyState } from "@/components/molecules/EmptyState";
@@ -82,42 +82,45 @@ export default function InventarioPage() {
           texto={busqueda || categoria ? "Prueba con otra búsqueda." : "Agrega tu primera prenda."}
         />
       ) : (
-        <ul className="grid gap-2 md:grid-cols-2" style={{ opacity: productos.isPlaceholderData ? 0.6 : 1 }}>
+        <ul className="grid gap-2.5 md:grid-cols-2" style={{ opacity: productos.isPlaceholderData ? 0.6 : 1 }}>
           {lista.map((p) => (
             <li key={p.id}>
               <Link
                 to={`${base}/inventario/${p.id}`}
-                className="flex items-center gap-3 rounded-2xl bg-surface-container-lowest p-2.5 pr-3 shadow-soft hover:shadow-lift"
+                className="flex gap-3 rounded-2xl bg-surface-container-lowest p-3 shadow-soft transition-shadow hover:shadow-lift"
               >
                 <PrendaImagen
                   silueta={p.silueta}
                   hex={p.colores[0].hex}
                   url={p.imagenes.find((i) => i.colorId === p.colores[0].id)?.url ?? p.imagenes[0]?.url}
                   alt=""
-                  className="w-14 shrink-0 rounded-xl"
+                  className="w-20 shrink-0 rounded-xl"
                 />
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-label-lg">{p.nombre}</p>
-                  <p className="tabular text-body-sm text-on-surface-variant">
-                    {formatMXN(p.precio)} · {p.colores.length} {p.colores.length === 1 ? "color" : "colores"}
+                <div className="flex min-w-0 flex-1 flex-col">
+                  <p className="truncate font-marca text-headline-sm leading-tight text-on-surface">{p.nombre}</p>
+                  <p className="mt-0.5 text-body-sm text-on-surface-variant">
+                    {p.colores.length} {p.colores.length === 1 ? "color" : "colores"}
                   </p>
-                  <div className="mt-1 flex gap-1.5">
-                    {!p.activo ? (
-                      <Badge>Inactivo</Badge>
-                    ) : p.disponibleTotal === 0 ? (
-                      <Badge tono="danger">Agotado</Badge>
-                    ) : p.disponibleTotal <= STOCK_BAJO ? (
-                      <Badge tono="warning">Stock bajo</Badge>
-                    ) : null}
-                    {p.activo && p.nuevo && <Badge tono="primary">Nuevo</Badge>}
-                    {p.activo && p.reabastecido && <Badge tono="success">De vuelta</Badge>}
+
+                  {(!p.activo || p.disponibleTotal === 0 || p.disponibleTotal <= STOCK_BAJO || (p.activo && (p.nuevo || p.reabastecido))) && (
+                    <div className="mt-1.5 flex flex-wrap gap-1.5">
+                      {!p.activo ? (
+                        <Badge>Inactivo</Badge>
+                      ) : p.disponibleTotal === 0 ? (
+                        <Badge tono="danger">Agotado</Badge>
+                      ) : p.disponibleTotal <= STOCK_BAJO ? (
+                        <Badge tono="warning">Stock bajo</Badge>
+                      ) : null}
+                      {p.activo && p.nuevo && <Badge tono="primary">Nuevo</Badge>}
+                      {p.activo && p.reabastecido && <Badge tono="success">De vuelta</Badge>}
+                    </div>
+                  )}
+
+                  <div className="mt-auto flex items-baseline justify-between gap-2 pt-1.5">
+                    <span className="tabular text-label-lg text-on-surface">{formatMXN(p.precio)}</span>
+                    <span className="tabular text-body-sm text-on-surface-variant">{p.disponibleTotal} disp.</span>
                   </div>
                 </div>
-                <div className="text-right">
-                  <p className="tabular text-label-lg">{p.disponibleTotal}</p>
-                  <p className="text-label-sm text-on-surface-variant">disp. de {p.stockFisicoTotal}</p>
-                </div>
-                <ChevronRight className="h-4 w-4 text-outline" aria-hidden />
               </Link>
             </li>
           ))}

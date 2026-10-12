@@ -85,7 +85,7 @@ export default function DuenaLayout() {
             </PerfilMenu>
           </div>
         </header>
-        <main className="mx-auto max-w-6xl px-4 pb-32 pt-5 md:pb-12">
+        <main className="mx-auto max-w-6xl px-4 pb-40 pt-5 md:pb-12">
           <Outlet />
         </main>
         <Dock inicio={inicio} items={itemsDock} mas={{ label: mas.label, icono: mas.icono, items: subMas }} />

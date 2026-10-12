@@ -1,11 +1,12 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { Link } from "react-router-dom";
 import { ChevronRight, Pencil, Plus } from "lucide-react";
 import type { Categoria } from "@/types/api";
 import { EmptyState } from "@/components/molecules/EmptyState";
-import { Button, Skeleton } from "@/components/ui";
+import { Skeleton } from "@/components/ui";
 import { mensajeError } from "@/lib/errores";
 import { useCategorias } from "@/features/catalogo/hooks";
+import { useRegistrarFab } from "../fab";
 import { CategoriaDrawer } from "../components/CategoriaDrawer";
 
 /** Categorías de la boutique, cada una con su juego de tallas. */
@@ -13,17 +14,14 @@ export default function CategoriasPage() {
   const categorias = useCategorias();
   const [editando, setEditando] = useState<Categoria | "nueva" | null>(null);
 
+  const abrirNueva = useCallback(() => setEditando("nueva"), []);
+  useRegistrarFab("Nueva categoría", Plus, abrirNueva);
+
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-4">
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <h1 className="font-marca text-headline-lg">Categorías</h1>
-          <p className="text-body-sm text-on-surface-variant">Cada una propone sus tallas al dar de alta una prenda.</p>
-        </div>
-        <Button size="sm" onClick={() => setEditando("nueva")}>
-          <Plus className="h-4 w-4" aria-hidden />
-          Nueva
-        </Button>
+      <div>
+        <h1 className="font-marca text-headline-lg">Categorías</h1>
+        <p className="text-body-sm text-on-surface-variant">Cada una propone sus tallas al dar de alta una prenda.</p>
       </div>
 
       {categorias.isError ? (

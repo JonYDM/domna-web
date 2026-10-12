@@ -1,14 +1,15 @@
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { Plus } from "lucide-react";
 import type { ColorCatalogo } from "@/types/api";
 import { BarraBusqueda } from "@/components/molecules/BarraBusqueda";
 import { EmptyState } from "@/components/molecules/EmptyState";
-import { Button, Skeleton } from "@/components/ui";
+import { Skeleton } from "@/components/ui";
 import { esClaro } from "@/lib/color";
 import { cn } from "@/lib/cn";
 import { FAMILIAS_COLOR } from "@/lib/enums";
 import { mensajeError } from "@/lib/errores";
 import { useColores } from "@/features/catalogo/hooks";
+import { useRegistrarFab } from "../fab";
 import { ColorDrawer } from "../components/ColorDrawer";
 
 /** Colores del catálogo de la boutique, agrupados como los verá la clienta en el filtro. */
@@ -16,6 +17,9 @@ export default function ColoresPage() {
   const colores = useColores();
   const [texto, setTexto] = useState("");
   const [editando, setEditando] = useState<ColorCatalogo | "nuevo" | null>(null);
+
+  const abrirNuevo = useCallback(() => setEditando("nuevo"), []);
+  useRegistrarFab("Nuevo color", Plus, abrirNuevo);
 
   const grupos = useMemo(() => {
     const t = texto
@@ -31,15 +35,9 @@ export default function ColoresPage() {
 
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-4">
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <h1 className="font-marca text-headline-lg">Colores</h1>
-          <p className="text-body-sm text-on-surface-variant">{colores.data?.length ?? 0} en tu catálogo</p>
-        </div>
-        <Button size="sm" onClick={() => setEditando("nuevo")}>
-          <Plus className="h-4 w-4" aria-hidden />
-          Nuevo
-        </Button>
+      <div>
+        <h1 className="font-marca text-headline-lg">Colores</h1>
+        <p className="text-body-sm text-on-surface-variant">{colores.data?.length ?? 0} en tu catálogo</p>
       </div>
 
       <BarraBusqueda valor={texto} onChange={setTexto} placeholder="Buscar color" />
