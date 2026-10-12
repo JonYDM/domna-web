@@ -4,6 +4,7 @@ import { qk } from "@/lib/queryKeys";
 import * as api from "@/mock/server";
 import * as cat from "@/api/catalogoSelector";
 import * as personal from "@/api/personal";
+import * as clientasApi from "@/api/clientasSelector";
 
 export function useMetricas(filtro: FiltroMetricas = {}) {
   const sucursal = filtro.sucursal ?? "todas";
@@ -143,25 +144,25 @@ export function useMoverStock(productoId: string) {
 export function useClientas(filtro: FiltroClientas, texto: string) {
   return useQuery({
     queryKey: qk.clientas(filtro, texto),
-    queryFn: () => api.listarClientas(filtro, texto),
+    queryFn: () => clientasApi.listarClientas(filtro, texto),
     staleTime: 30_000,
     placeholderData: (prev) => prev,
   });
 }
 
 export function useResumenClientas() {
-  return useQuery({ queryKey: qk.resumenClientas(), queryFn: api.obtenerResumenClientas, staleTime: 60_000 });
+  return useQuery({ queryKey: qk.resumenClientas(), queryFn: clientasApi.obtenerResumenClientas, staleTime: 60_000 });
 }
 
 export function useClientaResumen(id: string) {
-  return useQuery({ queryKey: qk.clientaResumen(id), queryFn: () => api.obtenerClientaResumen(id), staleTime: 15_000 });
+  return useQuery({ queryKey: qk.clientaResumen(id), queryFn: () => clientasApi.obtenerClientaResumen(id), staleTime: 15_000 });
 }
 
 /** Alta en mostrador: invalida lista, resumen y métricas. */
 export function useCrearClienta() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (input: NuevaClientaInput) => api.crearClienta(input),
+    mutationFn: (input: NuevaClientaInput) => clientasApi.crearClienta(input),
     onSuccess: () => qc.invalidateQueries({ queryKey: qk.clientasTodos() }),
   });
 }
