@@ -78,10 +78,16 @@ export async function obtenerResumenClientas(): Promise<ResumenClientas> {
   };
 }
 
-/** Ficha de una clienta. */
+/** Ficha de una clienta (panel de la dueña). */
 export async function obtenerClientaResumen(id: string): Promise<ClientaResumen> {
   const dto = await http.get<ClientaResumenDto>(`/api/clientas/${id}`);
   return aClientaResumen(dto);
+}
+
+/** Datos básicos de la PROPIA clienta (para su perfil en la tienda). */
+export async function obtenerClienta(id: string): Promise<Clienta> {
+  const dto = await http.get<ClientaResumenDto>(`/api/clientas/${id}/propio`);
+  return aClienta(dto);
 }
 
 /** Alta en mostrador: nace sin PIN (sin acceso) hasta que se registre. */

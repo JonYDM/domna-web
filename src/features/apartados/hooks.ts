@@ -7,7 +7,8 @@ import type {
   TipoPedido,
 } from "@/types/api";
 import { qk } from "@/lib/queryKeys";
-import * as api from "@/mock/server";
+import * as api from "@/api/apartadosSelector";
+import * as clientasApi from "@/api/clientasSelector";
 
 /**
  * Mapa de invalidación (regla de oro): al mutar, invalidar TODAS las vistas que muestran el dato.
@@ -32,7 +33,7 @@ function invalidarTodo(qc: QueryClient, { stock }: { stock: boolean }) {
 export function useClienta(id: string | undefined) {
   return useQuery({
     queryKey: qk.clienta(id ?? ""),
-    queryFn: () => api.obtenerClienta(id!),
+    queryFn: () => clientasApi.obtenerClienta(id!),
     enabled: !!id,
   });
 }

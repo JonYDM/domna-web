@@ -16,6 +16,11 @@ export function obtenerClientaResumen(id: string): Promise<ClientaResumen> {
   return apiActiva ? real.obtenerClientaResumen(id) : mock.obtenerClientaResumen(id);
 }
 
+/** Datos básicos de la propia clienta (perfil en la tienda). */
+export function obtenerClienta(id: string): Promise<Clienta> {
+  return apiActiva ? real.obtenerClienta(id) : mock.obtenerClienta(id);
+}
+
 export function crearClienta(input: NuevaClientaInput): Promise<Clienta> {
   return apiActiva ? real.crearClienta(input) : mock.crearClienta(input);
 }

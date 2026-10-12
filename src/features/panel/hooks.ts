@@ -5,12 +5,13 @@ import * as api from "@/mock/server";
 import * as cat from "@/api/catalogoSelector";
 import * as personal from "@/api/personal";
 import * as clientasApi from "@/api/clientasSelector";
+import * as apartadosApi from "@/api/apartadosSelector";
 
 export function useMetricas(filtro: FiltroMetricas = {}) {
   const sucursal = filtro.sucursal ?? "todas";
   return useQuery({
     queryKey: qk.metricas(sucursal),
-    queryFn: () => api.obtenerMetricas(filtro),
+    queryFn: () => apartadosApi.obtenerMetricas(filtro),
     staleTime: 60_000,
     placeholderData: (prev) => prev,
   });
@@ -18,7 +19,7 @@ export function useMetricas(filtro: FiltroMetricas = {}) {
 
 /** Corte del día de una sucursal (lo que ve la cajera). */
 export function useCorteDia(sucursal: SucursalId) {
-  return useQuery({ queryKey: qk.corteDia(sucursal), queryFn: () => api.obtenerCorteDia(sucursal), staleTime: 30_000 });
+  return useQuery({ queryKey: qk.corteDia(sucursal), queryFn: () => apartadosApi.obtenerCorteDia(sucursal), staleTime: 30_000 });
 }
 
 export function useCrearProducto() {

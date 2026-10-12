@@ -4,15 +4,18 @@ import type {
   ColorCatalogo,
   ColorInput,
   AgregarColorInput,
+  ConfigBoutique,
   EditarProductoInput,
   FiltrosCatalogo,
   NuevoProductoInput,
   Producto,
   ProductoDetalle,
   ProductoResumen,
+  ResultadoCodigo,
 } from "@/types/api";
 import { apiActiva } from "./http";
 import * as real from "./catalogo";
+import * as config from "./config";
 import * as mock from "@/mock/server";
 
 /**
@@ -91,5 +94,22 @@ export function eliminarColor(id: string): Promise<void> {
   return apiActiva ? real.eliminarColor(id) : mock.eliminarColor(id);
 }
 
-/** Config de la boutique: aún solo en mock (el backend no la expone todavía). */
-export const obtenerConfig = mock.obtenerConfig;
+/** Config de la boutique: datos reales (nombre, vigencias, kill switch, etc.). */
+export function obtenerConfig(): Promise<ConfigBoutique> {
+  return apiActiva ? config.obtenerConfig() : mock.obtenerConfig();
+}
+
+/** Pausar/reanudar la tienda (kill switch del SaaS): dato real, persistido. */
+export function demoSuspender(suspendida: boolean): Promise<void> {
+  return apiActiva ? config.demoSuspender(suspendida) : mock.demoSuspender(suspendida);
+}
+
+/** Catálogo público u oculto sin cuenta: dato real, persistido. */
+export function demoCatalogoPublico(publico: boolean): Promise<void> {
+  return apiActiva ? config.demoCatalogoPublico(publico) : mock.demoCatalogoPublico(publico);
+}
+
+/** Busca una variante por su código de barras físico (POS/escáner). */
+export function buscarPorCodigo(codigo: string): Promise<ResultadoCodigo> {
+  return apiActiva ? real.buscarPorCodigo(codigo) : mock.buscarPorCodigo(codigo);
+}

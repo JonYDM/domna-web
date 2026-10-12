@@ -10,6 +10,7 @@ import type {
   Producto,
   ProductoDetalle,
   ProductoResumen,
+  ResultadoCodigo,
   Variante,
   VarianteDisponible,
 } from "@/types/api";
@@ -46,6 +47,9 @@ interface ProductoDto {
     sku: string;
     codigoBarras?: string | null;
     stock: Record<string, number>;
+    disponible: number;
+    disponiblePorSucursal: Record<string, number>;
+    reservadoPorSucursal: Record<string, number>;
   }[];
   imagenes?: { url: string; colorId?: string | null }[];
   creado: string;
@@ -60,7 +64,7 @@ function stockTotalDto(p: ProductoDto): number {
   return p.variantes.reduce((n, v) => n + (v.stock.temixco ?? 0) + (v.stock.azteca ?? 0), 0);
 }
 
-/** DTO → VarianteDisponible (sin reservas del backend aún: disponible = stock físico). */
+/** DTO → VarianteDisponible, usando el disponible/reservado real que ya calcula el backend. */
 function aVarianteDisponible(v: ProductoDto["variantes"][number]): VarianteDisponible {
   const temixco = v.stock.temixco ?? 0;
   const azteca = v.stock.azteca ?? 0;
@@ -75,9 +79,15 @@ function aVarianteDisponible(v: ProductoDto["variantes"][number]): VarianteDispo
   };
   return {
     ...base,
-    disponible: temixco + azteca,
-    disponiblePorSucursal: { temixco, azteca },
-    reservadoPorSucursal: { temixco: 0, azteca: 0 },
+    disponible: v.disponible,
+    disponiblePorSucursal: {
+      temixco: v.disponiblePorSucursal.temixco ?? 0,
+      azteca: v.disponiblePorSucursal.azteca ?? 0,
+    },
+    reservadoPorSucursal: {
+      temixco: v.reservadoPorSucursal.temixco ?? 0,
+      azteca: v.reservadoPorSucursal.azteca ?? 0,
+    },
   };
 }
 
@@ -253,4 +263,23 @@ export async function cambiarPermiteApartado(id: string, permite: boolean): Prom
     precioAntes: dto.precioAntes ?? null,
     permiteApartado: permite,
   });
+}
+
+/** Busca una variante por su código de barras físico (POS/escáner). */
+export async function buscarPorCodigo(codigo: string): Promise<ResultadoCodigo> {
+  const dto = await http.get<ProductoDto>(`/api/productos/codigo/${encodeURIComponent(codigo)}`);
+  const v = dto.variantes.find((x) => x.codigoBarras === codigo);
+  if (!v) throw new Error("Código no encontrado en la prenda devuelta.");
+  const color = dto.colores.find((c) => c.id === v.colorId);
+  return {
+    productoId: dto.id,
+    varianteId: v.id,
+    nombre: dto.nombre,
+    precio: dto.precio,
+    talla: v.talla,
+    colorNombre: color?.nombre ?? "",
+    colorHex: color?.hex ?? "#000000",
+    disponible: v.disponible,
+    disponiblePorSucursal: v.disponiblePorSucursal as Record<"temixco" | "azteca", number>,
+  };
 }

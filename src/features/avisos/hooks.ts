@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Aviso } from "@/types/api";
 import { qk } from "@/lib/queryKeys";
-import * as api from "@/mock/server";
+import * as api from "@/api/avisosSelector";
 
 /**
  * Avisos in-app de la clienta. Se refrescan al volver a la app y cada minuto mientras está
