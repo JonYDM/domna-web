@@ -174,7 +174,6 @@ export default function CarritoPage() {
                       </Chip>
                     ))}
                   </div>
-                  <p className="mt-2 text-body-sm text-on-surface-variant">En la demo el pago se simula.</p>
                 </section>
               )}
 
