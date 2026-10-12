@@ -19,7 +19,6 @@ import {
   InventarioPage,
   MisApartadosPage,
   PersonalPage,
-  PresentacionPage,
   ProductoDuenaPage,
   ProductoPage,
   S,
@@ -41,15 +40,6 @@ export const router = createBrowserRouter([
     element: (
       <S>
         <EntrarPage />
-      </S>
-    ),
-    errorElement: <PaginaError tipo="error" />,
-  },
-  {
-    path: "/presentacion",
-    element: (
-      <S>
-        <PresentacionPage />
       </S>
     ),
     errorElement: <PaginaError tipo="error" />,

@@ -32,7 +32,6 @@ export const ProductoPage = lazyConReintento(() => import("@/features/catalogo/p
 export const MisApartadosPage = lazyConReintento(() => import("@/features/apartados/pages/MisApartadosPage"));
 export const CarritoPage = lazyConReintento(() => import("@/features/carrito/pages/CarritoPage"));
 export const EntrarPage = lazyConReintento(() => import("@/features/auth/pages/EntrarPage"));
-export const PresentacionPage = lazyConReintento(() => import("@/features/presentacion/pages/PresentacionPage"));
 export const ClientasPage = lazyConReintento(() => import("@/features/panel/pages/ClientasPage"));
 export const ClientaPage = lazyConReintento(() => import("@/features/panel/pages/ClientaPage"));
 export const AvisosPage = lazyConReintento(() => import("@/features/avisos/pages/AvisosPage"));

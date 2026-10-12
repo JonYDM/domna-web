@@ -11,7 +11,6 @@ import { useSesion } from "../sesion";
 import { useConfirmarRecuperacion, useRegistrar, useSolicitarRecuperacion } from "../hooks";
 import { usandoApi, existeTelefono, loginUnificado } from "@/api/authSelector";
 import { nombreConocido, recordarNombre } from "../conocidas";
-import { BotonPresentacion } from "@/features/presentacion/BotonPresentacion";
 
 type Fase = "login" | "registro" | "recuperar" | "recuperar-pin";
 
@@ -233,7 +232,6 @@ export default function EntrarPage() {
       <div className="relative flex w-full max-w-sm flex-1 flex-col self-center">
         <header className="flex items-center justify-between gap-2">
           <BotonInstalar compacto />
-          <BotonPresentacion />
         </header>
 
         {/* Marca del tenant (white-label): nombre de la boutique, sin logo de Domna. */}
