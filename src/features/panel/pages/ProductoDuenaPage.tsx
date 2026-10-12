@@ -1,7 +1,7 @@
-import { Link, useLocation, useParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { useState } from "react";
 import toast from "react-hot-toast";
-import { Eye, EyeOff, Pencil, QrCode, Store } from "lucide-react";
+import { Eye, EyeOff, Pencil, QrCode, Store, Trash2 } from "lucide-react";
 import { PrendaImagen } from "@/components/ilustraciones/PrendaImagen";
 import { EmptyState } from "@/components/molecules/EmptyState";
 import { PrecioTag } from "@/components/molecules/PrecioTag";
@@ -12,14 +12,16 @@ import {
   BreadcrumbList,
   BreadcrumbPage,
   BreadcrumbSeparator,
+  Button,
   ButtonLink,
+  Drawer,
   Interruptor,
   Skeleton,
 } from "@/components/ui";
 import { cn } from "@/lib/cn";
 import { mensajeError } from "@/lib/errores";
 import { useCategorias, useProducto } from "@/features/catalogo/hooks";
-import { useCambiarEstadoProducto, useCambiarPermiteApartado } from "../hooks";
+import { useCambiarEstadoProducto, useCambiarPermiteApartado, useEliminarProductoPermanente } from "../hooks";
 import { EditorStock } from "../components/EditorStock";
 import { EditarProductoDrawer } from "../components/EditarProductoDrawer";
 import { EtiquetasQR } from "../components/EtiquetasQR";
@@ -28,14 +30,17 @@ import { EtiquetasQR } from "../components/EtiquetasQR";
 export default function ProductoDuenaPage() {
   const { id = "" } = useParams();
   const { pathname } = useLocation();
+  const navigate = useNavigate();
   // La cajera también abre fichas desde /caja; los enlaces respetan su base.
   const base = pathname.startsWith("/caja") ? "/caja" : "/app";
   const producto = useProducto(id, { incluirInactivo: true });
   const categorias = useCategorias();
   const estado = useCambiarEstadoProducto();
   const permite = useCambiarPermiteApartado();
+  const eliminar = useEliminarProductoPermanente();
   const [editando, setEditando] = useState(false);
   const [imprimiendo, setImprimiendo] = useState(false);
+  const [confirmarEliminar, setConfirmarEliminar] = useState(false);
 
   if (producto.isPending) {
     return (
@@ -72,6 +77,19 @@ export default function ProductoDuenaPage() {
         onError: (e) => toast.error(mensajeError(e)),
       },
     );
+  }
+
+  function eliminarPermanente() {
+    eliminar.mutate(p.id, {
+      onSuccess: () => {
+        toast.success(`${p.nombre} se eliminó para siempre`);
+        navigate(`${base}/inventario`, { replace: true });
+      },
+      onError: (e) => {
+        toast.error(mensajeError(e));
+        setConfirmarEliminar(false);
+      },
+    });
   }
 
   return (
@@ -163,6 +181,17 @@ export default function ProductoDuenaPage() {
             >
               {p.activo ? <EyeOff className="h-5 w-5" aria-hidden /> : <Eye className="h-5 w-5" aria-hidden />}
             </button>
+            {!p.activo && (
+              <button
+                type="button"
+                onClick={() => setConfirmarEliminar(true)}
+                aria-label="Eliminar para siempre"
+                title="Eliminar para siempre"
+                className="grid h-11 w-11 shrink-0 place-items-center rounded-xl text-error hover:bg-error-container"
+              >
+                <Trash2 className="h-5 w-5" aria-hidden />
+              </button>
+            )}
           </div>
         </div>
 
@@ -195,6 +224,36 @@ export default function ProductoDuenaPage() {
       <EditarProductoDrawer producto={p} open={editando} onClose={() => setEditando(false)} />
 
       {imprimiendo && <EtiquetasQR producto={p} onClose={() => setImprimiendo(false)} />}
+
+      {confirmarEliminar && (
+        <Drawer open onClose={() => setConfirmarEliminar(false)} title="Eliminar para siempre">
+          {fisico > 0 ? (
+            <p className="text-body-md text-on-surface-variant">
+              Todavía tiene <strong className="text-on-surface">{fisico}</strong> {fisico === 1 ? "pieza" : "piezas"} en
+              inventario. Pon el stock en cero en todas las sucursales antes de eliminarla.
+            </p>
+          ) : (
+            <p className="text-body-md text-on-surface-variant">
+              Se borrará <strong className="text-on-surface">{p.nombre}</strong> y todo su historial de colores, tallas
+              y fotos. No se puede deshacer.
+            </p>
+          )}
+          <div className="mt-5 flex gap-2">
+            <Button variant="ghost" onClick={() => setConfirmarEliminar(false)}>
+              Cancelar
+            </Button>
+            <Button
+              fullWidth
+              variant="danger"
+              disabled={fisico > 0}
+              loading={eliminar.isPending}
+              onClick={eliminarPermanente}
+            >
+              Sí, eliminar para siempre
+            </Button>
+          </div>
+        </Drawer>
+      )}
     </div>
   );
 }

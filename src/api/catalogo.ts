@@ -233,8 +233,13 @@ export async function editarProducto(id: string, input: EditarProductoInput): Pr
 }
 
 export async function cambiarEstadoProducto(id: string, activo: boolean): Promise<void> {
-  // El backend expone baja lógica (DELETE = desactivar). Reactivar aún no está en el backend.
-  if (!activo) await http.del<void>(`/api/productos/${id}`);
+  if (activo) await http.post<void>(`/api/productos/${id}/activar`);
+  else await http.del<void>(`/api/productos/${id}`);
+}
+
+/** Borrado físico permanente (irreversible): solo si está inactiva y sin stock físico. */
+export async function eliminarProductoPermanente(id: string): Promise<void> {
+  await http.del<void>(`/api/productos/${id}/permanente`);
 }
 
 export async function cambiarPermiteApartado(id: string, permite: boolean): Promise<void> {

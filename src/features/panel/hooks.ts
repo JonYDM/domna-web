@@ -85,6 +85,18 @@ export function useCambiarEstadoProducto() {
   });
 }
 
+/** Borrado físico permanente (irreversible): solo si está inactiva y sin stock físico. */
+export function useEliminarProductoPermanente() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => cat.eliminarProductoPermanente(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: qk.productosTodos() });
+      qc.invalidateQueries({ queryKey: qk.metricasTodos() });
+    },
+  });
+}
+
 export function useCambiarPermiteApartado() {
   const qc = useQueryClient();
   return useMutation({

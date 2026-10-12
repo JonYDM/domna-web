@@ -615,6 +615,22 @@ export function cambiarEstadoProducto(id: string, activo: boolean): Promise<void
   });
 }
 
+/** Borrado físico permanente (irreversible): solo si está inactivo y sin stock físico. */
+export function eliminarProductoPermanente(id: string): Promise<void> {
+  return responder(() => {
+    const e = estado();
+    const p = e.productos.find((x) => x.id === id);
+    if (!p) throw new ApiError(404, "Producto no encontrado.");
+    if (p.activo) throw new ApiError(409, "Primero oculta la prenda de la tienda antes de eliminarla.");
+    const stockFisico = p.variantes.reduce((n, v) => n + v.stock.temixco + v.stock.azteca, 0);
+    if (stockFisico > 0) {
+      throw new ApiError(409, `Todavía tiene ${stockFisico} piezas en inventario. Pon el stock en cero antes de eliminarla.`);
+    }
+    e.productos = e.productos.filter((x) => x.id !== id);
+    persistir();
+  });
+}
+
 export function cambiarPermiteApartado(id: string, permite: boolean): Promise<void> {
   return responder(() => {
     const p = estado().productos.find((x) => x.id === id);

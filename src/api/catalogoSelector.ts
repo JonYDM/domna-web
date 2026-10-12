@@ -59,6 +59,10 @@ export function cambiarEstadoProducto(id: string, activo: boolean): Promise<void
   return apiActiva ? real.cambiarEstadoProducto(id, activo) : mock.cambiarEstadoProducto(id, activo);
 }
 
+export function eliminarProductoPermanente(id: string): Promise<void> {
+  return apiActiva ? real.eliminarProductoPermanente(id) : mock.eliminarProductoPermanente(id);
+}
+
 export function cambiarPermiteApartado(id: string, permite: boolean): Promise<void> {
   return apiActiva ? real.cambiarPermiteApartado(id, permite) : mock.cambiarPermiteApartado(id, permite);
 }
