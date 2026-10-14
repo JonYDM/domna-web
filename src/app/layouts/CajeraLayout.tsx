@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { Link, Outlet, useNavigate } from "react-router-dom";
-import { Package, Receipt, ShoppingBag } from "lucide-react";
+import { Package, Receipt, ShoppingBag, Wallet } from "lucide-react";
 import { BottomNav, TopNav, type ItemNav } from "@/components/organisms/Navegacion";
 import { PerfilMenu } from "@/components/organisms/PerfilMenu";
 import { useSesion } from "@/features/auth/sesion";
 import { useConfig } from "@/features/catalogo/hooks";
+import { usePorConfirmar } from "@/features/apartados/hooks";
 
 const NOMBRE_SUCURSAL: Record<string, string> = { temixco: "Temixco", azteca: "La Azteca" };
 
@@ -15,12 +16,14 @@ export default function CajeraLayout() {
   const config = useConfig();
   const [perfilAbierto, setPerfilAbierto] = useState(false);
   const sucursal = sesion?.sucursal ?? "temixco";
+  const porConfirmar = usePorConfirmar();
 
   const corte: ItemNav = { to: "/caja", label: "Corte del día", icono: Receipt, end: true };
   const vender: ItemNav = { to: "/caja/vender", label: "Vender", icono: ShoppingBag };
+  const pagos: ItemNav = { to: "/caja/pagos", label: "Pagos", icono: Wallet, contador: porConfirmar.data?.length };
   const inventario: ItemNav = { to: "/caja/inventario", label: "Inventario", icono: Package };
-  const items: ItemNav[] = [corte, vender, inventario];
-  const itemsMovil: ItemNav[] = [corte, { ...vender, destacado: true }, inventario];
+  const items: ItemNav[] = [corte, pagos, vender, inventario];
+  const itemsMovil: ItemNav[] = [corte, pagos, { ...vender, destacado: true }, inventario];
 
   return (
     <div className="min-h-dvh bg-surface">

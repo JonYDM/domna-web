@@ -3,6 +3,7 @@ import type { FiltroEstadoApartado, FiltrosCatalogo, TipoPedido } from "@/types/
 /** Fábrica única de query keys (evita keys inestables y facilita invalidar). */
 export const qk = {
   config: () => ["config"] as const,
+  datosBancarios: () => ["config", "datos-bancarios"] as const,
   categorias: () => ["categorias"] as const,
   colores: () => ["colores"] as const,
   productos: (f: FiltrosCatalogo) => ["productos", f] as const,
@@ -14,6 +15,7 @@ export const qk = {
   apartadosTodos: () => ["apartados"] as const,
   apartado: (id: string) => ["apartado", id] as const,
   apartadoTodos: () => ["apartado"] as const,
+  porConfirmar: () => ["pagos", "por-confirmar"] as const,
   misApartados: (clientaId: string) => ["tienda", "apartados", clientaId] as const,
   misApartadosTodos: () => ["tienda"] as const,
   /** Bajo "tienda": se invalida junto con mis apartados en cada mutación de pedidos. */

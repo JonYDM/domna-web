@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { Link, Outlet, useNavigate } from "react-router-dom";
-import { AlertTriangle, ClipboardList, LayoutDashboard, Menu, Package, Palette, Store, Tags, UserCog, Users } from "lucide-react";
+import { AlertTriangle, ClipboardList, LayoutDashboard, Menu, Package, Palette, Store, Tags, UserCog, Users, Wallet, Landmark } from "lucide-react";
 import { TopNav, type ItemNav } from "@/components/organisms/Navegacion";
 import { PerfilMenu } from "@/components/organisms/PerfilMenu";
 import { Dock } from "@/components/organisms/Dock";
 import { FabFlotante } from "@/features/panel/components/FabFlotante";
 import { FabProvider } from "@/features/panel/FabContext";
 import { useMetricas } from "@/features/panel/hooks";
+import { usePorConfirmar } from "@/features/apartados/hooks";
 import { useSesion } from "@/features/auth/sesion";
 import { useConfig } from "@/features/catalogo/hooks";
 import { CristalEncabezado, FondoShell, MarcaNombre } from "@/components/organisms/MarcaShell";
@@ -17,23 +18,28 @@ export default function DuenaLayout() {
   const navigate = useNavigate();
   const [perfilAbierto, setPerfilAbierto] = useState(false);
   const metricas = useMetricas();
+  const porConfirmar = usePorConfirmar();
   const config = useConfig();
   const nombreBoutique = config.data?.nombre ?? "Jesly Boutique";
 
   const inicio: ItemNav = { to: "/app", label: "Inicio", icono: LayoutDashboard, end: true };
   const pedidos: ItemNav = { to: "/app/apartados", label: "Pedidos", icono: ClipboardList, contador: metricas.data?.porVencer };
+  const pagos: ItemNav = { to: "/app/pagos", label: "Pagos", icono: Wallet, contador: porConfirmar.data?.length };
   const inventario: ItemNav = { to: "/app/inventario", label: "Inventario", icono: Package };
   const clientas: ItemNav = { to: "/app/clientas", label: "Clientas", icono: Users };
   const subMas = [
     { to: "/app/categorias", label: "Categorías", descripcion: "Y sus tallas", icono: Tags },
     { to: "/app/colores", label: "Colores", descripcion: "Tu catálogo de colores", icono: Palette },
+    { to: "/app/transferencia", label: "Cuenta bancaria", descripcion: "Dónde te transfieren tus clientas", icono: Landmark },
     { to: "/app/personal", label: "Personal", descripcion: "Agrega cajeras y da acceso a tu equipo", icono: UserCog },
   ];
   const mas: ItemNav = { to: "/app/mas", label: "Más", icono: Menu, menu: subMas };
-  const items: ItemNav[] = [inicio, pedidos, inventario, clientas, mas];
+  const items: ItemNav[] = [inicio, pedidos, pagos, inventario, clientas, mas];
   // Dock móvil: Inicio va al centro, elevado; el resto se reparte a sus lados.
-  const dockIzquierda = [pedidos, inventario];
-  const dockDerecha = [clientas];
+  // Pagos por confirmar es diario: va en el dock; Clientas pasa al menú "Más" del dock.
+  const dockIzquierda = [pedidos, pagos];
+  const dockDerecha = [inventario];
+  const subMasDock = [{ to: clientas.to, label: clientas.label, descripcion: "Quién te compra y cuánto debe", icono: Users }, ...subMas];
 
   return (
     <FabProvider>
@@ -91,7 +97,7 @@ export default function DuenaLayout() {
         <main className="mx-auto max-w-6xl px-4 pb-40 pt-5 md:pb-12">
           <Outlet />
         </main>
-        <Dock centro={inicio} izquierda={dockIzquierda} derecha={dockDerecha} mas={{ label: mas.label, icono: mas.icono, items: subMas }} />
+        <Dock centro={inicio} izquierda={dockIzquierda} derecha={dockDerecha} mas={{ label: mas.label, icono: mas.icono, items: subMasDock }} />
         <FabFlotante />
       </div>
     </FabProvider>

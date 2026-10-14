@@ -256,6 +256,28 @@ export interface Abono {
   fecha: string;
   metodo: MetodoPago;
   concepto: "anticipo" | "abono" | "liquidacion" | "compra";
+  /**
+   * Un pago declarado en línea nace "pendiente" y no cuenta como pagado hasta que la tienda lo
+   * confirma. Si falta (datos del mock), se asume confirmado.
+   */
+  estado?: EstadoPago;
+  /** El pago por transferencia trae un comprobante. El archivo es privado: solo el personal lo abre, con su PIN. */
+  tieneComprobante?: boolean;
+  /** Quién de la tienda confirmó o rechazó el pago, y cuándo. */
+  revisadoPor?: string;
+  revisadoEl?: string;
+  motivoRechazo?: string;
+}
+
+export type EstadoPago = "pendiente" | "confirmado" | "rechazado";
+
+/** Cuenta donde la boutique recibe transferencias. Solo la ve quien tiene sesión. */
+export interface DatosBancarios {
+  titular: string;
+  banco: string;
+  /** 18 dígitos, sin espacios. */
+  clabe: string;
+  configurados: boolean;
 }
 
 export interface Apartado {
@@ -276,7 +298,10 @@ export interface Apartado {
   requiereTraslado: boolean;
   estadoEntrega: EstadoEntrega;
   abonos: Abono[];
+  /** Solo pagos confirmados por la tienda. */
   pagado: number;
+  /** Pagos declarados en línea que la tienda aún no confirma. */
+  porConfirmar?: number;
   saldo: number;
   creado: string;
   venceEl: string;

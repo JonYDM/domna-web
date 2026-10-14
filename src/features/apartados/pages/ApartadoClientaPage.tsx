@@ -7,6 +7,7 @@ import { mensajeError } from "@/lib/errores";
 import { useConfig } from "@/features/catalogo/hooks";
 import { useApartado } from "../hooks";
 import { DetalleApartado } from "../components/DetalleApartado";
+import { PagoTransferencia } from "../components/PagoTransferencia";
 
 export default function ApartadoClientaPage() {
   const { id = "" } = useParams();
@@ -36,6 +37,7 @@ export default function ApartadoClientaPage() {
 
   const a = apartado.data;
   const compra = a.modalidad === "compra";
+  const pendiente = a.abonos.find((x) => x.estado === "pendiente");
   const volver = `/tienda/apartados?tipo=${compra ? "compras" : "apartados"}`;
   const sucursal = config.data?.sucursales.find((s) => s.id === a.entrega)?.nombre ?? "la boutique";
 
@@ -49,10 +51,23 @@ export default function ApartadoClientaPage() {
             </span>
           </div>
           <h1 className="anim-sube mt-4 font-marca text-headline-lg" style={{ animationDelay: "250ms" }}>
-            {compra ? "¡Es tuya!" : "¡Apartado listo!"}
+            {pendiente ? "¡Pedido recibido!" : compra ? "¡Es tuya!" : "¡Apartado listo!"}
           </h1>
           <p className="anim-sube mt-1 text-body-md text-on-surface-variant" style={{ animationDelay: "350ms" }}>
-            {compra ? (
+            {pendiente ? (
+              <>
+                {pendiente.metodo === "transferencia" ? "Haz tu transferencia de " : "Paga "}
+                <strong className="text-on-surface">{formatMXN(pendiente.monto)}</strong>
+                {pendiente.metodo === "transferencia" ? (
+                  <> antes del </>
+                ) : (
+                  <>
+                    {" "}en <strong className="text-on-surface">{sucursal}</strong> antes del{" "}
+                  </>
+                )}
+                <strong className="text-on-surface">{formatFecha(a.venceEl)}</strong>
+              </>
+            ) : compra ? (
               <>
                 Recógela en <strong className="text-on-surface">{sucursal}</strong>{" "}
                 {a.requiereTraslado ? `desde el ${formatFecha(a.listoEstimado)}` : "hoy mismo"}
@@ -71,9 +86,11 @@ export default function ApartadoClientaPage() {
             <p className="tabular font-marca text-headline-md tracking-wide">{a.folio}</p>
           </div>
           <p className="mt-4 max-w-xs text-body-sm text-on-surface-variant">
-            {a.saldo > 0
-              ? `Para abonar los ${formatMXN(a.saldo)} restantes, paga en tienda o por transferencia y menciona tu folio.`
-              : "Muestra tu folio al recogerla."}
+            {pendiente
+              ? "Tu pedido queda reservado. Se confirma cuando la tienda reciba tu pago; menciona tu folio."
+              : a.saldo > 0
+                ? `Para abonar los ${formatMXN(a.saldo)} restantes, paga en tienda o por transferencia y menciona tu folio.`
+                : "Muestra tu folio al recogerla."}
           </p>
         </section>
       ) : (
@@ -90,6 +107,8 @@ export default function ApartadoClientaPage() {
           </h1>
         </div>
       )}
+
+      <PagoTransferencia apartado={a} />
 
       <DetalleApartado apartado={a} config={config.data} />
 

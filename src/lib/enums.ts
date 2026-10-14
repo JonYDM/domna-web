@@ -38,8 +38,9 @@ export const MODALIDAD: Record<ModalidadApartado, string> = {
   compra: "Compra de contado",
 };
 
-/** Estado visible: una compra pagada se muestra como "Pagada" (no "Liquidado"). */
-export function estadoVisible(a: { estado: EstadoApartado; modalidad: ModalidadApartado }) {
+/** Estado visible: una compra pagada se muestra como "Pagada" y un pedido con pago declarado, "por confirmar". */
+export function estadoVisible(a: { estado: EstadoApartado; modalidad: ModalidadApartado; porConfirmar?: number }) {
+  if (a.estado === "activo" && (a.porConfirmar ?? 0) > 0) return { label: "Pago por confirmar", tono: "warning" as Tono };
   if (a.modalidad === "compra" && a.estado === "liquidado") return { label: "Pagada", tono: "success" as Tono };
   return ESTADO_APARTADO[a.estado];
 }

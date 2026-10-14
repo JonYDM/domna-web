@@ -13,6 +13,7 @@ import { mensajeError } from "@/lib/errores";
 import { useSesion } from "@/features/auth/sesion";
 import { useConfig } from "@/features/catalogo/hooks";
 import { useCotizacion, useCrearApartado } from "@/features/apartados/hooks";
+import { AvisoPago } from "@/features/apartados/components/AvisoPago";
 import { useCarrito } from "../carrito";
 
 export default function CarritoPage() {
@@ -160,7 +161,7 @@ export default function CarritoPage() {
                 ) : (
                   <div role="radiogroup" className="grid gap-2">
                     <OpcionRadio activo={modalidad === "compra"} onClick={() => setModalidad("compra")} titulo="Comprar de contado" detalle="Pagas el total y es tuyo" />
-                    <OpcionRadio activo={modalidad === "anticipo"} onClick={() => setModalidad("anticipo")} titulo={`Apartar con ${cfg?.anticipoPct ?? 50}%`} detalle={`Te lo guardamos ${cfg?.vigenciaConAnticipoDias ?? 15} días`} extra={<Badge tono="primary">Popular</Badge>} />
+                    <OpcionRadio activo={modalidad === "anticipo"} onClick={() => setModalidad("anticipo")} titulo={`Apartar con ${cfg?.anticipoPct ?? 50}%`} detalle={`Te lo guardamos ${cfg?.vigenciaConAnticipoDias ?? 15} días al confirmar tu anticipo`} extra={<Badge tono="primary">Popular</Badge>} />
                     <OpcionRadio activo={modalidad === "sin_anticipo"} onClick={() => setModalidad("sin_anticipo")} titulo="Apartar sin anticipo" detalle={`Te lo guardamos ${cfg?.vigenciaSinAnticipoDias ?? 2} días`} />
                   </div>
                 )}
@@ -176,6 +177,7 @@ export default function CarritoPage() {
                       </Chip>
                     ))}
                   </div>
+                  <AvisoPago metodo={metodo} config={cfg} sucursal={cfg?.sucursales.find((s) => s.id === entrega)?.nombre} />
                 </section>
               )}
 

@@ -8,7 +8,9 @@ import type {
 } from "@/types/api";
 import { qk } from "@/lib/queryKeys";
 import * as api from "@/api/apartadosSelector";
+import * as comprobantes from "@/api/comprobantes";
 import * as clientasApi from "@/api/clientasSelector";
+import { comprimirComprobante } from "@/lib/imagen";
 
 /**
  * Mapa de invalidación (regla de oro): al mutar, invalidar TODAS las vistas que muestran el dato.
@@ -105,5 +107,85 @@ export function useAvanzarEntrega() {
   return useMutation({
     mutationFn: ({ id, siguiente }: { id: string; siguiente: EstadoEntrega }) => api.avanzarEntrega(id, siguiente),
     onSuccess: () => invalidarTodo(qc, { stock: false }),
+  });
+}
+
+// ── Transferencias y comprobantes (solo API real) ──
+
+/** Cuenta para transferir. La pide quien tiene sesión; `activo` evita pedirla si no hace falta. */
+export function useDatosBancarios(activo = true) {
+  return useQuery({
+    queryKey: qk.datosBancarios(),
+    queryFn: comprobantes.obtenerDatosBancarios,
+    enabled: activo,
+    staleTime: 5 * 60_000,
+  });
+}
+
+export function useGuardarDatosBancarios() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: comprobantes.guardarDatosBancarios,
+    onSuccess: (datos) => qc.setQueryData(qk.datosBancarios(), datos),
+  });
+}
+
+/** La clienta sube su comprobante: se reduce en el navegador, se sube directo y el pago queda en revisión. */
+export function useSubirComprobante(apartadoId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (archivo: File) => comprobantes.subirComprobante(apartadoId, await comprimirComprobante(archivo)),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: qk.porConfirmar() });
+      invalidarTodo(qc, { stock: false });
+    },
+  });
+}
+
+/** La cajera abre un comprobante con su PIN. Devuelve un enlace que dura 2 minutos (no se cachea). */
+export function useVerComprobante() {
+  return useMutation({
+    mutationFn: ({ apartadoId, abonoId, pin }: { apartadoId: string; abonoId: string; pin: string }) =>
+      comprobantes.verComprobante(apartadoId, abonoId, pin),
+    gcTime: 0,
+  });
+}
+
+// ── Pagos por confirmar (pedidos en línea) ──
+
+/** Cola de pagos declarados por las clientas. La cajera ve solo los de su sucursal. */
+export function usePorConfirmar() {
+  return useQuery({
+    queryKey: qk.porConfirmar(),
+    queryFn: api.listarPorConfirmar,
+    staleTime: 15_000,
+    refetchInterval: 60_000,
+  });
+}
+
+/** Confirmar liquida (y descuenta stock) si el pago cubre el saldo → refresca todo lo que lo muestra. */
+export function useConfirmarPago() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ apartadoId, abonoId }: { apartadoId: string; abonoId: string }) => api.confirmarPago(apartadoId, abonoId),
+    onSuccess: (a) => {
+      qc.invalidateQueries({ queryKey: qk.porConfirmar() });
+      invalidarTodo(qc, { stock: a.estado === "liquidado" });
+    },
+    // Si ya venció o lo revisó otra persona, la cola cambió: refrescarla.
+    onError: () => qc.invalidateQueries({ queryKey: qk.porConfirmar() }),
+  });
+}
+
+export function useRechazarPago() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ apartadoId, abonoId, motivo }: { apartadoId: string; abonoId: string; motivo: string }) =>
+      api.rechazarPago(apartadoId, abonoId, motivo),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: qk.porConfirmar() });
+      invalidarTodo(qc, { stock: false });
+    },
+    onError: () => qc.invalidateQueries({ queryKey: qk.porConfirmar() }),
   });
 }

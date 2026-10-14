@@ -67,7 +67,7 @@ export default function ApartadoDuenaPage() {
             {a.modalidad === "compra" ? "Compra" : "Apartado"} {a.folio}
           </h1>
         </div>
-        <DetalleApartado apartado={a} config={config.data} />
+        <DetalleApartado apartado={a} config={config.data} vista="duena" />
       </div>
 
       <aside className="flex flex-col gap-4 lg:pt-[76px]">
@@ -100,7 +100,13 @@ export default function ApartadoDuenaPage() {
         </section>
 
         <div className="flex flex-col gap-2">
-          {activo && (
+          {activo && (a.porConfirmar ?? 0) > 0 && (
+            <ButtonLink to="/app/pagos" size="lg">
+              <Wallet className="h-5 w-5" aria-hidden />
+              Confirmar el pago
+            </ButtonLink>
+          )}
+          {activo && (a.porConfirmar ?? 0) === 0 && (
             <Button size="lg" onClick={() => setAbonando(true)}>
               <Wallet className="h-5 w-5" aria-hidden />
               Registrar abono

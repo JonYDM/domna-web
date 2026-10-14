@@ -44,8 +44,10 @@ export const VenderPage = lazyConReintento(() => import("@/features/pos/pages/Ve
 export const DashboardPage = lazyConReintento(() => import("@/features/panel/pages/DashboardPage"));
 export const ApartadosPage = lazyConReintento(() => import("@/features/panel/pages/ApartadosPage"));
 export const ApartadoDuenaPage = lazyConReintento(() => import("@/features/panel/pages/ApartadoDuenaPage"));
+export const PagosPorConfirmarPage = lazyConReintento(() => import("@/features/pagos/pages/PagosPorConfirmarPage"));
 export const InventarioPage = lazyConReintento(() => import("@/features/panel/pages/InventarioPage"));
 export const ProductoDuenaPage = lazyConReintento(() => import("@/features/panel/pages/ProductoDuenaPage"));
+export const DatosBancariosPage = lazyConReintento(() => import("@/features/panel/pages/DatosBancariosPage"));
 export const PersonalPage = lazyConReintento(() => import("@/features/panel/pages/PersonalPage"));
 export const CategoriasPage = lazyConReintento(() => import("@/features/panel/pages/CategoriasPage"));
 export const ColoresPage = lazyConReintento(() => import("@/features/panel/pages/ColoresPage"));

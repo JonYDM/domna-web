@@ -40,6 +40,22 @@ export function registrarAbono(input: RegistrarAbonoInput): Promise<Apartado> {
   return apiActiva ? real.registrarAbono(input) : mock.registrarAbono(input);
 }
 
+/**
+ * Confirmación de pagos declarados en línea. Solo existe con la API real: el mock de la demo
+ * cobra al instante y no tiene pagos por confirmar.
+ */
+export function listarPorConfirmar(): Promise<Apartado[]> {
+  return apiActiva ? real.listarPorConfirmar() : Promise.resolve([]);
+}
+
+export function confirmarPago(apartadoId: string, abonoId: string): Promise<Apartado> {
+  return real.confirmarPago(apartadoId, abonoId);
+}
+
+export function rechazarPago(apartadoId: string, abonoId: string, motivo: string): Promise<Apartado> {
+  return real.rechazarPago(apartadoId, abonoId, motivo);
+}
+
 export function cancelarApartado(id: string): Promise<Apartado> {
   return apiActiva ? real.cancelarApartado(id) : mock.cancelarApartado(id);
 }

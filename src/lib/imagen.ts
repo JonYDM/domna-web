@@ -242,3 +242,39 @@ function blobADataUrl(blob: Blob): Promise<string> {
     fr.readAsDataURL(blob);
   });
 }
+
+
+/** Lado mayor del comprobante: suficiente para leer montos y claves de rastreo, sin pesar de más. */
+const LADO_MAX_COMPROBANTE = 1800;
+
+/**
+ * Prepara la foto o captura de un comprobante para subirla: la reduce (lado mayor 1800 px) y la
+ * exporta a JPEG con calidad alta para que el texto siga legible. Rechaza lo que no sea imagen.
+ * Una captura de pantalla de varios MB queda en unos cientos de KB.
+ */
+export async function comprimirComprobante(file: File): Promise<Blob> {
+  if (!file.type.startsWith("image/")) throw new Error("Elige una foto o captura del comprobante.");
+  const img = await cargarImagen(file);
+  const escala = Math.min(1, LADO_MAX_COMPROBANTE / Math.max(img.naturalWidth, img.naturalHeight));
+  const w = Math.max(1, Math.round(img.naturalWidth * escala));
+  const h = Math.max(1, Math.round(img.naturalHeight * escala));
+
+  const canvas = document.createElement("canvas");
+  canvas.width = w;
+  canvas.height = h;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("No se pudo preparar la imagen.");
+  // Fondo blanco: una captura PNG con transparencia no debe quedar negra al pasar a JPEG.
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, w, h);
+  ctx.imageSmoothingQuality = "high";
+  ctx.drawImage(img, 0, 0, w, h);
+
+  return new Promise((resolve, reject) => {
+    canvas.toBlob(
+      (blob) => (blob ? resolve(blob) : reject(new Error("No se pudo preparar la imagen."))),
+      "image/jpeg",
+      0.88,
+    );
+  });
+}

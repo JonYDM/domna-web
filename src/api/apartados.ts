@@ -4,6 +4,7 @@ import type {
   CotizacionApartado,
   CrearApartadoInput,
   EstadoEntrega,
+  EstadoPago,
   FiltroEstadoApartado,
   FiltroMetricas,
   Metricas,
@@ -14,7 +15,7 @@ import type {
 import { http } from "./http";
 
 /** DTO de apartado tal como lo devuelve el backend. */
-interface ApartadoDto {
+export interface ApartadoDto {
   id: string;
   folio: string;
   clientaId: string;
@@ -41,8 +42,20 @@ interface ApartadoDto {
   entrega: string;
   requiereTraslado: boolean;
   estadoEntrega: string;
-  abonos: { id: string; monto: number; fecha: string; metodo: string; concepto: string }[];
+  abonos: {
+    id: string;
+    monto: number;
+    fecha: string;
+    metodo: string;
+    concepto: string;
+    estado: string;
+    revisadoPor?: string | null;
+    revisadoEl?: string | null;
+    motivoRechazo?: string | null;
+    tieneComprobante: boolean;
+  }[];
   pagado: number;
+  porConfirmar: number;
   saldo: number;
   creado: string;
   venceEl: string;
@@ -51,7 +64,7 @@ interface ApartadoDto {
   cerradoEl?: string | null;
 }
 
-function aApartado(dto: ApartadoDto): Apartado {
+export function aApartado(dto: ApartadoDto): Apartado {
   return {
     id: dto.id,
     folio: dto.folio,
@@ -67,8 +80,20 @@ function aApartado(dto: ApartadoDto): Apartado {
     entrega: dto.entrega as Apartado["entrega"],
     requiereTraslado: dto.requiereTraslado,
     estadoEntrega: dto.estadoEntrega as EstadoEntrega,
-    abonos: dto.abonos.map((a) => ({ ...a, metodo: a.metodo as Apartado["abonos"][number]["metodo"], concepto: a.concepto as Apartado["abonos"][number]["concepto"] })),
+    abonos: dto.abonos.map((a) => ({
+      id: a.id,
+      monto: a.monto,
+      fecha: a.fecha,
+      metodo: a.metodo as Apartado["abonos"][number]["metodo"],
+      concepto: a.concepto as Apartado["abonos"][number]["concepto"],
+      estado: a.estado as EstadoPago,
+      revisadoPor: a.revisadoPor ?? undefined,
+      revisadoEl: a.revisadoEl ?? undefined,
+      motivoRechazo: a.motivoRechazo ?? undefined,
+      tieneComprobante: a.tieneComprobante,
+    })),
     pagado: dto.pagado,
+    porConfirmar: dto.porConfirmar,
     saldo: dto.saldo,
     creado: dto.creado,
     venceEl: dto.venceEl,
@@ -127,6 +152,24 @@ export async function listarApartados(
 
 export async function registrarAbono(input: RegistrarAbonoInput): Promise<Apartado> {
   const dto = await http.post<ApartadoDto>("/api/apartados/abonos", input);
+  return aApartado(dto);
+}
+
+/** Pedidos con un pago declarado en línea que la tienda aún no confirma (la cajera ve solo su sucursal). */
+export async function listarPorConfirmar(): Promise<Apartado[]> {
+  const lista = await http.get<ApartadoDto[]>("/api/apartados/por-confirmar");
+  return lista.map(aApartado);
+}
+
+/** La tienda verificó el pago: pasa a pagado y, si cubre el saldo, liquida. */
+export async function confirmarPago(apartadoId: string, abonoId: string): Promise<Apartado> {
+  const dto = await http.post<ApartadoDto>(`/api/apartados/${encodeURIComponent(apartadoId)}/abonos/${encodeURIComponent(abonoId)}/confirmar`);
+  return aApartado(dto);
+}
+
+/** La tienda no encontró el pago. Queda el motivo y la clienta puede volver a intentarlo. */
+export async function rechazarPago(apartadoId: string, abonoId: string, motivo: string): Promise<Apartado> {
+  const dto = await http.post<ApartadoDto>(`/api/apartados/${encodeURIComponent(apartadoId)}/abonos/${encodeURIComponent(abonoId)}/rechazar`, { motivo });
   return aApartado(dto);
 }
 

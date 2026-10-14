@@ -19,6 +19,7 @@ import { mensajeError } from "@/lib/errores";
 import { useSesion } from "@/features/auth/sesion";
 import { useConfig } from "@/features/catalogo/hooks";
 import { useCotizacion, useCrearApartado } from "../hooks";
+import { AvisoPago } from "./AvisoPago";
 
 interface ComprarApartarDrawerProps {
   open: boolean;
@@ -148,7 +149,7 @@ export function ComprarApartarDrawer({
                   activo={modalidad === "anticipo"}
                   onClick={() => setModalidad("anticipo")}
                   titulo={`Apartar con ${cfg?.anticipoPct ?? 50}%`}
-                  detalle={`Te la guardamos ${cfg?.vigenciaConAnticipoDias ?? 15} días`}
+                  detalle={`Te la guardamos ${cfg?.vigenciaConAnticipoDias ?? 15} días al confirmar tu anticipo`}
                   extra={<Badge tono="primary">Popular</Badge>}
                 />
                 <OpcionRadio
@@ -176,7 +177,7 @@ export function ComprarApartarDrawer({
                 </Chip>
               ))}
             </div>
-            <p className="mt-2 text-body-sm text-on-surface-variant">En la demo el pago se simula.</p>
+            <AvisoPago metodo={metodo} config={cfg} sucursal={cfg?.sucursales.find((s) => s.id === entrega)?.nombre} />
           </fieldset>
         )}
 

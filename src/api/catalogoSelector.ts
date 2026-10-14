@@ -1,4 +1,5 @@
 import type {
+  CambioStock,
   Categoria,
   CategoriaInput,
   ColorCatalogo,
@@ -7,15 +8,18 @@ import type {
   ConfigBoutique,
   EditarProductoInput,
   FiltrosCatalogo,
+  MotivoAjuste,
   NuevoProductoInput,
   Producto,
   ProductoDetalle,
   ProductoResumen,
   ResultadoCodigo,
+  SucursalId,
 } from "@/types/api";
 import { apiActiva } from "./http";
 import * as real from "./catalogo";
 import * as config from "./config";
+import * as stock from "./stock";
 import * as mock from "@/mock/server";
 
 /**
@@ -112,4 +116,14 @@ export function demoCatalogoPublico(publico: boolean): Promise<void> {
 /** Busca una variante por su código de barras físico (POS/escáner). */
 export function buscarPorCodigo(codigo: string): Promise<ResultadoCodigo> {
   return apiActiva ? real.buscarPorCodigo(codigo) : mock.buscarPorCodigo(codigo);
+}
+
+/** Guardar stock en lote con motivo (todo o nada, con historial). */
+export function guardarStock(productoId: string, cambios: CambioStock[], motivo: MotivoAjuste): Promise<number> {
+  return apiActiva ? stock.guardarStock(productoId, cambios, motivo) : mock.guardarStock(productoId, cambios, motivo);
+}
+
+/** Mover piezas disponibles entre sucursales. */
+export function moverStock(varianteId: string, desde: SucursalId, cantidad: number): Promise<void> {
+  return apiActiva ? stock.moverStock(varianteId, desde, cantidad) : mock.moverStock(varianteId, desde, cantidad);
 }

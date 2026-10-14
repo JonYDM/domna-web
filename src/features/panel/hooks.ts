@@ -1,7 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { CambioStock, CategoriaInput, ColorInput, AgregarColorInput, CrearCajeraInput, EditarCajeraInput, EditarProductoInput, FiltroClientas, FiltroMetricas, MotivoAjuste, NuevaClientaInput, NuevoProductoInput, SucursalId } from "@/types/api";
 import { qk } from "@/lib/queryKeys";
-import * as api from "@/mock/server";
 import * as cat from "@/api/catalogoSelector";
 import * as personal from "@/api/personal";
 import * as clientasApi from "@/api/clientasSelector";
@@ -125,7 +124,7 @@ export function useGuardarStock(productoId: string) {
   const invalidar = useInvalidarStock(productoId);
   return useMutation({
     mutationFn: ({ cambios, motivo }: { cambios: CambioStock[]; motivo: MotivoAjuste }) =>
-      api.guardarStock(productoId, cambios, motivo),
+      cat.guardarStock(productoId, cambios, motivo),
     onSuccess: invalidar,
   });
 }
