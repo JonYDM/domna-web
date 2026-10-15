@@ -12,6 +12,8 @@ import { useCategorias, useColores, useConfig } from "@/features/catalogo/hooks"
 import { useCrearProducto, useGuardarColor } from "../hooks";
 import { ResumenProducto } from "./ResumenProducto";
 import { CamposColor } from "./ColorDrawer";
+import { ColorDeFoto } from "./ColorDeFoto";
+import { aplicarColorDeFoto } from "@/lib/colorMuestra";
 import { FotosPorColor } from "./FotosPorColor";
 import type { ImagenProcesada } from "@/lib/imagen";
 import { subirFotosPorColor } from "@/api/imagenes";
@@ -64,6 +66,8 @@ export function NuevoProductoDrawer({ open, onClose, onCreado }: { open: boolean
   const [costo, setCosto] = useState(inicial?.costo ?? "");
   const [permiteApartado, setPermiteApartado] = useState(inicial?.permiteApartado ?? true);
   const [formColor, setFormColor] = useState<{ nombre: string; hex: string } | null>(null);
+  /** "colorFoto" = sub-paso a pantalla completa para tomar el color de una foto. */
+  const [vista, setVista] = useState<"formulario" | "colorFoto">("formulario");
 
   const hayFotos = fotosPorColor.some((f) => f && f.length > 0);
   const borrador = {
@@ -265,7 +269,19 @@ export function NuevoProductoDrawer({ open, onClose, onCreado }: { open: boolean
 
 
   return (
-    <Drawer open={open} onClose={cerrar} title="Nuevo producto">
+    <Drawer open={open} onClose={cerrar} title={vista === "colorFoto" ? "Color de la foto" : "Nuevo producto"}>
+      {vista === "colorFoto" && formColor && (
+        <ColorDeFoto
+          fotos={fotosPorColor.flat().map((f) => ({ preview: f.preview }))}
+          onVolver={() => setVista("formulario")}
+          onUsar={(hex, nombreSugerido) => {
+            setFormColor((f) => (f ? aplicarColorDeFoto(f, hex, nombreSugerido) : f));
+            setVista("formulario");
+          }}
+        />
+      )}
+      {/* El formulario sigue montado (solo oculto) mientras se elige el color: así no pierde el paso ni lo escrito. */}
+      <div hidden={vista === "colorFoto"}>
       {retomado && (
         <div role="status" className="mb-4 flex items-center gap-3 rounded-xl bg-info-container px-3 py-2.5 text-body-sm text-info">
           <span className="flex-1">Retomamos tu borrador de {formatHace(retomado)}.</span>
@@ -363,9 +379,9 @@ export function NuevoProductoDrawer({ open, onClose, onCreado }: { open: boolean
                       <CamposColor
                         nombre={formColor.nombre}
                         hex={formColor.hex}
-                        fotos={fotosPorColor.flat().map((f) => ({ preview: f.preview }))}
-                        onNombre={(nombre) => setFormColor({ ...formColor, nombre })}
-                        onHex={(hex) => setFormColor({ ...formColor, hex })}
+                        onTomarDeFoto={() => setVista("colorFoto")}
+                        onNombre={(nombre) => setFormColor((f) => (f ? { ...f, nombre } : f))}
+                        onHex={(hex) => setFormColor((f) => (f ? { ...f, hex } : f))}
                       />
                       <Button
                         variant="tinta"
@@ -380,7 +396,7 @@ export function NuevoProductoDrawer({ open, onClose, onCreado }: { open: boolean
                   ) : (
                     <button
                       type="button"
-                      onClick={() => setFormColor({ nombre: "", hex: "#A7D7C5" })}
+                      onClick={() => setFormColor({ nombre: "", hex: "" })}
                       className="mt-2 inline-flex h-10 items-center gap-1.5 rounded-full px-2 text-label-lg text-primary-strong hover:bg-primary-soft"
                     >
                       <Plus className="h-4 w-4" aria-hidden />
@@ -562,6 +578,7 @@ export function NuevoProductoDrawer({ open, onClose, onCreado }: { open: boolean
           },
         ]}
       />
+      </div>
     </Drawer>
   );
 }

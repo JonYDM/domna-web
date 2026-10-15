@@ -17,6 +17,13 @@ import type {
 import { http } from "./http";
 
 /**
+ * Las lecturas del catálogo revalidan siempre con el servidor (ETag → 304 si no cambió). El API
+ * las marca con max-age corto para otros clientes, pero esta app no debe recibir la lista vieja de
+ * la caché del navegador justo después de publicar o editar algo.
+ */
+const REVALIDAR = { cache: "no-cache" } as const;
+
+/**
  * Catálogo contra el backend real (domna-api). Mismas firmas que el mock para que el selector
  * intercambie sin tocar los hooks. El backend devuelve un ProductoDto; aquí lo adaptamos a las
  * formas que la UI espera (ProductoResumen / ProductoDetalle), derivando lo que haga falta.
@@ -142,7 +149,7 @@ function aProductoResumen(p: ProductoDto, ahora: number): ProductoResumen {
 // ── Categorías ──
 
 export async function obtenerCategorias(): Promise<Categoria[]> {
-  const dtos = await http.get<{ id: string; nombre: string; tallas: string[]; productos: number }[]>("/api/categorias");
+  const dtos = await http.get<{ id: string; nombre: string; tallas: string[]; productos: number }[]>("/api/categorias", REVALIDAR);
   return dtos;
 }
 
@@ -159,7 +166,7 @@ export async function eliminarCategoria(id: string): Promise<void> {
 // ── Colores ──
 
 export async function obtenerColores(): Promise<ColorCatalogo[]> {
-  return http.get<ColorCatalogo[]>("/api/colores");
+  return http.get<ColorCatalogo[]>("/api/colores", REVALIDAR);
 }
 
 export async function guardarColor(id: string | null, input: ColorInput): Promise<ColorCatalogo> {
@@ -173,7 +180,7 @@ export async function eliminarColor(id: string): Promise<void> {
 // ── Productos ──
 
 export async function listarProductos(f: FiltrosCatalogo): Promise<ProductoResumen[]> {
-  const dtos = await http.get<ProductoDto[]>(`/api/productos?incluirInactivos=${f.incluirInactivos ? "true" : "false"}`);
+  const dtos = await http.get<ProductoDto[]>(`/api/productos?incluirInactivos=${f.incluirInactivos ? "true" : "false"}`, REVALIDAR);
   const ahora = Date.now();
   let lista = dtos.map((p) => aProductoResumen(p, ahora));
 
@@ -194,7 +201,7 @@ export async function obtenerProducto(
   id: string,
   _opciones: { incluirInactivo?: boolean } = {},
 ): Promise<ProductoDetalle> {
-  const dto = await http.get<ProductoDto>(`/api/productos/${id}`);
+  const dto = await http.get<ProductoDto>(`/api/productos/${id}`, REVALIDAR);
   return aProductoDetalle(dto, Date.now());
 }
 
@@ -254,7 +261,7 @@ export async function eliminarProductoPermanente(id: string): Promise<void> {
 
 export async function cambiarPermiteApartado(id: string, permite: boolean): Promise<void> {
   // Edición parcial vía PUT: el backend reusa EditarProductoInput; se obtiene y reenvía.
-  const dto = await http.get<ProductoDto>(`/api/productos/${id}`);
+  const dto = await http.get<ProductoDto>(`/api/productos/${id}`, REVALIDAR);
   await http.put(`/api/productos/${id}`, {
     nombre: dto.nombre,
     descripcion: dto.descripcion,

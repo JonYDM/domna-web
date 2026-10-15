@@ -8,7 +8,11 @@ export function useProductos(filtros: FiltrosCatalogo) {
   return useQuery({
     queryKey: qk.productos(filtros),
     queryFn: () => api.listarProductos(filtros),
-    staleTime: 5 * 60_000,
+    // Se publican prendas con frecuencia: al volver a la app o cada 2 min (con la ventana visible)
+    // se revalida. Cuesta poco: el servidor responde 304 si nada cambió.
+    staleTime: 60_000,
+    refetchOnWindowFocus: true,
+    refetchInterval: 2 * 60_000,
     placeholderData: keepPreviousData,
   });
 }
@@ -24,11 +28,11 @@ export function useProducto(id: string, opciones: { incluirInactivo?: boolean } 
 }
 
 export function useCategorias() {
-  return useQuery({ queryKey: qk.categorias(), queryFn: api.obtenerCategorias, staleTime: 5 * 60_000 });
+  return useQuery({ queryKey: qk.categorias(), queryFn: api.obtenerCategorias, staleTime: 60_000, refetchOnWindowFocus: true });
 }
 
 export function useColores() {
-  return useQuery({ queryKey: qk.colores(), queryFn: api.obtenerColores, staleTime: 5 * 60_000 });
+  return useQuery({ queryKey: qk.colores(), queryFn: api.obtenerColores, staleTime: 60_000, refetchOnWindowFocus: true });
 }
 
 export function useConfig() {

@@ -58,11 +58,18 @@ interface OpcionesPeticion {
   idempotencyKey?: string;
   /** Señal externa opcional (p. ej. para cancelar al desmontar). Se combina con el timeout interno. */
   signal?: AbortSignal;
+  /**
+   * Modo de caché del navegador. "no-cache" = revalida siempre con el servidor (ETag: si no cambió,
+   * responde 304 sin cuerpo). Úsalo en lecturas del catálogo: así un refresco tras publicar nunca
+   * recibe la lista vieja de la caché HTTP (max-age) del navegador.
+   */
+  cache?: RequestCache;
 }
 
 /** Petición JSON genérica al backend. Lanza ApiError con el status y el mensaje del backend. */
 async function pedir<T>(metodo: string, ruta: string, opciones: OpcionesPeticion = {}): Promise<T> {
-  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  // Content-Type solo si hay cuerpo: en un GET obliga a una consulta previa (preflight) sin necesidad.
+  const headers: Record<string, string> = opciones.body !== undefined ? { "Content-Type": "application/json" } : {};
   const token = leerToken();
   if (token && opciones.conAuth !== false) headers.Authorization = `Bearer ${token}`;
   if (opciones.idempotencyKey) headers["Idempotency-Key"] = opciones.idempotencyKey;
@@ -91,6 +98,7 @@ async function pedir<T>(metodo: string, ruta: string, opciones: OpcionesPeticion
       headers,
       body: opciones.body !== undefined ? JSON.stringify(opciones.body) : undefined,
       signal: controlador.signal,
+      cache: opciones.cache,
     });
   } catch (e) {
     if (porTimeout) throw errorDeTimeout();
