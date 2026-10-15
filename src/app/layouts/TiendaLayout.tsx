@@ -15,6 +15,7 @@ import { AvisosPopover } from "@/features/avisos/components/AvisosPopover";
 import { useSesion } from "@/features/auth/sesion";
 import { enCurso } from "@/lib/enums";
 import { CristalEncabezado, FondoShell, MarcaNombre } from "@/components/organisms/MarcaShell";
+import { BannerConexion } from "@/components/feedback/BannerConexion";
 import { DockTienda } from "./DockTienda";
 
 /** Portal de la clienta (app shell): encabezado translúcido, dock flotante en móvil, nav superior en escritorio. */
@@ -96,6 +97,7 @@ export default function TiendaLayout() {
             </div>
           </div>
         </header>
+        <BannerConexion />
         <main className="mx-auto max-w-6xl px-4 pb-36 pt-4 md:pb-12">
           <Outlet />
         </main>

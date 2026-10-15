@@ -122,8 +122,8 @@ export async function cotizarApartado(clientaId: string, input: CrearApartadoInp
   return { ...dto, sucursalOrigen: dto.sucursalOrigen as CotizacionApartado["sucursalOrigen"] };
 }
 
-export async function crearApartado(clientaId: string, input: CrearApartadoInput): Promise<Apartado> {
-  const dto = await http.post<ApartadoDto>("/api/apartados", aInputBackend(input, clientaId));
+export async function crearApartado(clientaId: string, input: CrearApartadoInput, idempotencyKey?: string): Promise<Apartado> {
+  const dto = await http.post<ApartadoDto>("/api/apartados", aInputBackend(input, clientaId), { idempotencyKey });
   return aApartado(dto);
 }
 
@@ -150,8 +150,8 @@ export async function listarApartados(
   return lista.map(aApartado);
 }
 
-export async function registrarAbono(input: RegistrarAbonoInput): Promise<Apartado> {
-  const dto = await http.post<ApartadoDto>("/api/apartados/abonos", input);
+export async function registrarAbono(input: RegistrarAbonoInput, idempotencyKey?: string): Promise<Apartado> {
+  const dto = await http.post<ApartadoDto>("/api/apartados/abonos", input, { idempotencyKey });
   return aApartado(dto);
 }
 
@@ -162,14 +162,14 @@ export async function listarPorConfirmar(): Promise<Apartado[]> {
 }
 
 /** La tienda verificó el pago: pasa a pagado y, si cubre el saldo, liquida. */
-export async function confirmarPago(apartadoId: string, abonoId: string): Promise<Apartado> {
-  const dto = await http.post<ApartadoDto>(`/api/apartados/${encodeURIComponent(apartadoId)}/abonos/${encodeURIComponent(abonoId)}/confirmar`);
+export async function confirmarPago(apartadoId: string, abonoId: string, idempotencyKey?: string): Promise<Apartado> {
+  const dto = await http.post<ApartadoDto>(`/api/apartados/${encodeURIComponent(apartadoId)}/abonos/${encodeURIComponent(abonoId)}/confirmar`, undefined, { idempotencyKey });
   return aApartado(dto);
 }
 
 /** La tienda no encontró el pago. Queda el motivo y la clienta puede volver a intentarlo. */
-export async function rechazarPago(apartadoId: string, abonoId: string, motivo: string): Promise<Apartado> {
-  const dto = await http.post<ApartadoDto>(`/api/apartados/${encodeURIComponent(apartadoId)}/abonos/${encodeURIComponent(abonoId)}/rechazar`, { motivo });
+export async function rechazarPago(apartadoId: string, abonoId: string, motivo: string, idempotencyKey?: string): Promise<Apartado> {
+  const dto = await http.post<ApartadoDto>(`/api/apartados/${encodeURIComponent(apartadoId)}/abonos/${encodeURIComponent(abonoId)}/rechazar`, { motivo }, { idempotencyKey });
   return aApartado(dto);
 }
 

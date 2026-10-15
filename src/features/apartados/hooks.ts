@@ -7,6 +7,7 @@ import type {
   TipoPedido,
 } from "@/types/api";
 import { qk } from "@/lib/queryKeys";
+import { useLlaveIdempotencia } from "@/lib/idempotencia";
 import * as api from "@/api/apartadosSelector";
 import * as comprobantes from "@/api/comprobantes";
 import * as clientasApi from "@/api/clientasSelector";
@@ -53,11 +54,18 @@ export function useCotizacion(clientaId: string | undefined, input: CrearApartad
 /** Apartar NO es optimista: espera la confirmación (depende del stock real). */
 export function useCrearApartado(clientaId: string | undefined) {
   const qc = useQueryClient();
+  const llave = useLlaveIdempotencia();
   return useMutation({
-    mutationFn: (input: CrearApartadoInput) => api.crearApartado(clientaId!, input),
-    onSuccess: () => invalidarTodo(qc, { stock: true }),
+    mutationFn: (input: CrearApartadoInput) => api.crearApartado(clientaId!, input, llave.llavePara(input)),
+    onSuccess: () => {
+      llave.confirmarExito();
+      invalidarTodo(qc, { stock: true });
+    },
     // Si fue 409 (sin stock), refresca el detalle para mostrar el stock real.
-    onError: () => qc.invalidateQueries({ queryKey: qk.productoTodos() }),
+    onError: (e) => {
+      llave.alError(e);
+      qc.invalidateQueries({ queryKey: qk.productoTodos() });
+    },
   });
 }
 
@@ -87,10 +95,15 @@ export function useApartados(estado?: FiltroEstadoApartado, texto?: string, tipo
 
 export function useRegistrarAbono() {
   const qc = useQueryClient();
+  const llave = useLlaveIdempotencia();
   return useMutation({
-    mutationFn: (input: RegistrarAbonoInput) => api.registrarAbono(input),
+    mutationFn: (input: RegistrarAbonoInput) => api.registrarAbono(input, llave.llavePara(input)),
     // Si liquida, descuenta stock físico → también producto(s).
-    onSuccess: (a) => invalidarTodo(qc, { stock: a.estado === "liquidado" }),
+    onSuccess: (a) => {
+      llave.confirmarExito();
+      invalidarTodo(qc, { stock: a.estado === "liquidado" });
+    },
+    onError: (e) => llave.alError(e),
   });
 }
 
@@ -133,12 +146,16 @@ export function useGuardarDatosBancarios() {
 /** La clienta sube su comprobante: se reduce en el navegador, se sube directo y el pago queda en revisión. */
 export function useSubirComprobante(apartadoId: string) {
   const qc = useQueryClient();
+  const llave = useLlaveIdempotencia();
   return useMutation({
-    mutationFn: async (archivo: File) => comprobantes.subirComprobante(apartadoId, await comprimirComprobante(archivo)),
+    mutationFn: async (archivo: File) =>
+      comprobantes.subirComprobante(apartadoId, await comprimirComprobante(archivo), llave.llavePara(apartadoId)),
     onSuccess: () => {
+      llave.confirmarExito();
       qc.invalidateQueries({ queryKey: qk.porConfirmar() });
       invalidarTodo(qc, { stock: false });
     },
+    onError: (e) => llave.alError(e),
   });
 }
 
@@ -166,26 +183,37 @@ export function usePorConfirmar() {
 /** Confirmar liquida (y descuenta stock) si el pago cubre el saldo → refresca todo lo que lo muestra. */
 export function useConfirmarPago() {
   const qc = useQueryClient();
+  const llave = useLlaveIdempotencia();
   return useMutation({
-    mutationFn: ({ apartadoId, abonoId }: { apartadoId: string; abonoId: string }) => api.confirmarPago(apartadoId, abonoId),
+    mutationFn: ({ apartadoId, abonoId }: { apartadoId: string; abonoId: string }) =>
+      api.confirmarPago(apartadoId, abonoId, llave.llavePara({ apartadoId, abonoId })),
     onSuccess: (a) => {
+      llave.confirmarExito();
       qc.invalidateQueries({ queryKey: qk.porConfirmar() });
       invalidarTodo(qc, { stock: a.estado === "liquidado" });
     },
-    // Si ya venció o lo revisó otra persona, la cola cambió: refrescarla.
-    onError: () => qc.invalidateQueries({ queryKey: qk.porConfirmar() }),
+    // Si ya venció o lo revisó otra persona, la cola cambió: refrescarla para ver el estado real.
+    onError: (e) => {
+      llave.alError(e);
+      qc.invalidateQueries({ queryKey: qk.porConfirmar() });
+    },
   });
 }
 
 export function useRechazarPago() {
   const qc = useQueryClient();
+  const llave = useLlaveIdempotencia();
   return useMutation({
     mutationFn: ({ apartadoId, abonoId, motivo }: { apartadoId: string; abonoId: string; motivo: string }) =>
-      api.rechazarPago(apartadoId, abonoId, motivo),
+      api.rechazarPago(apartadoId, abonoId, motivo, llave.llavePara({ apartadoId, abonoId, motivo })),
     onSuccess: () => {
+      llave.confirmarExito();
       qc.invalidateQueries({ queryKey: qk.porConfirmar() });
       invalidarTodo(qc, { stock: false });
     },
-    onError: () => qc.invalidateQueries({ queryKey: qk.porConfirmar() }),
+    onError: (e) => {
+      llave.alError(e);
+      qc.invalidateQueries({ queryKey: qk.porConfirmar() });
+    },
   });
 }

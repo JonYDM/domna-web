@@ -2,7 +2,7 @@ import { useState, type ReactNode } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "react-hot-toast";
 import { SesionProvider } from "@/features/auth/SesionProvider";
-import { ApiError } from "@/lib/errores";
+import { debeReintentar, esperaReintento } from "@/lib/reintento";
 import { MARCA } from "@/lib/marca";
 
 /** Providers globales: TanStack Query (estado de servidor), sesión y toasts. */
@@ -12,11 +12,10 @@ export function Providers({ children }: { children: ReactNode }) {
       new QueryClient({
         defaultOptions: {
           queries: {
-            // No reintentar errores de negocio/permiso (no cambian al reintentar).
-            retry: (fallos, error) => {
-              if (error instanceof ApiError && error.status < 500) return false;
-              return fallos < 1;
-            },
+            // Reintenta cortes de red/timeout (hasta 2 veces); no reintenta errores de negocio (4xx)
+            // y da un solo reintento a 5xx persistentes. Espera exponencial entre intentos.
+            retry: debeReintentar,
+            retryDelay: esperaReintento,
             refetchOnWindowFocus: false,
             staleTime: 30_000,
           },

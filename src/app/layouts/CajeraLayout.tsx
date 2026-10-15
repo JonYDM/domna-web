@@ -6,6 +6,7 @@ import { PerfilMenu } from "@/components/organisms/PerfilMenu";
 import { useSesion } from "@/features/auth/sesion";
 import { useConfig } from "@/features/catalogo/hooks";
 import { usePorConfirmar } from "@/features/apartados/hooks";
+import { BannerConexion } from "@/components/feedback/BannerConexion";
 
 const NOMBRE_SUCURSAL: Record<string, string> = { temixco: "Temixco", azteca: "La Azteca" };
 
@@ -53,6 +54,7 @@ export default function CajeraLayout() {
           />
         </div>
       </header>
+      <BannerConexion />
       <main className="mx-auto max-w-6xl px-4 pb-28 pt-5 md:pb-12">
         <Outlet />
       </main>

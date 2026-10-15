@@ -76,6 +76,7 @@ function CampoTelefono({
 export default function EntrarPage() {
   const [params] = useSearchParams();
   const destino = destinoSeguro(params.get("volver"));
+  const sesionVencio = params.get("motivo") === "vencio";
   const navigate = useNavigate();
   const { entrarComoClienta, entrarStaff } = useSesion();
 
@@ -236,6 +237,14 @@ export default function EntrarPage() {
 
         {/* Marca del tenant (white-label): nombre de la boutique, sin logo de Domna. */}
         <div className="anim-sube mt-7">
+          {sesionVencio && (
+            <p
+              role="status"
+              className="mb-5 rounded-2xl bg-warning-container px-4 py-3 text-body-md text-warning"
+            >
+              Tu sesión venció. Entra de nuevo.
+            </p>
+          )}
           <p className="font-marca text-[32px] leading-none text-on-surface">Jesly Boutique</p>
           <h1 className="mt-6 whitespace-pre-line font-marca text-[2.1rem] leading-[1.08] tracking-[-0.02em] text-on-surface">
             {fase === "login" && !pasoPin && "Qué gusto\nverte de nuevo."}

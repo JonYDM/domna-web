@@ -1,6 +1,7 @@
-import { useCallback, useMemo, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import type { SucursalId } from "@/types/api";
 import { cerrarSesion } from "@/api/authSelector";
+import { registrarSesionVencida } from "@/api/http";
 import { SesionContext, STORAGE_SESION, USUARIAS_DEMO, type Rol, type Sesion } from "./sesion";
 
 function leer(): Sesion | null {
@@ -37,7 +38,22 @@ export function SesionProvider({ children }: { children: ReactNode }) {
   const salir = useCallback(() => {
     cerrarSesion(); // borra el JWT si la API real está activa
     localStorage.removeItem(STORAGE_SESION);
+    // Nota: NO se borra el carrito (domna.carrito.<clientaId>): sobrevive al cierre de sesión.
     setSesion(null);
+  }, []);
+
+  // Sesión vencida (401 en ruta autenticada): limpia la sesión y manda a /entrar con un aviso.
+  // Se maneja de forma centralizada vía http.ts (callback registrable, sin dependencias circulares).
+  // El carrito se conserva (vive en localStorage por clientaId y salir() no lo toca).
+  useEffect(() => {
+    registrarSesionVencida(() => {
+      cerrarSesion();
+      localStorage.removeItem(STORAGE_SESION);
+      setSesion(null);
+      const yaEnEntrar = window.location.pathname.startsWith("/entrar");
+      if (!yaEnEntrar) window.location.assign("/entrar?motivo=vencio");
+    });
+    return () => registrarSesionVencida(null);
   }, []);
 
   const valor = useMemo(

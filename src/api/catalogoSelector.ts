@@ -119,11 +119,11 @@ export function buscarPorCodigo(codigo: string): Promise<ResultadoCodigo> {
 }
 
 /** Guardar stock en lote con motivo (todo o nada, con historial). */
-export function guardarStock(productoId: string, cambios: CambioStock[], motivo: MotivoAjuste): Promise<number> {
-  return apiActiva ? stock.guardarStock(productoId, cambios, motivo) : mock.guardarStock(productoId, cambios, motivo);
+export function guardarStock(productoId: string, cambios: CambioStock[], motivo: MotivoAjuste, idempotencyKey?: string): Promise<number> {
+  return apiActiva ? stock.guardarStock(productoId, cambios, motivo, idempotencyKey) : mock.guardarStock(productoId, cambios, motivo);
 }
 
 /** Mover piezas disponibles entre sucursales. */
-export function moverStock(varianteId: string, desde: SucursalId, cantidad: number): Promise<void> {
-  return apiActiva ? stock.moverStock(varianteId, desde, cantidad) : mock.moverStock(varianteId, desde, cantidad);
+export function moverStock(varianteId: string, desde: SucursalId, cantidad: number, idempotencyKey?: string): Promise<void> {
+  return apiActiva ? stock.moverStock(varianteId, desde, cantidad, idempotencyKey) : mock.moverStock(varianteId, desde, cantidad);
 }

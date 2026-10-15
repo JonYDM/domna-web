@@ -11,6 +11,12 @@ interface UrlFirmada {
   tamano: string;
   urlSubida: string;
   urlPublica: string;
+  /**
+   * Cabeceras que van firmadas en la URL (p. ej. Cache-Control inmutable de las fotos) y que el PUT
+   * debe enviar EXACTAMENTE igual, o el almacenamiento rechaza la firma. Opcional: un backend
+   * anterior no las manda.
+   */
+  cabeceras?: Record<string, string>;
 }
 interface FirmaSubida {
   subidas: UrlFirmada[];
@@ -43,7 +49,7 @@ export async function subirImagenProducto(
       if (!blob) return;
       const res = await fetch(s.urlSubida, {
         method: "PUT",
-        headers: { "Content-Type": "image/webp" },
+        headers: { "Content-Type": "image/webp", ...(s.cabeceras ?? {}) },
         body: blob,
       });
       if (!res.ok) throw new Error(`No se pudo subir la imagen (${s.tamano}).`);

@@ -20,8 +20,8 @@ export function cotizarApartado(clientaId: string, input: CrearApartadoInput): P
   return apiActiva ? real.cotizarApartado(clientaId, input) : mock.cotizarApartado(clientaId, input);
 }
 
-export function crearApartado(clientaId: string, input: CrearApartadoInput): Promise<Apartado> {
-  return apiActiva ? real.crearApartado(clientaId, input) : mock.crearApartado(clientaId, input);
+export function crearApartado(clientaId: string, input: CrearApartadoInput, idempotencyKey?: string): Promise<Apartado> {
+  return apiActiva ? real.crearApartado(clientaId, input, idempotencyKey) : mock.crearApartado(clientaId, input);
 }
 
 export function misApartados(clientaId: string): Promise<Apartado[]> {
@@ -36,8 +36,8 @@ export function listarApartados(filtro?: FiltroEstadoApartado, texto?: string, t
   return apiActiva ? real.listarApartados(filtro, texto, tipo) : mock.listarApartados(filtro, texto, tipo);
 }
 
-export function registrarAbono(input: RegistrarAbonoInput): Promise<Apartado> {
-  return apiActiva ? real.registrarAbono(input) : mock.registrarAbono(input);
+export function registrarAbono(input: RegistrarAbonoInput, idempotencyKey?: string): Promise<Apartado> {
+  return apiActiva ? real.registrarAbono(input, idempotencyKey) : mock.registrarAbono(input);
 }
 
 /**
@@ -48,12 +48,12 @@ export function listarPorConfirmar(): Promise<Apartado[]> {
   return apiActiva ? real.listarPorConfirmar() : Promise.resolve([]);
 }
 
-export function confirmarPago(apartadoId: string, abonoId: string): Promise<Apartado> {
-  return real.confirmarPago(apartadoId, abonoId);
+export function confirmarPago(apartadoId: string, abonoId: string, idempotencyKey?: string): Promise<Apartado> {
+  return real.confirmarPago(apartadoId, abonoId, idempotencyKey);
 }
 
-export function rechazarPago(apartadoId: string, abonoId: string, motivo: string): Promise<Apartado> {
-  return real.rechazarPago(apartadoId, abonoId, motivo);
+export function rechazarPago(apartadoId: string, abonoId: string, motivo: string, idempotencyKey?: string): Promise<Apartado> {
+  return real.rechazarPago(apartadoId, abonoId, motivo, idempotencyKey);
 }
 
 export function cancelarApartado(id: string): Promise<Apartado> {

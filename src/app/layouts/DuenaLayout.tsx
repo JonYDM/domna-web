@@ -11,6 +11,7 @@ import { usePorConfirmar } from "@/features/apartados/hooks";
 import { useSesion } from "@/features/auth/sesion";
 import { useConfig } from "@/features/catalogo/hooks";
 import { CristalEncabezado, FondoShell, MarcaNombre } from "@/components/organisms/MarcaShell";
+import { BannerConexion } from "@/components/feedback/BannerConexion";
 
 /** Panel de la dueña. Móvil: dock flotante con FAB contextual. Escritorio: nav superior. */
 export default function DuenaLayout() {
@@ -94,6 +95,7 @@ export default function DuenaLayout() {
             </PerfilMenu>
           </div>
         </header>
+        <BannerConexion />
         <main className="mx-auto max-w-6xl px-4 pb-40 pt-5 md:pb-12">
           <Outlet />
         </main>

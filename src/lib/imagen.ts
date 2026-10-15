@@ -249,8 +249,8 @@ const LADO_MAX_COMPROBANTE = 1800;
 
 /**
  * Prepara la foto o captura de un comprobante para subirla: la reduce (lado mayor 1800 px) y la
- * exporta a JPEG con calidad alta para que el texto siga legible. Rechaza lo que no sea imagen.
- * Una captura de pantalla de varios MB queda en unos cientos de KB.
+ * exporta a WebP, que pesa menos que JPEG con el mismo texto legible. Si el navegador no sabe
+ * exportar WebP (algunos Safari devuelven PNG sin avisar), usa JPEG. Rechaza lo que no sea imagen.
  */
 export async function comprimirComprobante(file: File): Promise<Blob> {
   if (!file.type.startsWith("image/")) throw new Error("Elige una foto o captura del comprobante.");
@@ -264,17 +264,18 @@ export async function comprimirComprobante(file: File): Promise<Blob> {
   canvas.height = h;
   const ctx = canvas.getContext("2d");
   if (!ctx) throw new Error("No se pudo preparar la imagen.");
-  // Fondo blanco: una captura PNG con transparencia no debe quedar negra al pasar a JPEG.
+  // Fondo blanco: una captura PNG con transparencia no debe quedar negra.
   ctx.fillStyle = "#ffffff";
   ctx.fillRect(0, 0, w, h);
   ctx.imageSmoothingQuality = "high";
   ctx.drawImage(img, 0, 0, w, h);
 
-  return new Promise((resolve, reject) => {
-    canvas.toBlob(
-      (blob) => (blob ? resolve(blob) : reject(new Error("No se pudo preparar la imagen."))),
-      "image/jpeg",
-      0.88,
-    );
-  });
+  const exportar = (tipo: string, calidad: number) =>
+    new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, tipo, calidad));
+
+  const webp = await exportar("image/webp", 0.85);
+  if (webp && webp.type === "image/webp") return webp;
+  const jpeg = await exportar("image/jpeg", 0.88);
+  if (!jpeg) throw new Error("No se pudo preparar la imagen.");
+  return jpeg;
 }
