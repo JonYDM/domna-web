@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import { Clock, MapPin, ShieldCheck, ShoppingBag, ShoppingCart, Truck } from "lucide-react";
@@ -22,6 +22,7 @@ import {
 } from "@/components/ui";
 import { formatMXN } from "@/lib/format";
 import { mensajeError } from "@/lib/errores";
+import { useSuperadoArriba } from "@/lib/useSuperadoArriba";
 import { ComprarApartarDrawer } from "@/features/apartados/components/ComprarApartarDrawer";
 import { useCarrito } from "@/features/carrito/carrito";
 import { useCategorias, useConfig, useProducto } from "../hooks";
@@ -39,6 +40,9 @@ export default function ProductoPage() {
   const [tallaElegida, setTallaElegida] = useState<string | null>(null);
   /** Drawer abierto con la opción elegida (null = cerrado). */
   const [accion, setAccion] = useState<ModalidadApartado | null>(null);
+  /** Las acciones viven en la página; la barra flotante aparece solo al pasarlas (64 px = encabezado fijo). */
+  const [refAcciones, accionesSuperadas] = useSuperadoArriba(64);
+  const refTalla = useRef<HTMLDivElement>(null);
 
   const p = producto.data;
 
@@ -111,8 +115,15 @@ export default function ProductoPage() {
     toast.success(`${p.nombre} (${color.nombre} · ${variante.talla}) va en tu carrito`);
   }
 
+  function irATalla() {
+    refTalla.current?.scrollIntoView({
+      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+      block: "center",
+    });
+  }
+
   return (
-    <div className="pb-24 md:pb-0">
+    <div className="pb-16 md:pb-0">
       <Breadcrumb className="mb-2">
         <BreadcrumbList>
           <BreadcrumbItem>
@@ -165,7 +176,9 @@ export default function ProductoPage() {
             }}
           />
 
-          <SelectorTalla tallas={p.tallas} seleccionada={talla} onChange={setTallaElegida} disponible={dispPorTalla} />
+          <div ref={refTalla} className="scroll-mt-20">
+            <SelectorTalla tallas={p.tallas} seleccionada={talla} onChange={setTallaElegida} disponible={dispPorTalla} />
+          </div>
 
           {variante && variante.disponible > 0 && (
             <p className="-mt-2 flex items-center gap-2 text-body-sm text-on-surface-variant">
@@ -175,6 +188,11 @@ export default function ProductoPage() {
                 .join(" · ")}
             </p>
           )}
+
+          {/* Acciones en el flujo de la página, junto a lo que se elige. Al pasarlas, flotan (abajo). */}
+          <div ref={refAcciones}>
+            <Acciones talla={talla} agotada={tallaAgotada} precio={p.precio} anticipo={anticipo} permiteApartado={p.permiteApartado} onAccion={setAccion} onAgregarCarrito={agregarAlCarrito} />
+          </div>
 
           <p className="text-body-md text-on-surface-variant">{p.descripcion}</p>
 
@@ -210,17 +228,28 @@ export default function ProductoPage() {
               <span>Recoge en Temixco o La Azteca. Si está en la otra sucursal, te la llevamos en 2 días hábiles.</span>
             </li>
           </ul>
-
-          <div className="hidden md:block">
-            <Acciones talla={talla} agotada={tallaAgotada} precio={p.precio} anticipo={anticipo} permiteApartado={p.permiteApartado} onAccion={setAccion} onAgregarCarrito={agregarAlCarrito} />
-          </div>
         </div>
       </div>
 
-      {/* CTA flotante sobre el dock en móvil */}
-      <div className="fixed inset-x-3 bottom-[calc(var(--dock-bottom)_+_5.25rem)] z-30 rounded-2xl border border-outline-variant/60 bg-surface-container-lowest p-2.5 shadow-lift md:hidden">
-        <Acciones talla={talla} agotada={tallaAgotada} precio={p.precio} anticipo={anticipo} permiteApartado={p.permiteApartado} onAccion={setAccion} onAgregarCarrito={agregarAlCarrito} />
-      </div>
+      {/* Barra compacta en móvil: aparece solo después de pasar las acciones y flota sobre el dock. */}
+      {accionesSuperadas && (
+        <div
+          role="region"
+          aria-label="Acciones de compra"
+          className="anim-sube fixed inset-x-3 bottom-[calc(var(--dock-bottom)_+_5.25rem)] z-30 rounded-2xl border border-outline-variant/60 bg-surface-container-lowest p-2 shadow-lift md:hidden"
+        >
+          <BarraCompacta
+            talla={talla}
+            agotada={tallaAgotada}
+            precio={p.precio}
+            anticipo={anticipo}
+            permiteApartado={p.permiteApartado}
+            onAccion={setAccion}
+            onAgregarCarrito={agregarAlCarrito}
+            onElegirTalla={irATalla}
+          />
+        </div>
+      )}
 
       {variante && accion && (
         <ComprarApartarDrawer
@@ -233,6 +262,58 @@ export default function ProductoPage() {
           modalidadInicial={accion}
         />
       )}
+    </div>
+  );
+}
+
+/** Versión de una sola fila para la barra flotante: no tapa el contenido ni el selector de talla. */
+function BarraCompacta({
+  talla,
+  agotada,
+  precio,
+  anticipo,
+  permiteApartado,
+  onAccion,
+  onAgregarCarrito,
+  onElegirTalla,
+}: {
+  talla: string | null;
+  agotada: boolean;
+  precio: number;
+  anticipo: number;
+  permiteApartado: boolean;
+  onAccion: (m: ModalidadApartado) => void;
+  onAgregarCarrito: () => void;
+  onElegirTalla: () => void;
+}) {
+  if (agotada) {
+    return (
+      <Button size="lg" fullWidth disabled>
+        Talla agotada
+      </Button>
+    );
+  }
+  if (!talla) {
+    // Sin talla no se puede comprar: el botón lleva de vuelta al selector en lugar de quedar muerto.
+    return (
+      <Button size="lg" variant="tinta" fullWidth onClick={onElegirTalla}>
+        Elige tu talla
+      </Button>
+    );
+  }
+  return (
+    <div className="flex gap-2">
+      <Button size="lg" variant="tinta" fullWidth className="min-w-0 px-3" onClick={() => onAccion("compra")}>
+        Comprar · {formatMXN(precio)}
+      </Button>
+      {permiteApartado && (
+        <Button size="lg" fullWidth className="min-w-0 px-3" onClick={() => onAccion("anticipo")}>
+          Apartar · {formatMXN(anticipo)}
+        </Button>
+      )}
+      <Button size="lg" variant="outline" className="w-14 shrink-0 px-0" onClick={onAgregarCarrito} aria-label="Agregar al carrito" title="Agregar al carrito">
+        <ShoppingCart className="h-5 w-5" aria-hidden />
+      </Button>
     </div>
   );
 }

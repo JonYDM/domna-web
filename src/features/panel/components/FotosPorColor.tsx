@@ -120,8 +120,8 @@ function FilaColor({
                 <Loader2 className="h-5 w-5 animate-spin text-primary" aria-hidden />
               </div>
             )}
-            {/* Quitar fondo (si aún no está recortada) */}
-            {!f.transparente && recortando === null && (
+            {/* Quitar fondo (si aún no está recortada). Necesita el archivo original: un borrador retomado no lo conserva. */}
+            {!f.transparente && f.originalFile && recortando === null && (
               <button
                 type="button"
                 onClick={() => quitarFondo(idx)}

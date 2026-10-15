@@ -1,33 +1,51 @@
 import { useState } from "react";
 import toast from "react-hot-toast";
-import { Trash2 } from "lucide-react";
+import { Pipette, Trash2 } from "lucide-react";
 import type { ColorCatalogo } from "@/types/api";
 import { PrendaImagen } from "@/components/ilustraciones/PrendaImagen";
-import { Button, Drawer, Input } from "@/components/ui";
+import { Button, Chip, Drawer, Input } from "@/components/ui";
 import { FAMILIAS_COLOR } from "@/lib/enums";
 import { mensajeError } from "@/lib/errores";
 import { familiaDeHex } from "@/lib/color";
+import { nombreDeHex } from "@/lib/colorMuestra";
 import { useEliminarColor, useGuardarColor } from "../hooks";
+import { ColorDeFoto, type FotoParaColor } from "./ColorDeFoto";
 
 const HEX = /^#[0-9A-Fa-f]{6}$/;
 
-/** Campos de color reutilizables (nombre + selector + vista previa). También se usan en el alta de producto. */
+/**
+ * Campos de color reutilizables (nombre + selector + vista previa). También se usan en el alta de
+ * producto. Con `fotos` se puede tomar el color tocando la foto de la prenda, para que el círculo
+ * de la tienda sea el de la ropa de verdad.
+ */
 export function CamposColor({
   nombre,
   hex,
   onNombre,
   onHex,
+  fotos = [],
 }: {
   nombre: string;
   hex: string;
   onNombre: (v: string) => void;
   onHex: (v: string) => void;
+  fotos?: FotoParaColor[];
 }) {
+  const [tomando, setTomando] = useState(false);
   const valido = HEX.test(hex);
   const familia = valido ? FAMILIAS_COLOR.find((f) => f.id === familiaDeHex(hex))?.nombre : undefined;
+  const sugerido = valido ? nombreDeHex(hex) : "";
   return (
     <div className="flex flex-col gap-4">
-      <Input label="Nombre" value={nombre} onChange={(e) => onNombre(e.target.value)} placeholder="Verde menta" maxLength={24} />
+      <div className="flex flex-col gap-2">
+        <Input label="Nombre" value={nombre} onChange={(e) => onNombre(e.target.value)} placeholder="Verde menta" maxLength={24} />
+        {sugerido && nombre.trim().toLowerCase() !== sugerido.toLowerCase() && (
+          <div className="flex items-center gap-2 text-body-sm text-on-surface-variant">
+            <span>Se parece a</span>
+            <Chip onClick={() => onNombre(sugerido)}>{sugerido}</Chip>
+          </div>
+        )}
+      </div>
       <div className="flex items-end gap-3">
         <label className="flex flex-col gap-1.5">
           <span className="text-label-md text-on-surface-variant">Color</span>
@@ -51,6 +69,24 @@ export function CamposColor({
           />
         </div>
       </div>
+
+      {tomando ? (
+        <ColorDeFoto
+          fotos={fotos}
+          onCerrar={() => setTomando(false)}
+          onUsar={(nuevo, nombreSugerido) => {
+            onHex(nuevo);
+            if (!nombre.trim()) onNombre(nombreSugerido);
+            setTomando(false);
+          }}
+        />
+      ) : (
+        <Button type="button" variant="ghost" onClick={() => setTomando(true)}>
+          <Pipette className="h-4 w-4" aria-hidden />
+          Tomar el color de una foto
+        </Button>
+      )}
+
       {valido && (
         <div className="flex items-center gap-3 rounded-2xl bg-surface-container-low p-3">
           <PrendaImagen silueta="vestido" hex={hex} alt="" className="w-14 shrink-0 rounded-lg" />

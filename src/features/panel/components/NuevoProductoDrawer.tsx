@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ImagePlus, Minus, Plus, QrCode, X } from "lucide-react";
 import toast from "react-hot-toast";
 import type { Silueta, SucursalId } from "@/types/api";
@@ -6,6 +6,8 @@ import { Button, Chip, Drawer, Input, Interruptor, Pasos, Select, Textarea } fro
 import { cn } from "@/lib/cn";
 import { esClaro } from "@/lib/color";
 import { mensajeError } from "@/lib/errores";
+import { formatHace } from "@/lib/format";
+import { useSesion } from "@/features/auth/sesion";
 import { useCategorias, useColores, useConfig } from "@/features/catalogo/hooks";
 import { useCrearProducto, useGuardarColor } from "../hooks";
 import { ResumenProducto } from "./ResumenProducto";
@@ -13,31 +15,128 @@ import { CamposColor } from "./ColorDrawer";
 import { FotosPorColor } from "./FotosPorColor";
 import type { ImagenProcesada } from "@/lib/imagen";
 import { subirFotosPorColor } from "@/api/imagenes";
+import {
+  borrarBorrador,
+  guardarBorrador,
+  guardarFotosBorrador,
+  leerBorrador,
+  leerFotosBorrador,
+  tieneContenido,
+} from "../borradorProducto";
 
-/** Alta de producto en pasos: datos → colores y tallas → stock (matriz) → precio y publicar. */
+const STOCK_VACIO = { temixco: {}, azteca: {} };
+
+/**
+ * Alta de producto en pasos: datos → colores y tallas → stock (matriz) → precio y publicar.
+ * Se guarda un borrador solo: si se cierra el formulario o la página se recarga (p. ej. al volver
+ * de la cámara), se retoma donde se quedó, con sus fotos.
+ */
 export function NuevoProductoDrawer({ open, onClose, onCreado }: { open: boolean; onClose: () => void; onCreado: (id: string) => void }) {
   const categorias = useCategorias();
   const catalogo = useColores();
   const config = useConfig();
   const crear = useCrearProducto();
   const nuevoColor = useGuardarColor();
+  const { sesion } = useSesion();
+  const usuario = sesion?.clientaId ?? sesion?.nombre ?? "anon";
 
-  const [nombre, setNombre] = useState("");
-  const [descripcion, setDescripcion] = useState("");
+  const [inicial] = useState(() => leerBorrador(usuario));
+  const [retomado, setRetomado] = useState<string | null>(inicial?.guardado ?? null);
+  const [claveReinicio, setClaveReinicio] = useState(0);
+  const [paso, setPaso] = useState(inicial?.paso ?? 0);
+  const publicado = useRef(false);
+  const fotosLeidas = useRef(false);
+  const catalogoValidado = useRef(false);
+
+  const [nombre, setNombre] = useState(inicial?.nombre ?? "");
+  const [descripcion, setDescripcion] = useState(inicial?.descripcion ?? "");
   /** Fotos por color (modelo Zara): fotosPorColor[indiceColor] = fotos de ese color. Máx 5 c/u. */
   const [fotosPorColor, setFotosPorColor] = useState<ImagenProcesada[][]>([]);
-  const [categoriaElegida, setCategoriaElegida] = useState<string | null>(null);
+  const [categoriaElegida, setCategoriaElegida] = useState<string | null>(inicial?.categoriaElegida ?? null);
   const [silueta] = useState<Silueta>("vestido");
-  const [colorIds, setColorIds] = useState<string[]>([]);
+  const [colorIds, setColorIds] = useState<string[]>(inicial?.colorIds ?? []);
   /** null = todas las tallas de la categoría. */
-  const [tallasElegidas, setTallasElegidas] = useState<string[] | null>(null);
-  const [sucursal, setSucursal] = useState<SucursalId>("temixco");
+  const [tallasElegidas, setTallasElegidas] = useState<string[] | null>(inicial?.tallasElegidas ?? null);
+  const [sucursal, setSucursal] = useState<SucursalId>(inicial?.sucursal ?? "temixco");
   /** Stock independiente por sucursal: stock[sucursal][talla][colorIndex]. */
-  const [stock, setStock] = useState<Record<SucursalId, Record<string, number[]>>>({ temixco: {}, azteca: {} });
-  const [precio, setPrecio] = useState("");
-  const [costo, setCosto] = useState("");
-  const [permiteApartado, setPermiteApartado] = useState(true);
+  const [stock, setStock] = useState<Record<SucursalId, Record<string, number[]>>>(inicial?.stock ?? STOCK_VACIO);
+  const [precio, setPrecio] = useState(inicial?.precio ?? "");
+  const [costo, setCosto] = useState(inicial?.costo ?? "");
+  const [permiteApartado, setPermiteApartado] = useState(inicial?.permiteApartado ?? true);
   const [formColor, setFormColor] = useState<{ nombre: string; hex: string } | null>(null);
+
+  const hayFotos = fotosPorColor.some((f) => f && f.length > 0);
+  const borrador = {
+    paso,
+    nombre,
+    descripcion,
+    categoriaElegida,
+    colorIds,
+    tallasElegidas,
+    sucursal,
+    stock,
+    precio,
+    costo,
+    permiteApartado,
+  };
+  // Lo último en memoria, para guardarlo sin esperar si el formulario se cierra de golpe.
+  const ultimo = useRef({ borrador, fotos: fotosPorColor, hayFotos });
+  ultimo.current = { borrador, fotos: fotosPorColor, hayFotos };
+
+  // Las fotos de un borrador viven en IndexedDB (son Blobs): se leen aparte, después de abrir.
+  useEffect(() => {
+    if (!inicial) {
+      fotosLeidas.current = true;
+      return;
+    }
+    let vivo = true;
+    leerFotosBorrador(usuario).then((f) => {
+      fotosLeidas.current = true;
+      if (vivo && f) setFotosPorColor((actuales) => (actuales.some((l) => l?.length) ? actuales : f));
+    });
+    return () => {
+      vivo = false;
+    };
+  }, [inicial, usuario]);
+
+  // Guarda el borrador poco después de cada cambio.
+  useEffect(() => {
+    if (publicado.current || !tieneContenido(borrador, hayFotos)) return;
+    const t = window.setTimeout(() => guardarBorrador(usuario, borrador), 400);
+    return () => window.clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `borrador` se arma de los mismos estados listados
+  }, [paso, nombre, descripcion, categoriaElegida, colorIds, tallasElegidas, sucursal, stock, precio, costo, permiteApartado, hayFotos, usuario]);
+
+  useEffect(() => {
+    if (publicado.current || (!fotosLeidas.current && inicial)) return;
+    const t = window.setTimeout(() => void guardarFotosBorrador(usuario, fotosPorColor), 800);
+    return () => window.clearTimeout(t);
+  }, [fotosPorColor, usuario, inicial]);
+
+  // Al cerrarse el formulario (deslizar, tocar fuera, atrás) se guarda de inmediato lo último.
+  useEffect(
+    () => () => {
+      if (publicado.current) return;
+      const u = ultimo.current;
+      if (!tieneContenido(u.borrador, u.hayFotos)) return;
+      guardarBorrador(usuario, u.borrador);
+      void guardarFotosBorrador(usuario, u.fotos);
+    },
+    [usuario],
+  );
+
+  // Si un color del borrador ya no existe en el catálogo, el stock por color quedaría desalineado: se limpia.
+  useEffect(() => {
+    if (catalogoValidado.current || !catalogo.data || colorIds.length === 0) return;
+    catalogoValidado.current = true;
+    const vigentes = colorIds.filter((id) => catalogo.data.some((c) => c.id === id));
+    if (vigentes.length !== colorIds.length) {
+      setColorIds(vigentes);
+      setStock({ temixco: {}, azteca: {} });
+      setFotosPorColor([]);
+      toast("Algunos colores de tu borrador ya no existen; revisa el paso de colores.");
+    }
+  }, [catalogo.data, colorIds]);
 
   const categoria = categorias.data?.find((c) => c.id === categoriaElegida) ?? categorias.data?.[0];
   const categoriaId = categoria?.id ?? "";
@@ -128,15 +227,53 @@ export function NuevoProductoDrawer({ open, onClose, onCreado }: { open: boolean
         imagenes,
       });
       toast.success("¡Prenda publicada!");
+      publicado.current = true;
+      await borrarBorrador(usuario);
       onCreado(p.id);
     } catch (e) {
       toast.error(mensajeError(e));
     }
   }
 
+  /** Cierra sin perder nada: el borrador ya se guarda solo. */
+  function cerrar() {
+    if (!publicado.current && tieneContenido(borrador, hayFotos)) {
+      toast.success("Guardamos tu borrador. Lo retomas al tocar Nuevo.");
+    }
+    onClose();
+  }
+
+  async function empezarDeCero() {
+    await borrarBorrador(usuario);
+    setRetomado(null);
+    setPaso(0);
+    setNombre("");
+    setDescripcion("");
+    setFotosPorColor([]);
+    setCategoriaElegida(null);
+    setColorIds([]);
+    setTallasElegidas(null);
+    setSucursal("temixco");
+    setStock({ temixco: {}, azteca: {} });
+    setPrecio("");
+    setCosto("");
+    setPermiteApartado(true);
+    setFormColor(null);
+    setClaveReinicio((k) => k + 1);
+    toast.success("Empezamos de cero");
+  }
+
 
   return (
-    <Drawer open={open} onClose={onClose} title="Nuevo producto">
+    <Drawer open={open} onClose={cerrar} title="Nuevo producto">
+      {retomado && (
+        <div role="status" className="mb-4 flex items-center gap-3 rounded-xl bg-info-container px-3 py-2.5 text-body-sm text-info">
+          <span className="flex-1">Retomamos tu borrador de {formatHace(retomado)}.</span>
+          <Button type="button" variant="ghost" size="sm" onClick={empezarDeCero}>
+            Empezar de cero
+          </Button>
+        </div>
+      )}
       {crear.isPending && (
         <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-3 bg-surface/85 backdrop-blur-sm">
           <span className="relative grid h-16 w-16 place-items-center">
@@ -148,6 +285,9 @@ export function NuevoProductoDrawer({ open, onClose, onCreado }: { open: boolean
         </div>
       )}
       <Pasos
+        key={claveReinicio}
+        pasoInicial={claveReinicio === 0 ? (inicial?.paso ?? 0) : 0}
+        onCambioPaso={setPaso}
         guardando={crear.isPending}
         textoFinal="Publicar"
         onFinalizar={publicar}
@@ -223,6 +363,7 @@ export function NuevoProductoDrawer({ open, onClose, onCreado }: { open: boolean
                       <CamposColor
                         nombre={formColor.nombre}
                         hex={formColor.hex}
+                        fotos={fotosPorColor.flat().map((f) => ({ preview: f.preview }))}
                         onNombre={(nombre) => setFormColor({ ...formColor, nombre })}
                         onHex={(hex) => setFormColor({ ...formColor, hex })}
                       />

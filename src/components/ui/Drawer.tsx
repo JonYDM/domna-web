@@ -1,9 +1,10 @@
-import type { ElementType, ReactNode } from "react";
+import type { ElementType, FocusEvent, ReactNode } from "react";
 import { Drawer as Vaul } from "vaul";
 import * as Dialog from "@radix-ui/react-dialog";
 import { X } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { useMediaQuery } from "@/lib/useMediaQuery";
+import { useTecladoVirtual } from "@/lib/useTecladoVirtual";
 
 interface DrawerProps {
   open: boolean;
@@ -23,6 +24,14 @@ interface DrawerProps {
  */
 export function Drawer({ open, onClose, title, descripcion, children, pie, className }: DrawerProps) {
   const escritorio = useMediaQuery("(min-width: 768px)");
+  useTecladoVirtual(open && !escritorio);
+
+  /** Con el teclado abierto, que el campo enfocado quede a la vista dentro de la hoja. */
+  function asegurarCampoVisible(e: FocusEvent<HTMLElement>) {
+    const campo = e.target;
+    if (!(campo instanceof HTMLElement) || !/^(INPUT|TEXTAREA|SELECT)$/.test(campo.tagName)) return;
+    window.setTimeout(() => campo.scrollIntoView({ block: "center", behavior: "smooth" }), 300);
+  }
 
   const encabezado = (Titulo: ElementType, Desc: ElementType) => (
     <div className="px-5 pb-3 pt-2 md:px-6 md:pt-6">
@@ -75,12 +84,14 @@ export function Drawer({ open, onClose, title, descripcion, children, pie, class
   }
 
   return (
-    <Vaul.Root open={open} onOpenChange={(o) => !o && onClose()}>
+    <Vaul.Root open={open} onOpenChange={(o) => !o && onClose()} repositionInputs={false}>
       <Vaul.Portal>
         <Vaul.Overlay className="fixed inset-0 z-50 bg-on-surface/40" />
         <Vaul.Content
+          onFocus={asegurarCampoVisible}
           className={cn(
-            "fixed inset-x-0 bottom-0 z-50 mx-auto flex max-h-[92dvh] w-full max-w-lg flex-col rounded-t-3xl bg-surface-container-lowest outline-none",
+            // Sube sobre el teclado (variables de useTecladoVirtual) y vuelve sola al cerrarse.
+            "fixed inset-x-0 bottom-[var(--teclado,0px)] z-50 mx-auto flex max-h-[min(92dvh,calc(var(--alto-visible,100dvh)_-_12px))] w-full max-w-lg flex-col rounded-t-3xl bg-surface-container-lowest outline-none",
             className,
           )}
         >

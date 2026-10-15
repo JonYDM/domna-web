@@ -17,12 +17,25 @@ interface PasosProps {
   textoFinal?: string;
   /** Edición: se puede saltar a cualquier paso. */
   libre?: boolean;
+  /** Paso con el que arranca (para retomar un borrador). Los anteriores quedan accesibles. */
+  pasoInicial?: number;
+  /** Avisa cada vez que cambia el paso (para guardarlo en el borrador). */
+  onCambioPaso?: (paso: number) => void;
 }
 
 /** Wizard corto (1–3 campos por paso) dentro del Drawer. */
-export function Pasos({ pasos, onFinalizar, guardando = false, textoFinal = "Guardar", libre = false }: PasosProps) {
-  const [actual, setActual] = useState(0);
-  const [maxVisto, setMaxVisto] = useState(0);
+export function Pasos({
+  pasos,
+  onFinalizar,
+  guardando = false,
+  textoFinal = "Guardar",
+  libre = false,
+  pasoInicial = 0,
+  onCambioPaso,
+}: PasosProps) {
+  const inicio = Math.min(Math.max(pasoInicial, 0), pasos.length - 1);
+  const [actual, setActual] = useState(inicio);
+  const [maxVisto, setMaxVisto] = useState(inicio);
   const paso = pasos[actual];
   const esUltimo = actual === pasos.length - 1;
   const puede = paso.valido !== false;
@@ -30,6 +43,7 @@ export function Pasos({ pasos, onFinalizar, guardando = false, textoFinal = "Gua
   function ir(i: number) {
     setActual(i);
     setMaxVisto((m) => Math.max(m, i));
+    onCambioPaso?.(i);
   }
 
   return (
