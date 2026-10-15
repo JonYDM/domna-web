@@ -9,6 +9,7 @@ import { mensajeError } from "@/lib/errores";
 import { familiaDeHex } from "@/lib/color";
 import { aplicarColorDeFoto, hexDeNombre, nombreDeHex } from "@/lib/colorMuestra";
 import { useEliminarColor, useGuardarColor } from "../hooks";
+import { SelectorDeColor } from "@/components/molecules/SelectorDeColor";
 import { ColorDeFoto, type FotoParaColor } from "./ColorDeFoto";
 
 const HEX = /^#[0-9A-Fa-f]{6}$/;
@@ -70,41 +71,19 @@ export function CamposColor({
         )}
       </div>
 
-      <div className="flex items-end gap-3">
-        <label className="flex flex-col gap-1.5">
-          <span className="text-label-md text-on-surface-variant">Color</span>
-          <input
-            type="color"
-            value={valido ? hex : "#E0E0E0"}
-            onChange={(e) => onHex(e.target.value.toUpperCase())}
-            className={cn2(valido, "h-12 w-16 cursor-pointer rounded-xl border border-outline-variant bg-surface-container-lowest p-1")}
-            aria-label="Elegir color"
-          />
-        </label>
-        <div className="flex-1">
-          <Input
-            label="Código"
-            value={hex}
-            onChange={(e) => onHex(e.target.value.trim().toUpperCase())}
-            maxLength={7}
-            placeholder="#A7D7C5"
-            error={hex && !valido ? "Formato #RRGGBB" : undefined}
-            autoCapitalize="characters"
-          />
-        </div>
-      </div>
+      <SelectorDeColor
+        hex={hex}
+        onChange={onHex}
+        onElegirNombre={(n) => {
+          if (!nombre.trim()) onNombre(n);
+        }}
+      />
 
-      {!valido && !hex && (
-        <p className="-mt-2 text-body-sm text-on-surface-variant">
-          Aún no eliges el color. Tócalo arriba, escribe su código o tómalo de una foto de la prenda.
-        </p>
-      )}
       {hayTonoPorNombre && (
         <p className="-mt-2 text-body-sm text-on-surface-variant">
-          Es un tono de referencia para «{nombre.trim()}». Cámbialo si tu prenda se ve distinta.
+          Es un tono de referencia para «{nombre.trim()}». Muévelo si tu prenda se ve distinta.
         </p>
       )}
-
       {onTomarDeFoto && (
         <Button type="button" variant="ghost" onClick={onTomarDeFoto}>
           <Pipette className="h-4 w-4" aria-hidden />
@@ -122,11 +101,6 @@ export function CamposColor({
       )}
     </div>
   );
-}
-
-/** Atenúa el cuadro de color mientras no hay uno elegido. */
-function cn2(valido: boolean, base: string): string {
-  return valido ? base : `${base} opacity-50`;
 }
 
 /** Alta y edición de un color del catálogo. */

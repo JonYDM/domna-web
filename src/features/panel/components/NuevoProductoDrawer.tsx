@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ImagePlus, Minus, Plus, QrCode, X } from "lucide-react";
+import { ArrowLeft, ImagePlus, Minus, Plus, QrCode } from "lucide-react";
 import toast from "react-hot-toast";
 import type { Silueta, SucursalId } from "@/types/api";
 import { Button, Chip, Drawer, Input, Interruptor, Pasos, Select, Textarea } from "@/components/ui";
@@ -66,8 +66,8 @@ export function NuevoProductoDrawer({ open, onClose, onCreado }: { open: boolean
   const [costo, setCosto] = useState(inicial?.costo ?? "");
   const [permiteApartado, setPermiteApartado] = useState(inicial?.permiteApartado ?? true);
   const [formColor, setFormColor] = useState<{ nombre: string; hex: string } | null>(null);
-  /** "colorFoto" = sub-paso a pantalla completa para tomar el color de una foto. */
-  const [vista, setVista] = useState<"formulario" | "colorFoto">("formulario");
+  /** "color" = crear un color; "colorFoto" = tomar su color de una foto. Ambas son pantallas completas dentro del formulario. */
+  const [vista, setVista] = useState<"formulario" | "color" | "colorFoto">("formulario");
 
   const hayFotos = fotosPorColor.some((f) => f && f.length > 0);
   const borrador = {
@@ -187,6 +187,7 @@ export function NuevoProductoDrawer({ open, onClose, onCreado }: { open: boolean
         onSuccess: (c) => {
           setColorIds((ids) => [...ids, c.id]);
           setFormColor(null);
+          setVista("formulario");
           setStock({ temixco: {}, azteca: {} });
           toast.success(`“${c.nombre}” agregado a tus colores`);
         },
@@ -269,19 +270,56 @@ export function NuevoProductoDrawer({ open, onClose, onCreado }: { open: boolean
 
 
   return (
-    <Drawer open={open} onClose={cerrar} title={vista === "colorFoto" ? "Color de la foto" : "Nuevo producto"}>
+    <Drawer
+      open={open}
+      onClose={cerrar}
+      title={vista === "colorFoto" ? "Color de la foto" : vista === "color" ? "Nuevo color" : "Nuevo producto"}
+    >
       {vista === "colorFoto" && formColor && (
         <ColorDeFoto
           fotos={fotosPorColor.flat().map((f) => ({ preview: f.preview }))}
-          onVolver={() => setVista("formulario")}
+          onVolver={() => setVista("color")}
           onUsar={(hex, nombreSugerido) => {
             setFormColor((f) => (f ? aplicarColorDeFoto(f, hex, nombreSugerido) : f));
-            setVista("formulario");
+            setVista("color");
           }}
         />
       )}
+      {formColor && (
+        <div hidden={vista !== "color"} className="flex flex-col gap-4">
+          <button
+            type="button"
+            onClick={() => {
+              setFormColor(null);
+              setVista("formulario");
+            }}
+            className="-ml-2 inline-flex h-11 w-fit items-center gap-1.5 rounded-full pl-2 pr-4 text-label-lg text-on-surface-variant hover:bg-surface-container focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+          >
+            <ArrowLeft className="h-5 w-5" aria-hidden />
+            Volver al producto
+          </button>
+          <CamposColor
+            nombre={formColor.nombre}
+            hex={formColor.hex}
+            onTomarDeFoto={() => setVista("colorFoto")}
+            onNombre={(nombre) => setFormColor((f) => (f ? { ...f, nombre } : f))}
+            onHex={(hex) => setFormColor((f) => (f ? { ...f, hex } : f))}
+          />
+          <div className="sticky bottom-0 -mx-5 border-t border-outline-variant/60 bg-surface-container-lowest px-5 pb-1 pt-3">
+            <Button
+              size="lg"
+              fullWidth
+              loading={nuevoColor.isPending}
+              disabled={formColor.nombre.trim().length < 2 || !/^#[0-9A-F]{6}$/i.test(formColor.hex)}
+              onClick={crearColorRapido}
+            >
+              Agregar y usar
+            </Button>
+          </div>
+        </div>
+      )}
       {/* El formulario sigue montado (solo oculto) mientras se elige el color: así no pierde el paso ni lo escrito. */}
-      <div hidden={vista === "colorFoto"}>
+      <div hidden={vista !== "formulario"}>
       {retomado && (
         <div role="status" className="mb-4 flex items-center gap-3 rounded-xl bg-info-container px-3 py-2.5 text-body-sm text-info">
           <span className="flex-1">Retomamos tu borrador de {formatHace(retomado)}.</span>
@@ -363,46 +401,17 @@ export function NuevoProductoDrawer({ open, onClose, onCreado }: { open: boolean
                     })}
                   </div>
 
-                  {formColor ? (
-                    <div className="mt-3 flex flex-col gap-3 rounded-2xl border border-outline-variant p-3">
-                      <div className="flex items-center justify-between">
-                        <p className="text-label-lg">Nuevo color</p>
-                        <button
-                          type="button"
-                          onClick={() => setFormColor(null)}
-                          aria-label="Cancelar nuevo color"
-                          className="grid h-9 w-9 place-items-center rounded-full text-on-surface-variant hover:bg-surface-container"
-                        >
-                          <X className="h-4 w-4" aria-hidden />
-                        </button>
-                      </div>
-                      <CamposColor
-                        nombre={formColor.nombre}
-                        hex={formColor.hex}
-                        onTomarDeFoto={() => setVista("colorFoto")}
-                        onNombre={(nombre) => setFormColor((f) => (f ? { ...f, nombre } : f))}
-                        onHex={(hex) => setFormColor((f) => (f ? { ...f, hex } : f))}
-                      />
-                      <Button
-                        variant="tinta"
-                        size="sm"
-                        loading={nuevoColor.isPending}
-                        disabled={formColor.nombre.trim().length < 2 || !/^#[0-9A-F]{6}$/i.test(formColor.hex)}
-                        onClick={crearColorRapido}
-                      >
-                        Agregar y usar
-                      </Button>
-                    </div>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => setFormColor({ nombre: "", hex: "" })}
-                      className="mt-2 inline-flex h-10 items-center gap-1.5 rounded-full px-2 text-label-lg text-primary-strong hover:bg-primary-soft"
-                    >
-                      <Plus className="h-4 w-4" aria-hidden />
-                      ¿No está? Crear color
-                    </button>
-                  )}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setFormColor({ nombre: "", hex: "" });
+                      setVista("color");
+                    }}
+                    className="mt-2 inline-flex h-11 items-center gap-1.5 rounded-full px-3 text-label-lg text-primary-strong hover:bg-primary-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+                  >
+                    <Plus className="h-4 w-4" aria-hidden />
+                    ¿No está? Crear color
+                  </button>
                 </fieldset>
                 <fieldset>
                   <legend className="mb-1 text-label-lg">Tallas</legend>
