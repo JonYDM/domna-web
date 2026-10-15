@@ -3,6 +3,7 @@ import type {
   CategoriaInput,
   AgregarColorInput,
   ColorCatalogo,
+  ColorGuardado,
   ColorInput,
   EditarProductoInput,
   FiltrosCatalogo,
@@ -169,8 +170,19 @@ export async function obtenerColores(): Promise<ColorCatalogo[]> {
   return http.get<ColorCatalogo[]>("/api/colores", REVALIDAR);
 }
 
-export async function guardarColor(id: string | null, input: ColorInput): Promise<ColorCatalogo> {
-  return id ? http.put<ColorCatalogo>(`/api/colores/${id}`, input) : http.post<ColorCatalogo>("/api/colores", input);
+export async function guardarColor(id: string | null, input: ColorInput): Promise<ColorGuardado> {
+  return id ? http.put<ColorGuardado>(`/api/colores/${id}`, input) : http.post<ColorGuardado>("/api/colores", input);
+}
+
+/** Uso de un color: en cuántas prendas está y cuántas lo muestran con un tono anterior. */
+export interface UsoColor {
+  prendas: number;
+  desactualizadas: number;
+}
+
+/** En cuántas prendas se usa un color del catálogo (se reconoce por nombre). */
+export async function usoColor(id: string): Promise<UsoColor> {
+  return http.get<UsoColor>(`/api/colores/${encodeURIComponent(id)}/uso`);
 }
 
 export async function eliminarColor(id: string): Promise<void> {

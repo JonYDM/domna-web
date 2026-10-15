@@ -221,7 +221,24 @@ export function useGuardarColor() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ id, input }: { id: string | null; input: ColorInput }) => cat.guardarColor(id, input),
-    onSuccess: () => qc.invalidateQueries({ queryKey: qk.colores() }),
+    onSuccess: (r) => {
+      qc.invalidateQueries({ queryKey: qk.colores() });
+      // Si el cambio llegó a prendas, el catálogo de prendas y sus detalles también deben refrescarse.
+      if ((r.prendasActualizadas ?? 0) > 0) {
+        qc.invalidateQueries({ queryKey: qk.productosTodos() });
+        qc.invalidateQueries({ queryKey: qk.productoTodos() });
+      }
+    },
+  });
+}
+
+/** En cuántas prendas se usa un color del catálogo (para avisar antes de editarlo). */
+export function useUsoColor(id: string | undefined) {
+  return useQuery({
+    queryKey: ["colores", "uso", id ?? ""],
+    queryFn: () => cat.usoColor(id!),
+    enabled: !!id,
+    staleTime: 0,
   });
 }
 

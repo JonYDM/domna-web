@@ -1,6 +1,7 @@
 import type {
   CambioStock,
   Categoria,
+  ColorGuardado,
   CategoriaInput,
   ColorCatalogo,
   ColorInput,
@@ -90,7 +91,7 @@ export function obtenerColores(): Promise<ColorCatalogo[]> {
   return apiActiva ? real.obtenerColores() : mock.obtenerColores();
 }
 
-export function guardarColor(id: string | null, input: ColorInput): Promise<ColorCatalogo> {
+export function guardarColor(id: string | null, input: ColorInput): Promise<ColorGuardado> {
   return apiActiva ? real.guardarColor(id, input) : mock.guardarColor(id, input);
 }
 
@@ -111,6 +112,11 @@ export function demoSuspender(suspendida: boolean): Promise<void> {
 /** Catálogo público u oculto sin cuenta: dato real, persistido. */
 export function demoCatalogoPublico(publico: boolean): Promise<void> {
   return apiActiva ? config.demoCatalogoPublico(publico) : mock.demoCatalogoPublico(publico);
+}
+
+/** En cuántas prendas se usa un color. Solo con la API real (en la demo no hay copias ligadas). */
+export function usoColor(id: string): Promise<real.UsoColor> {
+  return apiActiva ? real.usoColor(id) : Promise.resolve({ prendas: 0, desactualizadas: 0 });
 }
 
 /** Busca una variante por su código de barras físico (POS/escáner). */

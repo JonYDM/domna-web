@@ -2,12 +2,13 @@ import { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import { Pipette, Trash2 } from "lucide-react";
 import type { ColorCatalogo } from "@/types/api";
-import { Button, Chip, Drawer, Input } from "@/components/ui";
+import { Button, Chip, Drawer, Input, Interruptor } from "@/components/ui";
 import { mensajeError } from "@/lib/errores";
 import { cn } from "@/lib/cn";
 import { esClaro } from "@/lib/color";
 import { aplicarColorDeFoto, hexDeNombre, nombreDeHex } from "@/lib/colorMuestra";
-import { useEliminarColor, useGuardarColor } from "../hooks";
+import { cambioElColor, ofrecerAplicarAPrendas, textoPrendas } from "@/lib/colorPrendas";
+import { useEliminarColor, useGuardarColor, useUsoColor } from "../hooks";
 import { SelectorDeColor } from "@/components/molecules/SelectorDeColor";
 import { ColorDeFoto, type FotoParaColor } from "./ColorDeFoto";
 
@@ -120,6 +121,16 @@ export function ColorDrawer({ color, onClose }: { color: ColorCatalogo | null; o
   const guardar = useGuardarColor();
   const eliminar = useEliminarColor();
   const valido = nombre.trim().length >= 2 && HEX.test(hex);
+
+  // Cada prenda guarda su PROPIA copia del color: editar el catálogo no la toca. Si el color se usa en
+  // prendas y se está cambiando, se ofrece llevar el cambio también ahí (activado por defecto).
+  const uso = useUsoColor(color?.id);
+  const [aplicar, setAplicar] = useState(true);
+  const prendas = uso.data?.prendas ?? 0;
+  const desactualizadas = uso.data?.desactualizadas ?? 0;
+  const ofrecerPrendas = ofrecerAplicarAPrendas({ original: color, nombre, hex, valido, prendas, desactualizadas });
+  // Sin cambios pero con prendas atrasadas: la oferta es "ponerlas al día", y cuenta solo esas.
+  const soloPonerAlDia = !!color && !cambioElColor(color, nombre, hex);
   const fotos: FotoParaColor[] = [];
 
   return (
@@ -137,10 +148,17 @@ export function ColorDrawer({ color, onClose }: { color: ColorCatalogo | null; o
             loading={guardar.isPending}
             onClick={() =>
               guardar.mutate(
-                { id: color?.id ?? null, input: { nombre, hex } },
+                { id: color?.id ?? null, input: { nombre, hex, aplicarAPrendas: ofrecerPrendas && aplicar } },
                 {
                   onSuccess: (c) => {
-                    toast.success(color ? "Color actualizado" : `Color “${c.nombre}” agregado`);
+                    const n = c.prendasActualizadas ?? 0;
+                    toast.success(
+                      !color
+                        ? `Color “${c.nombre}” agregado`
+                        : n > 0
+                          ? `Color actualizado · también en ${textoPrendas(n)}`
+                          : "Color actualizado",
+                    );
                     onClose();
                   },
                   onError: (e) => toast.error(mensajeError(e)),
@@ -167,6 +185,18 @@ export function ColorDrawer({ color, onClose }: { color: ColorCatalogo | null; o
       )}
       <div hidden={vista === "foto"} className="flex flex-col gap-5">
         <CamposColor nombre={nombre} hex={hex} onNombre={setNombre} onHex={setHex} onTomarDeFoto={() => setVista("foto")} />
+        {ofrecerPrendas && (
+          <Interruptor
+            checked={aplicar}
+            onChange={setAplicar}
+            label={soloPonerAlDia ? `Poner al día ${textoPrendas(desactualizadas)}` : `Cambiarlo también en ${textoPrendas(prendas)}`}
+            descripcion={
+              soloPonerAlDia
+                ? "Estas prendas todavía muestran un tono anterior de este color. Cada prenda guarda su propia copia: actívalo para que se vean como está en el catálogo."
+                : "Cada prenda guarda su propia copia del color. Actívalo para que estas prendas se vean con el color nuevo; si no, solo cambia en el catálogo."
+            }
+          />
+        )}
         {color && (
           <section className="border-t border-outline-variant/60 pt-4">
             {confirmarBorrar ? (
