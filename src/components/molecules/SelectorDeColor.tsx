@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type PointerEvent } from "react";
 import { Check, Pipette } from "lucide-react";
+import { Carrusel } from "@/components/molecules/Carrusel";
 import { cn } from "@/lib/cn";
 import { esClaro } from "@/lib/color";
 import { hexAHsv, hsvAHex, normalizarHexTecleado, type Hsv } from "@/lib/colorHsv";
@@ -104,6 +105,7 @@ export function SelectorDeColor({
   const nombre = valido ? nombreDeHex(hex) : "";
   const invalido = texto.replace("#", "").length > 0 && !normalizarHexTecleado(texto);
   const hayGotero = typeof window !== "undefined" && !!window.EyeDropper;
+  const nombrePaleta = valido ? PALETA_REFERENCIA.find((c) => c.hex === hex.toUpperCase())?.nombre : undefined;
 
   return (
     <div className="flex flex-col gap-4">
@@ -183,8 +185,11 @@ export function SelectorDeColor({
 
       {/* Paleta de colores de moda */}
       <fieldset>
-        <legend className="mb-2 text-label-md text-on-surface-variant">Colores de moda</legend>
-        <div className="grid grid-cols-8 gap-x-1 gap-y-1.5">
+        <legend className="mb-1 flex w-full items-baseline justify-between text-label-md text-on-surface-variant">
+          <span>Colores de moda</span>
+          {nombrePaleta && <span className="text-on-surface">{nombrePaleta}</span>}
+        </legend>
+        <Carrusel etiqueta="Colores de moda" filas={2}>
           {PALETA_REFERENCIA.map((c) => {
             const activo = valido && hex.toUpperCase() === c.hex;
             return (
@@ -198,7 +203,7 @@ export function SelectorDeColor({
                   alEscribir(c.hex);
                   onElegirNombre?.(c.nombre);
                 }}
-                className="grid h-10 w-full place-items-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
+                className="grid h-11 w-11 snap-start place-items-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
               >
                 <span
                   className={cn(
@@ -213,7 +218,7 @@ export function SelectorDeColor({
               </button>
             );
           })}
-        </div>
+        </Carrusel>
       </fieldset>
 
       {/* Código */}

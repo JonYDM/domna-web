@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, ImagePlus, Minus, Plus, QrCode } from "lucide-react";
+import { ArrowLeft, ImagePlus, Minus, Plus, QrCode, Search } from "lucide-react";
 import toast from "react-hot-toast";
 import type { Silueta, SucursalId } from "@/types/api";
 import { Button, Chip, Drawer, Input, Interruptor, Pasos, Select, Textarea } from "@/components/ui";
@@ -15,6 +15,8 @@ import { CamposColor } from "./ColorDrawer";
 import { ColorDeFoto } from "./ColorDeFoto";
 import { aplicarColorDeFoto } from "@/lib/colorMuestra";
 import { FotosPorColor } from "./FotosPorColor";
+import { Carrusel } from "@/components/molecules/Carrusel";
+import { filtrarPorNombre } from "@/lib/buscarColor";
 import type { ImagenProcesada } from "@/lib/imagen";
 import { subirFotosPorColor } from "@/api/imagenes";
 import {
@@ -68,6 +70,7 @@ export function NuevoProductoDrawer({ open, onClose, onCreado }: { open: boolean
   const [formColor, setFormColor] = useState<{ nombre: string; hex: string } | null>(null);
   /** "color" = crear un color; "colorFoto" = tomar su color de una foto. Ambas son pantallas completas dentro del formulario. */
   const [vista, setVista] = useState<"formulario" | "color" | "colorFoto">("formulario");
+  const [busquedaColor, setBusquedaColor] = useState("");
 
   const hayFotos = fotosPorColor.some((f) => f && f.length > 0);
   const borrador = {
@@ -143,6 +146,11 @@ export function NuevoProductoDrawer({ open, onClose, onCreado }: { open: boolean
   }, [catalogo.data, colorIds]);
 
   const categoria = categorias.data?.find((c) => c.id === categoriaElegida) ?? categorias.data?.[0];
+  /** Colores del catálogo que se muestran: los que coinciden con la búsqueda, más los ya elegidos. */
+  const resultadoColores = useMemo(
+    () => filtrarPorNombre(catalogo.data ?? [], busquedaColor, new Set(colorIds)),
+    [catalogo.data, busquedaColor, colorIds],
+  );
   const categoriaId = categoria?.id ?? "";
   const tallas = useMemo(() => tallasElegidas ?? [], [tallasElegidas]);
   // Colores elegidos del catálogo (en el orden en que se eligieron).
@@ -376,8 +384,41 @@ export function NuevoProductoDrawer({ open, onClose, onCreado }: { open: boolean
                     Colores{" "}
                     {colores.length > 0 && <span className="font-normal text-on-surface-variant">· {colores.length} elegidos</span>}
                   </legend>
-                  <div className="grid max-h-56 grid-cols-3 gap-2 overflow-y-auto pr-1">
-                    {(catalogo.data ?? []).map((c) => {
+                  {(catalogo.data?.length ?? 0) > 8 && (
+                    <div className="mb-2">
+                      <Input
+                        type="search"
+                        aria-label="Buscar color"
+                        placeholder="Buscar color…"
+                        value={busquedaColor}
+                        onChange={(e) => setBusquedaColor(e.target.value)}
+                        icono={<Search className="h-4 w-4" aria-hidden />}
+                        autoComplete="off"
+                      />
+                    </div>
+                  )}
+                  {busquedaColor.trim() && resultadoColores.coinciden === 0 && (
+                    <div className="mb-2 flex items-center justify-between gap-3 rounded-xl bg-surface-container-low px-3 py-2.5">
+                      <p className="min-w-0 truncate text-body-sm text-on-surface-variant">
+                        Ningún color se llama «{busquedaColor.trim()}».
+                      </p>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="tinta"
+                        onClick={() => {
+                          setFormColor({ nombre: busquedaColor.trim().slice(0, 24), hex: "" });
+                          setBusquedaColor("");
+                          setVista("color");
+                        }}
+                      >
+                        Crear
+                      </Button>
+                    </div>
+                  )}
+                  {resultadoColores.visibles.length > 0 && (
+                  <Carrusel etiqueta="Colores de tu catálogo" filas={2}>
+                    {resultadoColores.visibles.map((c) => {
                       const activo = colorIds.includes(c.id);
                       return (
                         <button
@@ -386,7 +427,7 @@ export function NuevoProductoDrawer({ open, onClose, onCreado }: { open: boolean
                           aria-pressed={activo}
                           onClick={() => toggleColor(c.id)}
                           className={cn(
-                            "flex min-w-0 items-center gap-2 rounded-xl border px-2.5 py-2.5 text-left text-body-sm",
+                            "flex h-11 max-w-[10.5rem] snap-start items-center gap-2 rounded-xl border px-3 text-left text-body-sm",
                             activo ? "border-tinta bg-surface-container-low" : "border-outline-variant",
                           )}
                         >
@@ -399,7 +440,8 @@ export function NuevoProductoDrawer({ open, onClose, onCreado }: { open: boolean
                         </button>
                       );
                     })}
-                  </div>
+                  </Carrusel>
+                  )}
 
                   <button
                     type="button"
