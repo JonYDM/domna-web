@@ -32,8 +32,9 @@ const STOCK_VACIO = { temixco: {}, azteca: {} };
 
 /**
  * Alta de producto en pasos: datos → colores y tallas → stock (matriz) → precio y publicar.
- * Se guarda un borrador solo: si se cierra el formulario o la página se recarga (p. ej. al volver
- * de la cámara), se retoma donde se quedó, con sus fotos.
+ * Se guarda un borrador mientras la sesión siga abierta: si se cierra el formulario o la página se
+ * recarga (p. ej. al volver de la cámara), se retoma donde se quedó, con sus fotos. Al cerrar sesión
+ * (o si vence) el borrador se descarta.
  */
 export function NuevoProductoDrawer({ open, onClose, onCreado }: { open: boolean; onClose: () => void; onCreado: (id: string) => void }) {
   const categorias = useCategorias();
@@ -251,7 +252,7 @@ export function NuevoProductoDrawer({ open, onClose, onCreado }: { open: boolean
   /** Cierra sin perder nada: el borrador ya se guarda solo. */
   function cerrar() {
     if (!publicado.current && tieneContenido(borrador, hayFotos)) {
-      toast.success("Guardamos tu borrador. Lo retomas al tocar Nuevo.");
+      toast.success("Guardamos tu borrador mientras tu sesión siga abierta.");
     }
     onClose();
   }

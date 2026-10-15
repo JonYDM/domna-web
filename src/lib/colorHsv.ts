@@ -43,16 +43,3 @@ export function hexAHsv(hex: string): Hsv | null {
   }
   return { h, s: max === 0 ? 0 : d / max, v: max };
 }
-
-/**
- * Acepta lo que alguien teclea o pega: con o sin "#", en mayúsculas o minúsculas, de 3 o de 6
- * dígitos. Devuelve "#RRGGBB" o null si no alcanza a ser un color.
- */
-export function normalizarHexTecleado(texto: string): string | null {
-  const limpio = texto.trim().replace(/^#/, "");
-  if (/^[0-9A-Fa-f]{3}$/.test(limpio)) {
-    return `#${limpio.replace(/(.)/g, "$1$1")}`.toUpperCase();
-  }
-  if (/^[0-9A-Fa-f]{6}$/.test(limpio)) return `#${limpio}`.toUpperCase();
-  return null;
-}

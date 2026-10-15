@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { hexAHsv, hsvAHex, normalizarHexTecleado } from "./colorHsv";
+import { hexAHsv, hsvAHex } from "./colorHsv";
 
 describe("hsvAHex", () => {
   it.each([
@@ -59,21 +59,5 @@ describe("hexAHsv", () => {
         }
       }
     }
-  });
-});
-
-describe("normalizarHexTecleado", () => {
-  it.each([
-    ["#a9b96b", "#A9B96B"],
-    ["A9B96B", "#A9B96B"],
-    ["  a9b96b ", "#A9B96B"],
-    ["#fa0", "#FFAA00"],
-    ["FA0", "#FFAA00"],
-  ])("%s → %s", (entrada, esperado) => {
-    expect(normalizarHexTecleado(entrada)).toBe(esperado);
-  });
-
-  it.each(["", "#", "#12", "#1234", "#12345", "#1234567", "zzzzzz", "#GG0000"])("rechaza %j", (entrada) => {
-    expect(normalizarHexTecleado(entrada)).toBeNull();
   });
 });

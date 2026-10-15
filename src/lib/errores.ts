@@ -1,13 +1,20 @@
 /** Motivo de un error de conexión (status 0): sin red o la petición tardó demasiado. */
 export type MotivoConexion = "red" | "timeout";
 
-/** Error de API normalizado (mismo shape que devolverá el backend: { mensaje }). */
+/** Error de API normalizado (mismo shape que devolverá el backend: { mensaje, codigo?, datos? }). */
 export class ApiError extends Error {
   constructor(
     public status: number,
     message: string,
     /** Solo para errores de conexión (status 0): distingue "sin red" de "timeout". */
     public motivo?: MotivoConexion,
+    /**
+     * Código de negocio del backend (p. ej. "sesion_activa", "sesion_reemplazada"). Permite
+     * decidir el flujo sin parsear el mensaje humano. Lo llena http.ts desde el cuerpo del error.
+     */
+    public codigo?: string,
+    /** Datos extra del error (p. ej. el dispositivo de la sesión activa en un 409). */
+    public datos?: unknown,
   ) {
     super(message);
     this.name = "ApiError";

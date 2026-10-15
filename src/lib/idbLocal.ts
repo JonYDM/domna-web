@@ -55,3 +55,34 @@ export async function idbGuardar(clave: string, valor: unknown): Promise<boolean
 export async function idbBorrar(clave: string): Promise<void> {
   await operar("readwrite", (s) => s.delete(clave));
 }
+
+/** Borra todas las claves que empiezan con `prefijo`, recorriéndolas con un cursor. */
+export async function idbBorrarPrefijo(prefijo: string): Promise<void> {
+  const db = await abrir();
+  if (!db) return;
+  await new Promise<void>((resolve) => {
+    try {
+      const tx = db.transaction(ALMACEN, "readwrite");
+      const store = tx.objectStore(ALMACEN);
+      const req = store.openCursor();
+      req.onsuccess = () => {
+        const cursor = req.result;
+        if (!cursor) return;
+        if (typeof cursor.key === "string" && cursor.key.startsWith(prefijo)) cursor.delete();
+        cursor.continue();
+      };
+      req.onerror = () => resolve();
+      tx.oncomplete = () => {
+        db.close();
+        resolve();
+      };
+      tx.onabort = () => {
+        db.close();
+        resolve();
+      };
+    } catch {
+      db.close();
+      resolve();
+    }
+  });
+}

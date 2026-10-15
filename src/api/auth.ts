@@ -1,5 +1,6 @@
 import type { Clienta, OrigenClienta, RegistroClientaInput } from "@/types/api";
-import { http, guardarToken, limpiarToken } from "./http";
+import { http, guardarToken, limpiarToken, leerToken } from "./http";
+import { cuerpoLogin } from "@/features/auth/sesionUnica";
 
 /**
  * Auth contra el backend real (domna-api). Mismas firmas que las del mock (`src/mock/server.ts`)
@@ -49,8 +50,10 @@ export async function registrar(input: RegistroClientaInput): Promise<Clienta> {
   return aClienta(sesion.clienta);
 }
 
-export async function loginConPin(telefono: string, pin: string): Promise<Clienta> {
-  const sesion = await http.post<SesionDto>("/api/auth/login", { telefono, pin }, { conAuth: false });
+export async function loginConPin(telefono: string, pin: string, reemplazarSesion = false): Promise<Clienta> {
+  const sesion = await http.post<SesionDto>("/api/auth/login", cuerpoLogin(telefono, pin, reemplazarSesion), {
+    conAuth: false,
+  });
   guardarToken(sesion.token);
   return aClienta(sesion.clienta);
 }
@@ -73,8 +76,10 @@ export interface SesionStaff {
 }
 
 /** Login de staff: valida teléfono+PIN y devuelve el rol real del backend (del JWT/DTO). */
-export async function loginStaff(telefono: string, pin: string): Promise<SesionStaff> {
-  const sesion = await http.post<SesionDto>("/api/auth/login", { telefono, pin }, { conAuth: false });
+export async function loginStaff(telefono: string, pin: string, reemplazarSesion = false): Promise<SesionStaff> {
+  const sesion = await http.post<SesionDto>("/api/auth/login", cuerpoLogin(telefono, pin, reemplazarSesion), {
+    conAuth: false,
+  });
   guardarToken(sesion.token);
   const c = sesion.clienta;
   return {
@@ -97,6 +102,36 @@ export async function confirmarRecuperacion(token: string, pinNuevo: string): Pr
   );
   guardarToken(sesion.token);
   return aClienta(sesion.clienta);
+}
+
+/** Datos de la sesión viva (GET /api/auth/sesion): para la comprobación temprana. */
+export interface SesionInfo {
+  dispositivo: string;
+  creada: string;
+  ultimaActividad: string;
+  expira: string;
+}
+
+/**
+ * Comprueba que la sesión siga viva en el servidor (GET /api/auth/sesion). Si el servidor la revocó,
+ * responde 401 y el manejador central de http.ts cierra la sesión local; aquí solo se propaga el
+ * ApiError. Un error de red NO debe cerrar la sesión (quien llama lo ignora).
+ */
+export function comprobarSesion(): Promise<SesionInfo> {
+  return http.get<SesionInfo>("/api/auth/sesion");
+}
+
+/**
+ * Cierra la sesión en el servidor (POST /api/auth/logout, 204). Mejor esfuerzo: timeout corto y
+ * nunca lanza, para no bloquear la salida local ni la navegación. Si no hay token, no hace nada.
+ */
+export async function logout(): Promise<void> {
+  if (!leerToken()) return;
+  try {
+    await http.post<void>("/api/auth/logout", undefined, { timeoutMs: 4_000 });
+  } catch {
+    // Mejor esfuerzo: si falla o tarda, igual cerramos localmente.
+  }
 }
 
 /** Cierra la sesión en el cliente (borra el JWT). */

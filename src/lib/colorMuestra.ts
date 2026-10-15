@@ -105,9 +105,6 @@ const NOMBRES: ReadonlyArray<readonly [string, string]> = [
   ["Fucsia", "#D81B7A"],
 ];
 
-/** Paleta de referencia (nombres de moda), en orden de neutros → cálidos → verdes → azules → morados → rosas. */
-export const PALETA_REFERENCIA: ReadonlyArray<{ nombre: string; hex: string }> = NOMBRES.map(([nombre, hex]) => ({ nombre, hex }));
-
 /** Nombre y color de un formulario de color. */
 export interface ColorForm {
   nombre: string;

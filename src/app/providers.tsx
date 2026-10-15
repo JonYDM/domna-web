@@ -5,6 +5,7 @@ import { SesionProvider } from "@/features/auth/SesionProvider";
 import { debeReintentar, esperaReintento } from "@/lib/reintento";
 import { MARCA } from "@/lib/marca";
 import { sincronizarCatalogoEntreVentanas } from "@/lib/sincronizacionCatalogo";
+import { purgarFotosHuerfanas } from "@/features/panel/borradorProducto";
 
 /** Providers globales: TanStack Query (estado de servidor), sesión y toasts. */
 export function Providers({ children }: { children: ReactNode }) {
@@ -26,6 +27,12 @@ export function Providers({ children }: { children: ReactNode }) {
 
   // Lo que se publica o edita en una ventana de la app se refleja en las demás sin recargar.
   useEffect(() => sincronizarCatalogoEntreVentanas(queryClient), [queryClient]);
+
+  // Al abrir la app, si no quedó borrador de texto en la sesión, limpia las fotos huérfanas en
+  // IndexedDB (la app se cerró y sessionStorage murió, pero las fotos no). No bloquea ni lanza.
+  useEffect(() => {
+    void purgarFotosHuerfanas();
+  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>

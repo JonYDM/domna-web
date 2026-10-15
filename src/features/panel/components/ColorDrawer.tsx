@@ -2,11 +2,10 @@ import { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import { Pipette, Trash2 } from "lucide-react";
 import type { ColorCatalogo } from "@/types/api";
-import { PrendaImagen } from "@/components/ilustraciones/PrendaImagen";
 import { Button, Chip, Drawer, Input } from "@/components/ui";
-import { FAMILIAS_COLOR } from "@/lib/enums";
 import { mensajeError } from "@/lib/errores";
-import { familiaDeHex } from "@/lib/color";
+import { cn } from "@/lib/cn";
+import { esClaro } from "@/lib/color";
 import { aplicarColorDeFoto, hexDeNombre, nombreDeHex } from "@/lib/colorMuestra";
 import { useEliminarColor, useGuardarColor } from "../hooks";
 import { SelectorDeColor } from "@/components/molecules/SelectorDeColor";
@@ -37,7 +36,6 @@ export function CamposColor({
   onTomarDeFoto?: () => void;
 }) {
   const valido = HEX.test(hex);
-  const familia = valido ? FAMILIAS_COLOR.find((f) => f.id === familiaDeHex(hex))?.nombre : undefined;
   const sugerido = valido ? nombreDeHex(hex) : "";
   /** Último tono puesto automáticamente por el nombre: solo ese se puede reemplazar sin preguntar. */
   const automatico = useRef<string | null>(null);
@@ -53,7 +51,7 @@ export function CamposColor({
       automatico.current = null;
       onHex("");
     }
-    // Solo reacciona al nombre: si reaccionara al hex, borrar el código a mano lo volvería a llenar.
+    // Solo reacciona al nombre: si reaccionara al hex, mover el selector volvería a llenar el tono.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nombre]);
 
@@ -62,7 +60,24 @@ export function CamposColor({
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-2">
-        <Input label="Nombre" value={nombre} onChange={(e) => onNombre(e.target.value)} placeholder="Verde menta" maxLength={24} />
+        <Input
+          label="Nombre"
+          value={nombre}
+          onChange={(e) => onNombre(e.target.value)}
+          placeholder="Verde menta"
+          maxLength={24}
+          // Un puntito con el color que llevas: la única vista previa, sin ocupar una sección.
+          icono={
+            <span
+              className={cn(
+                "h-5 w-5 rounded-full border",
+                valido ? (esClaro(hex) ? "border-outline-variant" : "border-transparent") : "border-dashed border-outline",
+              )}
+              style={valido ? { backgroundColor: hex } : undefined}
+              aria-hidden
+            />
+          }
+        />
         {sugerido && nombre.trim().toLowerCase() !== sugerido.toLowerCase() && (
           <div className="flex items-center gap-2 text-body-sm text-on-surface-variant">
             <span>Se parece a</span>
@@ -71,38 +86,31 @@ export function CamposColor({
         )}
       </div>
 
-      <SelectorDeColor
-        hex={hex}
-        onChange={onHex}
-        onElegirNombre={(n) => {
-          if (!nombre.trim()) onNombre(n);
-        }}
-      />
+      {/* Lo más fácil para igualar la tela va primero. */}
+      {onTomarDeFoto && (
+        <>
+          <Button type="button" variant="outline" size="lg" fullWidth onClick={onTomarDeFoto}>
+            <Pipette className="h-5 w-5" aria-hidden />
+            Tomar el color de una foto
+          </Button>
+          <div className="flex items-center gap-3 text-body-sm text-on-surface-variant" aria-hidden>
+            <span className="h-px flex-1 bg-outline-variant/60" />
+            o elígelo a mano
+            <span className="h-px flex-1 bg-outline-variant/60" />
+          </div>
+        </>
+      )}
+
+      <SelectorDeColor hex={hex} onChange={onHex} />
 
       {hayTonoPorNombre && (
-        <p className="-mt-2 text-body-sm text-on-surface-variant">
+        <p className="text-body-sm text-on-surface-variant">
           Es un tono de referencia para «{nombre.trim()}». Muévelo si tu prenda se ve distinta.
         </p>
-      )}
-      {onTomarDeFoto && (
-        <Button type="button" variant="ghost" onClick={onTomarDeFoto}>
-          <Pipette className="h-4 w-4" aria-hidden />
-          Tomar el color de una foto
-        </Button>
-      )}
-
-      {valido && (
-        <div className="flex items-center gap-3 rounded-2xl bg-surface-container-low p-3">
-          <PrendaImagen silueta="vestido" hex={hex} alt="" className="w-14 shrink-0 rounded-lg" />
-          <p className="text-body-sm text-on-surface-variant">
-            En el filtro de la tienda cuenta como <strong className="text-on-surface">{familia}</strong>.
-          </p>
-        </div>
       )}
     </div>
   );
 }
-
 /** Alta y edición de un color del catálogo. */
 export function ColorDrawer({ color, onClose }: { color: ColorCatalogo | null; onClose: () => void }) {
   const [nombre, setNombre] = useState(color?.nombre ?? "");

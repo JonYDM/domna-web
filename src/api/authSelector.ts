@@ -18,8 +18,8 @@ export function registrar(input: RegistroClientaInput): Promise<Clienta> {
   return apiActiva ? real.registrar(input) : mock.registrar(input);
 }
 
-export function loginConPin(telefono: string, pin: string): Promise<Clienta> {
-  return apiActiva ? real.loginConPin(telefono, pin) : mock.loginConPin(telefono, pin);
+export function loginConPin(telefono: string, pin: string, reemplazarSesion = false): Promise<Clienta> {
+  return apiActiva ? real.loginConPin(telefono, pin, reemplazarSesion) : mock.loginConPin(telefono, pin);
 }
 
 /**
@@ -44,8 +44,12 @@ export function loginStaff(telefono: string, pin: string): Promise<real.SesionSt
  * - API real: usa el login que ya trae el rol del token/DTO.
  * - Mock: solo hay clientas, así que mapea a rol "clienta".
  */
-export async function loginUnificado(telefono: string, pin: string): Promise<real.SesionStaff> {
-  if (apiActiva) return real.loginStaff(telefono, pin);
+export async function loginUnificado(
+  telefono: string,
+  pin: string,
+  reemplazarSesion = false,
+): Promise<real.SesionStaff> {
+  if (apiActiva) return real.loginStaff(telefono, pin, reemplazarSesion);
   const c = await mock.loginConPin(telefono, pin);
   return { rol: "clienta", nombre: c.nombre, clientaId: c.id };
 }
@@ -61,4 +65,21 @@ export function confirmarRecuperacion(token: string, pinNuevo: string): Promise<
 /** Cierra sesión en el cliente. Con la API real borra el JWT; con el mock no hace nada. */
 export function cerrarSesion(): void {
   if (apiActiva) real.cerrarSesion();
+}
+
+/**
+ * Cierra la sesión en el servidor (mejor esfuerzo). Con la API real llama POST /logout con timeout
+ * corto y nunca lanza; con el mock no hay servidor que avisar, así que resuelve de inmediato.
+ */
+export function logout(): Promise<void> {
+  return apiActiva ? real.logout() : Promise.resolve();
+}
+
+/**
+ * Comprueba que la sesión siga viva en el servidor (GET /sesion). Solo tiene sentido con la API
+ * real; con el mock se rechaza para que quien llama lo ignore (no corre la detección temprana).
+ */
+export function comprobarSesion(): Promise<real.SesionInfo> {
+  if (!apiActiva) return Promise.reject(new ApiError(0, "Sin servidor en modo demo."));
+  return real.comprobarSesion();
 }

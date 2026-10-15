@@ -11,6 +11,8 @@ import { useSesion } from "../sesion";
 import { useConfirmarRecuperacion, useRegistrar, useSolicitarRecuperacion } from "../hooks";
 import { usandoApi, existeTelefono, loginUnificado } from "@/api/authSelector";
 import { nombreConocido, recordarNombre } from "../conocidas";
+import { datosSesionActiva, esConflictoDeSesion, type SesionActiva } from "../sesionUnica";
+import { SesionAbiertaDrawer } from "../components/SesionAbiertaDrawer";
 
 type Fase = "login" | "registro" | "recuperar" | "recuperar-pin";
 
@@ -77,6 +79,8 @@ export default function EntrarPage() {
   const [params] = useSearchParams();
   const destino = destinoSeguro(params.get("volver"));
   const sesionVencio = params.get("motivo") === "vencio";
+  /** Aviso exacto según el código del backend (lo pone SesionProvider al cerrar por 401). */
+  const avisoVencio = params.get("aviso") ?? "Tu sesión venció. Entra de nuevo.";
   const navigate = useNavigate();
   const { entrarComoClienta, entrarStaff } = useSesion();
 
@@ -95,6 +99,15 @@ export default function EntrarPage() {
   const [verificando, setVerificando] = useState(false);
   /** Enviando el login (del keypad del PIN). */
   const [entrando, setEntrando] = useState(false);
+  /**
+   * Conflicto de "sesión única": si el login da 409 sesion_activa, guardamos los datos de la otra
+   * sesión para la hoja. El PIN tecleado vive solo en el estado del componente (nunca en storage).
+   */
+  const [conflicto, setConflicto] = useState<SesionActiva | null>(null);
+  /** Repitiendo el login con reemplazarSesion: true (botón "Seguir aquí"). */
+  const [reemplazando, setReemplazando] = useState(false);
+  /** Error del reintento con reemplazo, mostrado dentro de la hoja. */
+  const [errorReemplazo, setErrorReemplazo] = useState<string | null>(null);
   /** Sub-paso del registro: primero los datos, luego el keypad para crear el PIN. */
   const [pasoPinReg, setPasoPinReg] = useState(false);
 
@@ -143,10 +156,13 @@ export default function EntrarPage() {
   }
 
 
-  async function entrar(pinValor: string = pin) {
-    setEntrando(true);
+  async function entrar(pinValor: string = pin, reemplazarSesion = false) {
+    if (reemplazarSesion) setReemplazando(true);
+    else setEntrando(true);
+    setErrorReemplazo(null);
     try {
-      const s = await loginUnificado(tel, pinValor);
+      const s = await loginUnificado(tel, pinValor, reemplazarSesion);
+      setConflicto(null);
       recordarNombre(tel, s.nombre); // saludo por nombre la próxima vez en este equipo
       if (s.rol === "duena" || s.rol === "cajera") {
         entrarStaff({ rol: s.rol, nombre: s.nombre, clientaId: s.clientaId, sucursal: s.sucursal });
@@ -158,11 +174,34 @@ export default function EntrarPage() {
         navigate(destino, { replace: true });
       }
     } catch (e) {
-      toast.error(mensajeError(e));
-      setPin(""); // vacía el keypad para reintentar
+      if (esConflictoDeSesion(e)) {
+        // Otra sesión abierta: abrimos la hoja para decidir. Conservamos el PIN en el estado para
+        // poder repetir el login con reemplazarSesion: true si elige "Seguir aquí".
+        setConflicto(datosSesionActiva(e) ?? { dispositivo: "otro dispositivo", creada: "", ultimaActividad: "" });
+        if (reemplazarSesion) setErrorReemplazo(null);
+      } else if (reemplazarSesion) {
+        // Falló el reintento con reemplazo: lo mostramos dentro de la hoja (no la cerramos).
+        setErrorReemplazo(mensajeError(e));
+      } else {
+        toast.error(mensajeError(e));
+        setPin(""); // vacía el keypad para reintentar
+      }
     } finally {
       setEntrando(false);
+      setReemplazando(false);
     }
+  }
+
+  /** "Seguir aquí": repite el login reemplazando la otra sesión con las credenciales ya tecleadas. */
+  function seguirAqui() {
+    void entrar(pin, true);
+  }
+
+  /** "Mantener la otra": cierra la hoja, limpia el PIN y no entra. */
+  function mantenerLaOtra() {
+    setConflicto(null);
+    setErrorReemplazo(null);
+    setPin("");
   }
 
   function registrar(pinValor: string = pin) {
@@ -220,6 +259,8 @@ export default function EntrarPage() {
     setNoExiste(false);
     setSaludoNombre(null);
     setVerificando(false);
+    setConflicto(null);
+    setErrorReemplazo(null);
   }
 
   return (
@@ -242,7 +283,7 @@ export default function EntrarPage() {
               role="status"
               className="mb-5 rounded-2xl bg-warning-container px-4 py-3 text-body-md text-warning"
             >
-              Tu sesión venció. Entra de nuevo.
+              {avisoVencio}
             </p>
           )}
           <p className="font-marca text-[32px] leading-none text-on-surface">Jesly Boutique</p>
@@ -498,6 +539,15 @@ export default function EntrarPage() {
           </p>
         </div>
       </div>
+
+      <SesionAbiertaDrawer
+        open={conflicto !== null}
+        sesion={conflicto}
+        cargando={reemplazando}
+        error={errorReemplazo}
+        onSeguirAqui={seguirAqui}
+        onMantenerLaOtra={mantenerLaOtra}
+      />
     </main>
   );
 }

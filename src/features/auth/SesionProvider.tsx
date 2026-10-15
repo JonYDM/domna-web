@@ -1,7 +1,9 @@
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type { SucursalId } from "@/types/api";
-import { cerrarSesion } from "@/api/authSelector";
+import { cerrarSesion, comprobarSesion, logout, usandoApi } from "@/api/authSelector";
 import { registrarSesionVencida } from "@/api/http";
+import { limpiarBorradoresDeSesion } from "@/features/panel/borradorProducto";
+import { debeComprobarSesion, mensajeSesionVencida } from "./sesionUnica";
 import { SesionContext, STORAGE_SESION, USUARIAS_DEMO, type Rol, type Sesion } from "./sesion";
 
 function leer(): Sesion | null {
@@ -36,25 +38,57 @@ export function SesionProvider({ children }: { children: ReactNode }) {
   );
 
   const salir = useCallback(() => {
+    // Cierre real en el servidor PRIMERO (mejor esfuerzo: timeout corto, ignora errores y NO bloquea
+    // la salida local ni la navegación). Luego borra token + sesión local y los borradores de sesión.
+    void logout();
     cerrarSesion(); // borra el JWT si la API real está activa
     localStorage.removeItem(STORAGE_SESION);
+    void limpiarBorradoresDeSesion();
     // Nota: NO se borra el carrito (domna.carrito.<clientaId>): sobrevive al cierre de sesión.
     setSesion(null);
   }, []);
 
-  // Sesión vencida (401 en ruta autenticada): limpia la sesión y manda a /entrar con un aviso.
-  // Se maneja de forma centralizada vía http.ts (callback registrable, sin dependencias circulares).
-  // El carrito se conserva (vive en localStorage por clientaId y salir() no lo toca).
+  // Sesión terminada por el servidor (401 en ruta autenticada): limpia la sesión local, borra los
+  // borradores de sesión y manda a /entrar con un aviso acorde al `codigo` del backend. El carrito se
+  // conserva (vive en localStorage por clientaId y nada de esto lo toca). Centralizado vía http.ts.
   useEffect(() => {
-    registrarSesionVencida(() => {
+    registrarSesionVencida((codigo) => {
       cerrarSesion();
       localStorage.removeItem(STORAGE_SESION);
+      void limpiarBorradoresDeSesion();
       setSesion(null);
       const yaEnEntrar = window.location.pathname.startsWith("/entrar");
-      if (!yaEnEntrar) window.location.assign("/entrar?motivo=vencio");
+      if (!yaEnEntrar) {
+        const aviso = encodeURIComponent(mensajeSesionVencida(codigo));
+        window.location.assign(`/entrar?motivo=vencio&aviso=${aviso}`);
+      }
     });
     return () => registrarSesionVencida(null);
   }, []);
+
+  // Detección temprana (solo API real + sesión iniciada): al volver la ventana/app al primer plano
+  // comprueba la sesión con GET /api/auth/sesion, como máximo 1 vez cada 30 s, para enterarse pronto
+  // si la reemplazaron sin esperar a la siguiente acción. Un 401 lo maneja el handler central; un
+  // error de red NO cierra la sesión (se ignora). En modo mock no corre nada.
+  const ultimaComprobacion = useRef<number | null>(null);
+  const haySesion = sesion !== null;
+  useEffect(() => {
+    if (!usandoApi || !haySesion) return;
+    const alPrimerPlano = () => {
+      if (document.visibilityState === "hidden") return;
+      const ahora = Date.now();
+      if (!debeComprobarSesion(ultimaComprobacion.current, ahora)) return;
+      ultimaComprobacion.current = ahora;
+      // Ignoramos el resultado y los errores de red: el 401 ya lo cierra el handler central.
+      void comprobarSesion().catch(() => {});
+    };
+    window.addEventListener("visibilitychange", alPrimerPlano);
+    window.addEventListener("focus", alPrimerPlano);
+    return () => {
+      window.removeEventListener("visibilitychange", alPrimerPlano);
+      window.removeEventListener("focus", alPrimerPlano);
+    };
+  }, [haySesion]);
 
   const valor = useMemo(
     () => ({ sesion, entrar, entrarStaff, entrarComoClienta, salir }),
