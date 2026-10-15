@@ -61,7 +61,7 @@ export function Carrusel({
   const mascara = `linear-gradient(to right, ${izq}, ${der})`;
 
   return (
-    <div className={cn("group/carrusel relative", className)}>
+    <div className={cn("group/carrusel relative w-full min-w-0 max-w-full", className)}>
       <div
         ref={pista}
         role="group"

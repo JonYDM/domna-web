@@ -5,6 +5,14 @@
 @tailwind utilities;
 
 @layer base {
+  /*
+   * Un <fieldset> mide por defecto "al menos lo que mide su contenido". Si adentro hay algo ancho
+   * (un carrusel, una tabla), empuja a todo el formulario de lado. Se reinicia para que mida lo
+   * que le toque a su contenedor y lo ancho se deslice por dentro.
+   */
+  fieldset {
+    min-width: 0;
+  }
   :root {
     /*
      * Separación del dock respecto al borde inferior: nunca menos de 12 px y, en iPhone con
