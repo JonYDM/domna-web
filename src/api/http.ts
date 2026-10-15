@@ -1,5 +1,6 @@
 import { ApiError, errorDeRed, errorDeTimeout } from "@/lib/errores";
 import { esRutaDeAuth } from "@/lib/reintento";
+import { CABECERA_MODO_APP, VALOR_APP_INSTALADA, detectarAppInstalada } from "@/lib/modoApp";
 
 /**
  * Cliente HTTP del backend real (domna-api).
@@ -75,6 +76,10 @@ async function pedir<T>(metodo: string, ruta: string, opciones: OpcionesPeticion
   const token = leerToken();
   if (token && opciones.conAuth !== false) headers.Authorization = `Bearer ${token}`;
   if (opciones.idempotencyKey) headers["Idempotency-Key"] = opciones.idempotencyKey;
+  // Solo al entrar/registrarse (rutas de auth): el servidor nombra el dispositivo como "iPhone · App
+  // instalada" en lugar de repetir "iPhone · Safari". Fuera de auth no hace falta: evitaría una
+  // consulta previa (preflight) en lecturas públicas.
+  if (esRutaDeAuth(ruta) && detectarAppInstalada()) headers[CABECERA_MODO_APP] = VALOR_APP_INSTALADA;
 
   // AbortController propio por petición: así el timeout NUNCA cancela peticiones ajenas.
   const controlador = new AbortController();

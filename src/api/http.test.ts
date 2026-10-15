@@ -130,3 +130,66 @@ describe("http: 401 central con codigo", () => {
     expect(manejador).not.toHaveBeenCalled();
   });
 });
+
+describe("http: cabecera X-Modo-App", () => {
+  beforeEach(() => {
+    instalarLocalStorage();
+    limpiarToken();
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+  });
+
+  /** Simula la app corriendo instalada (standalone) o en una pestaña normal. */
+  function simularEntorno(instalada: boolean) {
+    vi.stubGlobal("window", {
+      matchMedia: (q: string) => ({ matches: instalada && q === "(display-mode: standalone)" }),
+      navigator: {},
+    });
+  }
+
+  function cabecerasEnviadas(fetchMock: ReturnType<typeof vi.fn>): Record<string, string> {
+    return (fetchMock.mock.calls[0][1] as RequestInit).headers as Record<string, string>;
+  }
+
+  it("la manda al entrar cuando corre como app instalada", async () => {
+    simularEntorno(true);
+    const f = vi.fn().mockResolvedValue(respuesta(200, { ok: true }));
+    vi.stubGlobal("fetch", f);
+
+    await http.post("/api/auth/login", { telefono: "777", pin: "000000" }, { conAuth: false });
+
+    expect(cabecerasEnviadas(f)["X-Modo-App"]).toBe("instalada");
+  });
+
+  it("también al registrarse y al confirmar la recuperación del PIN", async () => {
+    simularEntorno(true);
+    for (const ruta of ["/api/auth/registrar", "/api/auth/recuperar/confirmar"]) {
+      const f = vi.fn().mockResolvedValue(respuesta(200, {}));
+      vi.stubGlobal("fetch", f);
+      await http.post(ruta, {}, { conAuth: false });
+      expect(cabecerasEnviadas(f)["X-Modo-App"]).toBe("instalada");
+    }
+  });
+
+  it("no la manda desde una pestaña normal del navegador", async () => {
+    simularEntorno(false);
+    const f = vi.fn().mockResolvedValue(respuesta(200, {}));
+    vi.stubGlobal("fetch", f);
+
+    await http.post("/api/auth/login", {}, { conAuth: false });
+
+    expect(cabecerasEnviadas(f)["X-Modo-App"]).toBeUndefined();
+  });
+
+  it("no la manda en rutas que no son de entrada (evita una consulta previa de más)", async () => {
+    simularEntorno(true);
+    for (const ruta of ["/api/productos", "/api/config", "/api/apartados/por-confirmar", "/api/auth/logout"]) {
+      const f = vi.fn().mockResolvedValue(respuesta(200, {}));
+      vi.stubGlobal("fetch", f);
+      await http.get(ruta, { conAuth: false });
+      expect(cabecerasEnviadas(f)["X-Modo-App"], ruta).toBeUndefined();
+    }
+  });
+});

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { detectarAppInstalada } from "./modoApp";
 
 /** Evento no estándar de Chromium para instalar la PWA. */
 interface BeforeInstallPromptEvent extends Event {
@@ -8,10 +9,7 @@ interface BeforeInstallPromptEvent extends Event {
 
 /** ¿La app ya corre instalada (standalone)? Android/escritorio y iOS (navigator.standalone). */
 function esStandalone(): boolean {
-  if (typeof window === "undefined") return false;
-  const mql = window.matchMedia?.("(display-mode: standalone)").matches;
-  const iosStandalone = (window.navigator as unknown as { standalone?: boolean }).standalone === true;
-  return !!mql || iosStandalone;
+  return detectarAppInstalada();
 }
 
 /** iOS (iPhone/iPad), donde la instalación es manual (Compartir → Agregar a inicio). */
