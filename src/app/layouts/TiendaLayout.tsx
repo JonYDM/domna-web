@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, Navigate, Outlet, useLocation, useNavigate } from "react-router-dom";
-import { ShoppingBag, Store } from "lucide-react";
+import { ArrowLeft, LayoutDashboard, ShoppingBag, Store } from "lucide-react";
 import { TopNav, type ItemNav } from "@/components/organisms/Navegacion";
 import { PerfilMenu } from "@/components/organisms/PerfilMenu";
 import { EmptyState } from "@/components/molecules/EmptyState";
@@ -30,6 +30,9 @@ export default function TiendaLayout() {
   const activos = apartados.data?.filter(enCurso).length ?? 0;
   const avisos = useAvisos(sesion?.rol === "clienta" ? sesion.clientaId : undefined);
   const sinLeer = avisos.data?.filter((a) => !a.leido).length ?? 0;
+  // La dueña y la cajera también pueden mirar la tienda como la ve una clienta: necesitan una salida.
+  const esStaff = sesion?.rol === "duena" || sesion?.rol === "cajera";
+  const rutaPanel = sesion?.rol === "duena" ? "/app" : "/caja";
 
   // Navegación de escritorio. En móvil el dock reemplaza a este menú.
   const items: ItemNav[] = [
@@ -69,6 +72,13 @@ export default function TiendaLayout() {
             </Link>
             <TopNav items={items} />
             <div className="flex items-center gap-1">
+              {esStaff && (
+                <ButtonLink to={rutaPanel} size="sm" variant="tinta" aria-label="Volver al panel">
+                  <ArrowLeft className="h-4 w-4" aria-hidden />
+                  <span className="hidden sm:inline">Volver al panel</span>
+                  <span className="sm:hidden">Panel</span>
+                </ButtonLink>
+              )}
               <BotonInstalar compacto className="hidden sm:inline-flex" />
               <div className="hidden md:block">
                 <CarritoIcono />
@@ -87,6 +97,30 @@ export default function TiendaLayout() {
                   }}
                 >
                   <AvisosPopover clientaId={sesion.clientaId} onNavegar={() => setPerfilAbierto(false)} />
+                </PerfilMenu>
+              )}
+              {esStaff && sesion && (
+                <PerfilMenu
+                  nombre={sesion.nombre}
+                  subtitulo={sesion.rol === "duena" ? "Dueña · viendo la tienda como clienta" : "Cajera · viendo la tienda como clienta"}
+                  open={perfilAbierto}
+                  onOpenChange={setPerfilAbierto}
+                  onSalir={() => {
+                    setPerfilAbierto(false);
+                    salir();
+                    navigate("/");
+                  }}
+                >
+                  <nav className="p-2">
+                    <Link
+                      to={rutaPanel}
+                      onClick={() => setPerfilAbierto(false)}
+                      className="flex h-11 items-center gap-3 rounded-xl px-3 text-label-lg hover:bg-surface-container-low"
+                    >
+                      <LayoutDashboard className="h-4 w-4 text-on-surface-variant" aria-hidden />
+                      Volver al panel
+                    </Link>
+                  </nav>
                 </PerfilMenu>
               )}
               {!sesion && (
