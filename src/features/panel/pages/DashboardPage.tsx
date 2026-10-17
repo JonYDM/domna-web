@@ -47,13 +47,21 @@ export default function DashboardPage() {
         </ButtonLink>
       </div>
 
-      <div className="no-scrollbar -mx-4 flex items-center gap-2 overflow-x-auto px-4" role="toolbar" aria-label="Filtrar métricas por sucursal">
-        <span className="shrink-0 text-label-md text-on-surface-variant">Sucursal:</span>
-        {SUCURSALES.map((s) => (
-          <Chip key={s.id} activo={sucursal === s.id} onClick={() => setSucursal(s.id)}>
-            {s.label}
-          </Chip>
-        ))}
+      <div className="flex flex-col gap-2">
+        <p id="titulo-filtro-sucursal" className="text-label-md text-on-surface-variant">
+          ¿De qué sucursal quieres ver las cifras?
+        </p>
+        <div
+          className="no-scrollbar -mx-4 flex items-center gap-2 overflow-x-auto px-4"
+          role="toolbar"
+          aria-labelledby="titulo-filtro-sucursal"
+        >
+          {SUCURSALES.map((s) => (
+            <Chip key={s.id} activo={sucursal === s.id} onClick={() => setSucursal(s.id)}>
+              {s.label}
+            </Chip>
+          ))}
+        </div>
       </div>
 
       {m.isError ? (
