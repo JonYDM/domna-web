@@ -9,6 +9,7 @@ export { Drawer } from "./Drawer";
 export { Pasos, type Paso } from "./Pasos";
 export { Interruptor } from "./Interruptor";
 export { Avatar } from "./Avatar";
+export { Pestanas, type Pestana } from "./Pestanas";
 export { Segmentos, type Segmento } from "./Segmentos";
 export {
   Breadcrumb,

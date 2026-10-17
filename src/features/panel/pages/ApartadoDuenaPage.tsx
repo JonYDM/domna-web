@@ -1,26 +1,48 @@
 import { useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import toast from "react-hot-toast";
-import { Bell, ChevronLeft, MessageCircle, Phone, Wallet } from "lucide-react";
-import type { Apartado, MetodoPago } from "@/types/api";
+import { Banknote, Bell, ChevronLeft, MessageCircle, PackageCheck, Phone, Wallet } from "lucide-react";
+import type { Apartado, EstadoEntrega, MetodoPago } from "@/types/api";
 import { EmptyState } from "@/components/molecules/EmptyState";
 import { Button, ButtonLink, Chip, Drawer, Input, Skeleton } from "@/components/ui";
-import { METODO_PAGO, SIGUIENTE_ENTREGA } from "@/lib/enums";
+import { cn } from "@/lib/cn";
+import { METODO_PAGO } from "@/lib/enums";
 import { formatFecha, formatMXN } from "@/lib/format";
 import { mensajeError } from "@/lib/errores";
+import { accionPrincipal, siguienteEntrega, type AccionPrincipal } from "@/lib/accionPrincipalPedido";
 import { diasHasta } from "@/lib/reloj";
 import { useConfig } from "@/features/catalogo/hooks";
 import { useApartado, useAvanzarEntrega, useCancelarApartado, useRegistrarAbono } from "@/features/apartados/hooks";
 import { DetalleApartado } from "@/features/apartados/components/DetalleApartado";
+import { useRegistrarFabSi } from "../fab";
+
+const ICONO_ACCION = { "confirmar-pago": Wallet, abonar: Banknote, entrega: PackageCheck } as const;
 
 export default function ApartadoDuenaPage() {
   const { id = "" } = useParams();
   const apartado = useApartado(id);
   const config = useConfig();
+  const navigate = useNavigate();
   const [abonando, setAbonando] = useState(false);
+  const [confirmandoEntrega, setConfirmandoEntrega] = useState(false);
   const [confirmarCancelar, setConfirmarCancelar] = useState(false);
   const cancelar = useCancelarApartado();
   const entrega = useAvanzarEntrega();
+
+  // La acción que más se necesita en este pedido flota al alcance del pulgar (en móvil); no hay que bajar
+  // hasta el final de la página para cobrar o entregar.
+  const principal = apartado.data ? accionPrincipal(apartado.data) : null;
+  useRegistrarFabSi(
+    principal && {
+      label: principal.label,
+      icono: ICONO_ACCION[principal.tipo],
+      onClick: () => {
+        if (principal.tipo === "confirmar-pago") navigate("/app/pagos");
+        else if (principal.tipo === "abonar") setAbonando(true);
+        else setConfirmandoEntrega(true);
+      },
+    },
+  );
 
   if (apartado.isPending) {
     return (
@@ -43,10 +65,10 @@ export default function ApartadoDuenaPage() {
 
   const a = apartado.data;
   const activo = a.estado === "activo";
-  const siguiente = SIGUIENTE_ENTREGA[a.estadoEntrega];
-  // Solo se entrega lo liquidado; los traslados se pueden mover desde que está apartado.
-  const puedeEntrega =
-    siguiente && a.estado !== "cancelado" && a.estado !== "vencido" && (siguiente.estado !== "entregado" || a.estado === "liquidado");
+  const siguiente = siguienteEntrega(a);
+  // En móvil el botón principal ya flota abajo; en el panel de la derecha solo se repite en pantallas anchas.
+  const esPrincipal = (tipo: AccionPrincipal["tipo"]) => principal?.tipo === tipo;
+  const nombreSucursal = (id: string) => config.data?.sucursales.find((s) => s.id === id)?.nombre ?? id;
   const telefono = a.clientaTelefono.replace(/\D/g, "");
   const mensaje = encodeURIComponent(
     `¡Hola ${a.clientaNombre.split(" ")[0]}! Te escribimos de ${config.data?.nombre ?? "la boutique"}. Tu apartado ${a.folio} (${a.lineas[0].nombre}) tiene un saldo de ${formatMXN(a.saldo)} y vence el ${formatFecha(a.venceEl)}. 💕`,
@@ -66,6 +88,17 @@ export default function ApartadoDuenaPage() {
           <h1 className="tabular font-marca text-headline-lg">
             {a.modalidad === "compra" ? "Compra" : "Apartado"} {a.folio}
           </h1>
+          {/* Quién es la clienta, a la vista y con el teléfono a un toque (en pantallas anchas va en el panel lateral). */}
+          <div className="mt-0.5 flex flex-wrap items-center gap-x-3 lg:hidden">
+            <span className="text-label-lg">{a.clientaNombre}</span>
+            <a
+              href={`tel:+52${telefono}`}
+              className="inline-flex h-11 items-center gap-1.5 text-body-sm text-on-surface-variant hover:underline"
+            >
+              <Phone className="h-3.5 w-3.5" aria-hidden />
+              {a.clientaTelefono}
+            </a>
+          </div>
         </div>
         <DetalleApartado apartado={a} config={config.data} vista="duena" />
       </div>
@@ -101,20 +134,21 @@ export default function ApartadoDuenaPage() {
 
         <div className="flex flex-col gap-2">
           {activo && (a.porConfirmar ?? 0) > 0 && (
-            <ButtonLink to="/app/pagos" size="lg">
+            <ButtonLink to="/app/pagos" size="lg" className={cn(esPrincipal("confirmar-pago") && "max-md:hidden")}>
               <Wallet className="h-5 w-5" aria-hidden />
               Confirmar el pago
             </ButtonLink>
           )}
           {activo && (a.porConfirmar ?? 0) === 0 && (
-            <Button size="lg" onClick={() => setAbonando(true)}>
+            <Button size="lg" onClick={() => setAbonando(true)} className={cn(esPrincipal("abonar") && "max-md:hidden")}>
               <Wallet className="h-5 w-5" aria-hidden />
               Registrar abono
             </Button>
           )}
-          {puedeEntrega && (
+          {siguiente && (
             <Button
               variant="tinta"
+              className={cn(esPrincipal("entrega") && "max-md:hidden")}
               loading={entrega.isPending}
               onClick={() =>
                 entrega.mutate(
@@ -164,7 +198,83 @@ export default function ApartadoDuenaPage() {
       </aside>
 
       {activo && <AbonoDrawer key={a.pagado} apartado={a} open={abonando} onClose={() => setAbonando(false)} />}
+      {principal?.tipo === "entrega" && (
+        <ConfirmarEntregaDrawer
+          apartado={a}
+          siguiente={principal.siguiente}
+          accion={principal.label}
+          destino={nombreSucursal(a.entrega)}
+          open={confirmandoEntrega}
+          onClose={() => setConfirmandoEntrega(false)}
+        />
+      )}
     </div>
+  );
+}
+
+const AYUDA_ENTREGA: Partial<Record<EstadoEntrega, (cliente: string, destino: string) => string>> = {
+  en_traslado: (_c, destino) => `Márcalo cuando la pieza salga hacia ${destino}.`,
+  listo: (_c, destino) => `Márcalo cuando la pieza llegue a ${destino}.`,
+  entregado: (cliente) => `Hazlo cuando ${cliente} se lleve su pedido. Después ya no se puede cambiar.`,
+};
+
+/** Confirma el avance de la entrega desde el botón flotante: ahí es fácil tocar sin querer, y no hay marcha atrás. */
+function ConfirmarEntregaDrawer({
+  apartado: a,
+  siguiente,
+  accion,
+  destino,
+  open,
+  onClose,
+}: {
+  apartado: Apartado;
+  siguiente: EstadoEntrega;
+  accion: string;
+  destino: string;
+  open: boolean;
+  onClose: () => void;
+}) {
+  const entrega = useAvanzarEntrega();
+  const piezas = a.lineas.reduce((n, l) => n + l.cantidad, 0);
+
+  return (
+    <Drawer
+      open={open}
+      onClose={onClose}
+      title={accion}
+      descripcion={`${a.folio} · ${a.clientaNombre}`}
+      pie={
+        <Button
+          size="lg"
+          fullWidth
+          loading={entrega.isPending}
+          onClick={() =>
+            entrega.mutate(
+              { id: a.id, siguiente },
+              {
+                onSuccess: () => {
+                  onClose();
+                  toast.success("Entrega actualizada");
+                },
+                onError: (e) => toast.error(mensajeError(e)),
+              },
+            )
+          }
+        >
+          {accion}
+        </Button>
+      }
+    >
+      <div className="flex flex-col gap-3">
+        <p className="text-body-md text-on-surface-variant">
+          {AYUDA_ENTREGA[siguiente]?.(a.clientaNombre.split(" ")[0], destino)}
+        </p>
+        <p className="rounded-xl bg-surface-container-low px-3 py-2.5 text-body-sm">
+          {a.lineas[0]?.nombre}
+          {piezas > 1 ? ` y ${piezas - 1} más` : ""}
+        </p>
+      </div>
+    </Drawer>
   );
 }
 

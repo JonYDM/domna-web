@@ -1,10 +1,9 @@
 import { useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { ClipboardList, Layers, ShoppingBag } from "lucide-react";
 import type { FiltroEstadoApartado, TipoPedido } from "@/types/api";
 import { BarraBusqueda } from "@/components/molecules/BarraBusqueda";
 import { EmptyState } from "@/components/molecules/EmptyState";
-import { Button, Chip, Segmentos } from "@/components/ui";
+import { Button, Chip, Pestanas } from "@/components/ui";
 import { mensajeError } from "@/lib/errores";
 import { textoAvance, unirPaginas } from "@/lib/paginasPedidos";
 import { useApartadosPaginados, useConteosPedidos } from "@/features/apartados/hooks";
@@ -86,14 +85,14 @@ export default function ApartadosPage() {
     <div className="flex flex-col gap-4">
       <h1 className="font-marca text-headline-lg">Pedidos</h1>
 
-      <Segmentos
+      <Pestanas
         aria-label="Tipo de pedido"
         activo={vista}
         onChange={(v) => cambiar({ tipo: v, estado: undefined })}
-        segmentos={[
-          { id: "apartados", label: "Apartados", icono: ClipboardList, contador: conteos.data?.apartadosActivos },
-          { id: "compras", label: "Compras", icono: ShoppingBag, contador: conteos.data?.comprasPorEntregar },
-          { id: "todo", label: "Todo", icono: Layers },
+        pestanas={[
+          { id: "apartados", label: "Apartados", contador: conteos.data?.apartadosActivos },
+          { id: "compras", label: "Compras", contador: conteos.data?.comprasPorEntregar },
+          { id: "todo", label: "Todo" },
         ]}
       />
 
