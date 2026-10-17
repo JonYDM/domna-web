@@ -174,10 +174,9 @@ export async function guardarColor(id: string | null, input: ColorInput): Promis
   return id ? http.put<ColorGuardado>(`/api/colores/${id}`, input) : http.post<ColorGuardado>("/api/colores", input);
 }
 
-/** Uso de un color: en cuántas prendas está y cuántas lo muestran con un tono anterior. */
+/** Uso de un color: en cuántas prendas está. */
 export interface UsoColor {
   prendas: number;
-  desactualizadas: number;
 }
 
 /** En cuántas prendas se usa un color del catálogo (se reconoce por nombre). */

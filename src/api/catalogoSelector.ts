@@ -116,7 +116,7 @@ export function demoCatalogoPublico(publico: boolean): Promise<void> {
 
 /** En cuántas prendas se usa un color. Solo con la API real (en la demo no hay copias ligadas). */
 export function usoColor(id: string): Promise<real.UsoColor> {
-  return apiActiva ? real.usoColor(id) : Promise.resolve({ prendas: 0, desactualizadas: 0 });
+  return apiActiva ? real.usoColor(id) : Promise.resolve({ prendas: 0 });
 }
 
 /** Busca una variante por su código de barras físico (POS/escáner). */

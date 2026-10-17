@@ -70,11 +70,6 @@ export interface CategoriaInput {
 export interface ColorInput {
   nombre: string;
   hex: string;
-  /**
-   * Solo al EDITAR un color del catálogo: lleva el cambio a las prendas que todavía lo usan tal como
-   * estaba. Cada prenda guarda su propia copia del color, así que sin esto no se enteran.
-   */
-  aplicarAPrendas?: boolean;
 }
 
 /** Lo que devuelve editar un color: el color y a cuántas prendas llegó el cambio. */

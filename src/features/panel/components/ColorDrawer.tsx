@@ -2,12 +2,12 @@ import { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import { Pipette, Trash2 } from "lucide-react";
 import type { ColorCatalogo } from "@/types/api";
-import { Button, Chip, Drawer, Input, Interruptor } from "@/components/ui";
+import { Button, Chip, Drawer, Input } from "@/components/ui";
 import { mensajeError } from "@/lib/errores";
 import { cn } from "@/lib/cn";
 import { esClaro } from "@/lib/color";
 import { aplicarColorDeFoto, hexDeNombre, nombreDeHex } from "@/lib/colorMuestra";
-import { cambioElColor, ofrecerAplicarAPrendas, textoPrendas } from "@/lib/colorPrendas";
+import { textoPrendas } from "@/lib/colorPrendas";
 import { useEliminarColor, useGuardarColor, useUsoColor } from "../hooks";
 import { SelectorDeColor } from "@/components/molecules/SelectorDeColor";
 import { ColorDeFoto, type FotoParaColor } from "./ColorDeFoto";
@@ -122,15 +122,9 @@ export function ColorDrawer({ color, onClose }: { color: ColorCatalogo | null; o
   const eliminar = useEliminarColor();
   const valido = nombre.trim().length >= 2 && HEX.test(hex);
 
-  // Cada prenda guarda su PROPIA copia del color: editar el catálogo no la toca. Si el color se usa en
-  // prendas y se está cambiando, se ofrece llevar el cambio también ahí (activado por defecto).
+  // Es el mismo color en todos lados: lo que se edite aquí también cambia en las prendas que lo usan.
   const uso = useUsoColor(color?.id);
-  const [aplicar, setAplicar] = useState(true);
   const prendas = uso.data?.prendas ?? 0;
-  const desactualizadas = uso.data?.desactualizadas ?? 0;
-  const ofrecerPrendas = ofrecerAplicarAPrendas({ original: color, nombre, hex, valido, prendas, desactualizadas });
-  // Sin cambios pero con prendas atrasadas: la oferta es "ponerlas al día", y cuenta solo esas.
-  const soloPonerAlDia = !!color && !cambioElColor(color, nombre, hex);
   const fotos: FotoParaColor[] = [];
 
   return (
@@ -148,7 +142,7 @@ export function ColorDrawer({ color, onClose }: { color: ColorCatalogo | null; o
             loading={guardar.isPending}
             onClick={() =>
               guardar.mutate(
-                { id: color?.id ?? null, input: { nombre, hex, aplicarAPrendas: ofrecerPrendas && aplicar } },
+                { id: color?.id ?? null, input: { nombre, hex } },
                 {
                   onSuccess: (c) => {
                     const n = c.prendasActualizadas ?? 0;
@@ -185,19 +179,11 @@ export function ColorDrawer({ color, onClose }: { color: ColorCatalogo | null; o
       )}
       <div hidden={vista === "foto"} className="flex flex-col gap-5">
         <CamposColor nombre={nombre} hex={hex} onNombre={setNombre} onHex={setHex} onTomarDeFoto={() => setVista("foto")} />
-        {ofrecerPrendas && (
-          <Interruptor
-            checked={aplicar}
-            onChange={setAplicar}
-            label={soloPonerAlDia ? `Poner al día ${textoPrendas(desactualizadas)}` : `Cambiarlo también en ${textoPrendas(prendas)}`}
-            descripcion={
-              soloPonerAlDia
-                ? "Estas prendas todavía muestran un tono anterior de este color. Cada prenda guarda su propia copia: actívalo para que se vean como está en el catálogo."
-                : "Cada prenda guarda su propia copia del color. Actívalo para que estas prendas se vean con el color nuevo; si no, solo cambia en el catálogo."
-            }
-          />
-        )}
-        {color && (
+        {color && prendas > 0 && (
+          <p className="rounded-xl bg-surface-container-low px-3 py-2.5 text-body-sm text-on-surface-variant">
+            Este color se usa en {textoPrendas(prendas)}. Si lo cambias, también se verá distinto ahí.
+          </p>
+        )}        {color && (
           <section className="border-t border-outline-variant/60 pt-4">
             {confirmarBorrar ? (
               <div className="flex items-center gap-2 rounded-2xl bg-error-container p-3">
