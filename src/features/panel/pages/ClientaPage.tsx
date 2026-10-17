@@ -79,9 +79,7 @@ export default function ClientaPage() {
             {c.ultimoAcceso ? `Último acceso a la app: ${formatHace(c.ultimoAcceso).toLowerCase()}` : "Nunca ha entrado a la app"}
           </li>
         </ul>
-        <BotonWhatsApp telefono={c.telefono} variante="relleno">
-          Escribirle por WhatsApp
-        </BotonWhatsApp>
+        <BotonWhatsApp telefono={c.telefono} />
       </section>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">

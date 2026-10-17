@@ -87,7 +87,7 @@ export default function ApartadoDuenaPage() {
           <h1 className="tabular font-marca text-headline-lg">
             {a.modalidad === "compra" ? "Compra" : "Apartado"} {a.folio}
           </h1>
-          {/* Quién es la clienta, con el teléfono a un toque y, si todavía debe, el recordatorio por WhatsApp. */}
+          {/* Quién es la clienta, con el teléfono a un toque y, si todavía debe, el mismo botón de WhatsApp de su ficha. */}
           <div className="mt-0.5 flex flex-wrap items-center gap-x-4">
             <span className="text-label-lg">{a.clientaNombre}</span>
             <a
@@ -97,8 +97,8 @@ export default function ApartadoDuenaPage() {
               <Phone className="h-3.5 w-3.5" aria-hidden />
               {a.clientaTelefono}
             </a>
-            {activo && <BotonWhatsApp telefono={a.clientaTelefono} mensaje={mensaje} />}
           </div>
+          {activo && <BotonWhatsApp telefono={a.clientaTelefono} mensaje={mensaje} className="mt-1" />}
         </div>
         <DetalleApartado apartado={a} config={config.data} vista="duena" />
       </div>
