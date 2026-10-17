@@ -1,4 +1,3 @@
-import { cn } from "@/lib/cn";
 import { useFab } from "../fab";
 
 /**
@@ -16,13 +15,9 @@ export function FabFlotante() {
       type="button"
       onClick={fab.onClick}
       aria-label={fab.label}
-      className={cn(
-        "fixed bottom-[calc(var(--dock-bottom)_+_4.25rem)] right-4 z-40 h-14 rounded-full bg-primary-strong text-on-primary shadow-lift transition-all active:scale-95 md:hidden",
-        fab.extendido ? "inline-flex max-w-[calc(100vw-2rem)] items-center gap-2.5 pl-5 pr-6" : "grid w-14 place-items-center",
-      )}
+      className="fixed bottom-[calc(var(--dock-bottom)_+_4.25rem)] right-4 z-40 grid h-14 w-14 place-items-center rounded-full bg-primary-strong text-on-primary shadow-lift transition-all active:scale-95 md:hidden"
     >
-      <Icono className="h-6 w-6 shrink-0" aria-hidden />
-      {fab.extendido && <span className="truncate text-label-lg">{fab.label}</span>}
+      <Icono className="h-6 w-6" aria-hidden />
     </button>
   );
 }
