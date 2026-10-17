@@ -1,5 +1,5 @@
 import type { ImagenProcesada } from "@/lib/imagen";
-import { http, apiActiva } from "./http";
+import { http } from "./http";
 
 /**
  * Subida de fotos de producto a Cloudflare R2 (Fase 2).
@@ -22,19 +22,14 @@ interface FirmaSubida {
   subidas: UrlFirmada[];
 }
 
-/** ¿Se pueden subir imágenes? (requiere backend real; el mock no sube nada). */
-export const puedeSubirImagenes = apiActiva;
-
 /**
  * Sube los 3 tamaños WebP de una imagen procesada a R2 y devuelve la URL pública principal (800 px).
- * Si no hay backend real o algo falla, devuelve null (el producto se crea sin foto).
+ * Si el servidor no entrega la URL pública, devuelve null (el producto se crea sin foto).
  */
 export async function subirImagenProducto(
   productoId: string,
   imagen: ImagenProcesada,
 ): Promise<string | null> {
-  if (!apiActiva) return null;
-
   // 1. Pedir las URLs firmadas (una por tamaño).
   const firma = await http.post<FirmaSubida>("/api/productos/imagenes/firmar", {
     productoId,
@@ -77,7 +72,6 @@ export async function subirFotosPorColor(
   productoId: string,
   porColor: ImagenProcesada[][],
 ): Promise<FotoSubida[]> {
-  if (!apiActiva) return [];
   const resultado: FotoSubida[] = [];
   for (let colorIndex = 0; colorIndex < porColor.length; colorIndex++) {
     const fotos = porColor[colorIndex] ?? [];

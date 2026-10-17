@@ -2,7 +2,7 @@ import { memo } from "react";
 import { Link } from "react-router-dom";
 import { ChevronRight, Clock, MapPin } from "lucide-react";
 import type { Apartado } from "@/types/api";
-import { PrendaImagen } from "@/components/ilustraciones/PrendaImagen";
+import { FotoPrenda } from "@/components/FotoPrenda";
 import { Badge } from "@/components/ui";
 import { cn } from "@/lib/cn";
 import { ESTADO_ENTREGA, estadoVisible } from "@/lib/enums";
@@ -33,7 +33,7 @@ export const ApartadoCard = memo(function ApartadoCard({
       className="flex flex-col gap-3 rounded-2xl bg-surface-container-lowest p-3.5 shadow-soft transition-shadow hover:shadow-lift focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
     >
       <div className="flex gap-3">
-        <PrendaImagen silueta={l.silueta} hex={l.colorHex} alt="" className="w-16 shrink-0 rounded-xl" />
+        <FotoPrenda hex={l.colorHex} url={l.imagenUrl} alt="" className="w-16 shrink-0 rounded-xl" />
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-2">
             <p className="tabular text-label-md text-on-surface-variant">

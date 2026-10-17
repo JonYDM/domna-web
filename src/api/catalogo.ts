@@ -25,8 +25,7 @@ import { http } from "./http";
 const REVALIDAR = { cache: "no-cache" } as const;
 
 /**
- * Catálogo contra el backend real (domna-api). Mismas firmas que el mock para que el selector
- * intercambie sin tocar los hooks. El backend devuelve un ProductoDto; aquí lo adaptamos a las
+ * Catálogo contra el backend (domna-api). El backend devuelve un ProductoDto; aquí lo adaptamos a las
  * formas que la UI espera (ProductoResumen / ProductoDetalle), derivando lo que haga falta.
  */
 

@@ -1,6 +1,6 @@
 import { Banknote, Clock, Hourglass, MapPin, Truck, XCircle } from "lucide-react";
 import type { Apartado, ConfigBoutique } from "@/types/api";
-import { PrendaImagen } from "@/components/ilustraciones/PrendaImagen";
+import { FotoPrenda } from "@/components/FotoPrenda";
 import { Badge } from "@/components/ui";
 import { cn } from "@/lib/cn";
 import { ESTADO_ENTREGA, METODO_PAGO, MODALIDAD, estadoVisible } from "@/lib/enums";
@@ -33,7 +33,7 @@ export function DetalleApartado({
       <section className="rounded-2xl bg-surface-container-lowest p-4 shadow-soft">
         {a.lineas.map((l) => (
           <div key={l.varianteId} className="flex gap-3">
-            <PrendaImagen silueta={l.silueta} hex={l.colorHex} alt="" className="w-20 shrink-0 rounded-xl" />
+            <FotoPrenda hex={l.colorHex} url={l.imagenUrl} alt="" className="w-20 shrink-0 rounded-xl" />
             <div className="min-w-0 flex-1">
               <p className="text-label-lg">{l.nombre}</p>
               <p className="text-body-sm text-on-surface-variant">

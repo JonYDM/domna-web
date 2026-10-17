@@ -1,7 +1,8 @@
 import { useMemo, useState } from "react";
 import type { SucursalId } from "@/types/api";
 import { Badge, Button, Drawer, Skeleton } from "@/components/ui";
-import { PrendaImagen } from "@/components/ilustraciones/PrendaImagen";
+import { FotoPrenda } from "@/components/FotoPrenda";
+import { fotoDeColor } from "@/lib/fotoPrenda";
 import { cn } from "@/lib/cn";
 import { formatMXN } from "@/lib/format";
 import { useProducto } from "@/features/catalogo/hooks";
@@ -83,9 +84,9 @@ export function ElegirVarianteDrawer({
       ) : (
         <div className="flex flex-col gap-5">
           <div className="flex items-center gap-3">
-            <PrendaImagen
-              silueta={p.silueta}
+            <FotoPrenda
               hex={p.colores.find((c) => c.id === colorActivo)?.hex ?? p.colores[0].hex}
+              url={fotoDeColor(p.imagenes, colorActivo ?? p.colores[0].id)}
               alt=""
               className="w-16 shrink-0 rounded-xl"
             />

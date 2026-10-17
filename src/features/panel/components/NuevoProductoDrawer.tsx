@@ -608,8 +608,7 @@ export function NuevoProductoDrawer({ open, onClose, onCreado }: { open: boolean
                   nombre={nombre}
                   descripcion={descripcion}
                   categoria={categorias.data?.find((c) => c.id === categoriaId)?.nombre ?? "—"}
-                  silueta={silueta}
-                  precio={Number(precio)}
+                            precio={Number(precio)}
                   colores={colores}
                   tallas={tallas}
                   stock={stock}

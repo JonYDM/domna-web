@@ -32,7 +32,6 @@ import {
 
 /**
  * Rutas por rol:
- * - /          bienvenida (elegir rol en la demo)
  * - /tienda/*  portal de la clienta (catálogo público + apartados)
  * - /app/*     panel de la dueña
  */

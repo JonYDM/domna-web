@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Camera, Keyboard, Sparkles } from "lucide-react";
+import { Camera, Keyboard } from "lucide-react";
 import { Html5Qrcode, Html5QrcodeSupportedFormats } from "html5-qrcode";
 import { Button, Drawer, Input, Segmentos } from "@/components/ui";
 
@@ -23,20 +23,17 @@ type Modo = "camara" | "manual";
  * Escáner de código de barras reutilizable (POS y alta de producto).
  * - Cámara con `html5-qrcode` (iOS Safari + Android, usa getUserMedia; requiere HTTPS y permiso).
  * - Arranque seguro: solo inicia cuando el contenedor ya está en el DOM; los errores NO tumban la app.
- * - Modo manual: escribir el código. En la demo, botón "Simular lectura" si el padre pasa `onSimular`.
+ * - Modo manual: escribir el código.
  */
 export function EscanerCodigo({
   open,
   onClose,
   onCodigo,
-  onSimular,
   titulo = "Escanear código",
 }: {
   open: boolean;
   onClose: () => void;
   onCodigo: (codigo: string) => void;
-  /** Opcional: para la demo, lee un código de ejemplo (sin cámara). */
-  onSimular?: () => void;
   titulo?: string;
 }) {
   const [modo, setModo] = useState<Modo>("camara");
@@ -132,12 +129,6 @@ export function EscanerCodigo({
             {error ? (
               <div className="flex flex-col gap-2 rounded-xl bg-warning-container px-3 py-2.5">
                 <p className="text-body-sm text-warning">{error}</p>
-                {onSimular && (
-                  <Button type="button" variant="soft" size="sm" onClick={onSimular}>
-                    <Sparkles className="h-4 w-4" aria-hidden />
-                    Simular lectura (demo)
-                  </Button>
-                )}
               </div>
             ) : (
               <p className="text-center text-body-sm text-on-surface-variant">Centra el código dentro del recuadro.</p>
@@ -162,12 +153,6 @@ export function EscanerCodigo({
             <Button type="submit" size="lg" fullWidth disabled={!manual.trim()}>
               Buscar código
             </Button>
-            {onSimular && (
-              <Button type="button" variant="soft" fullWidth onClick={onSimular}>
-                <Sparkles className="h-4 w-4" aria-hidden />
-                Simular lectura (demo)
-              </Button>
-            )}
           </form>
         )}
       </div>

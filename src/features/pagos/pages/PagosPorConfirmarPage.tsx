@@ -2,7 +2,7 @@ import { useState } from "react";
 import toast from "react-hot-toast";
 import { Banknote, ChevronRight, Clock, CreditCard, Landmark, MapPin, Phone } from "lucide-react";
 import type { Abono, Apartado, MetodoPago } from "@/types/api";
-import { PrendaImagen } from "@/components/ilustraciones/PrendaImagen";
+import { FotoPrenda } from "@/components/FotoPrenda";
 import { DeslizarConfirmar } from "@/components/molecules/DeslizarConfirmar";
 import { EmptyState } from "@/components/molecules/EmptyState";
 import { Badge, Button, Drawer, Skeleton, Textarea } from "@/components/ui";
@@ -98,7 +98,7 @@ function TarjetaPago({ apartado: a, onAbrir }: { apartado: Apartado; onAbrir: ()
       onClick={onAbrir}
       className="flex w-full items-center gap-3 rounded-2xl bg-surface-container-lowest p-3.5 text-left shadow-soft transition-shadow hover:shadow-lift focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
     >
-      <PrendaImagen silueta={l.silueta} hex={l.colorHex} alt="" className="w-14 shrink-0 rounded-xl" />
+      <FotoPrenda hex={l.colorHex} url={l.imagenUrl} alt="" className="w-14 shrink-0 rounded-xl" />
       <span className="min-w-0 flex-1">
         <span className="flex items-center justify-between gap-2">
           <span className="tabular text-label-md text-on-surface-variant">{a.folio}</span>
@@ -212,7 +212,7 @@ function DetallePago({ apartado: a, onCerrar }: { apartado: Apartado; onCerrar: 
         <section className="flex flex-col gap-3">
           {a.lineas.map((l) => (
             <div key={l.varianteId} className="flex gap-3">
-              <PrendaImagen silueta={l.silueta} hex={l.colorHex} alt="" className="w-16 shrink-0 rounded-xl" />
+              <FotoPrenda hex={l.colorHex} url={l.imagenUrl} alt="" className="w-16 shrink-0 rounded-xl" />
               <div className="min-w-0 flex-1">
                 <p className="text-label-lg">{l.nombre}</p>
                 <p className="text-body-sm text-on-surface-variant">

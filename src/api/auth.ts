@@ -3,8 +3,7 @@ import { http, guardarToken, limpiarToken, leerToken } from "./http";
 import { cuerpoLogin } from "@/features/auth/sesionUnica";
 
 /**
- * Auth contra el backend real (domna-api). Mismas firmas que las del mock (`src/mock/server.ts`)
- * para que los hooks puedan usar una u otra sin cambios. Guarda el JWT tras registro/login.
+ * Auth contra el backend (domna-api). Guarda el JWT tras registro/login.
  */
 
 /** DTO de clienta tal como lo devuelve el backend. */

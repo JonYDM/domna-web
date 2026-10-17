@@ -5,7 +5,6 @@ import type {
   MetodoPago,
   ModalidadApartado,
   OrdenCatalogo,
-  Silueta,
 } from "@/types/api";
 
 /** Etiquetas y tonos de los enums de dominio (una sola fuente). */
@@ -72,16 +71,6 @@ export const FAMILIAS_COLOR: { id: FamiliaColor; nombre: string; hex: string }[]
   { id: "rosa", nombre: "Rosa", hex: "#F2A7B5" },
   { id: "azul", nombre: "Azul", hex: "#4A6A92" },
   { id: "verde", nombre: "Verde", hex: "#5E7A4E" },
-];
-
-export const SILUETAS: { id: Silueta; nombre: string }[] = [
-  { id: "vestido", nombre: "Vestido" },
-  { id: "blusa", nombre: "Blusa / top" },
-  { id: "pantalon", nombre: "Pantalón" },
-  { id: "falda", nombre: "Falda" },
-  { id: "chamarra", nombre: "Blazer / chamarra" },
-  { id: "conjunto", nombre: "Conjunto" },
-  { id: "bolsa", nombre: "Bolsa / accesorio" },
 ];
 
 /** Tallas estándar del catálogo de atributos. */

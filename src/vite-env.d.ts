@@ -2,7 +2,7 @@
 /// <reference types="vite-plugin-pwa/client" />
 
 interface ImportMetaEnv {
-  /** URL base del backend real (domna-api). Vacía ⇒ el front usa el mock. */
+  /** URL base del backend (domna-api). */
   readonly VITE_API_URL?: string;
 }
 

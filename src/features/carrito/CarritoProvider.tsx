@@ -10,7 +10,7 @@ import {
 
 /**
  * Carrito de la clienta. Persiste en localStorage por clientaId (sobrevive al refresh).
- * El dominio ya acepta pedidos multi-línea (ver mock/dominio.ts), así que al confirmar se manda
+ * El servidor acepta pedidos multi-línea, así que al confirmar se manda
  * `lineas: [{ varianteId, cantidad }]` a `crearApartado`.
  */
 export function CarritoProvider({ clientaId, children }: { clientaId: string | undefined; children: ReactNode }) {

@@ -10,7 +10,8 @@ import type {
   SucursalId,
   VarianteDisponible,
 } from "@/types/api";
-import { PrendaImagen } from "@/components/ilustraciones/PrendaImagen";
+import { FotoPrenda } from "@/components/FotoPrenda";
+import { fotoDeColor } from "@/lib/fotoPrenda";
 import { Badge, Button, ButtonLink, Chip, Drawer, Skeleton } from "@/components/ui";
 import { cn } from "@/lib/cn";
 import { METODO_PAGO } from "@/lib/enums";
@@ -124,7 +125,7 @@ export function ComprarApartarDrawer({
     >
       <div className="flex flex-col gap-5">
         <div className="flex gap-3">
-          <PrendaImagen silueta={producto.silueta} hex={color.hex} alt="" className="w-16 shrink-0 rounded-xl" />
+          <FotoPrenda hex={color.hex} url={fotoDeColor(producto.imagenes, color.id)} alt="" className="w-16 shrink-0 rounded-xl" />
           <div className="min-w-0">
             <p className="truncate text-label-lg">{producto.nombre}</p>
             <p className="text-body-sm text-on-surface-variant">

@@ -2,7 +2,8 @@ import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { useState } from "react";
 import toast from "react-hot-toast";
 import { Eye, EyeOff, Pencil, QrCode, Store, Trash2 } from "lucide-react";
-import { PrendaImagen } from "@/components/ilustraciones/PrendaImagen";
+import { FotoPrenda } from "@/components/FotoPrenda";
+import { fotoDeColor } from "@/lib/fotoPrenda";
 import { EmptyState } from "@/components/molecules/EmptyState";
 import { PrecioTag } from "@/components/molecules/PrecioTag";
 import {
@@ -112,10 +113,10 @@ export default function ProductoDuenaPage() {
 
       <section className="overflow-hidden rounded-2xl bg-surface-container-lowest shadow-soft">
         <div className="relative mx-auto max-w-sm sm:max-w-none">
-          <PrendaImagen
-            silueta={p.silueta}
+          <FotoPrenda
             hex={p.colores[0].hex}
-            url={p.imagenes.find((i) => i.colorId === p.colores[0].id)?.url ?? p.imagenes[0]?.url}
+            url={fotoDeColor(p.imagenes, p.colores[0].id)}
+            tamano="completa"
             alt=""
             prioridad
             className={cn("w-full rounded-none sm:mx-auto sm:max-w-xs", !p.activo && "opacity-50 grayscale")}

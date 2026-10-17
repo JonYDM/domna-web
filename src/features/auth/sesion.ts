@@ -14,8 +14,6 @@ export interface Sesion {
 
 export interface SesionValor {
   sesion: Sesion | null;
-  /** Entrar con un rol de demo (la dueña, la cajera, o María como clienta de ejemplo). */
-  entrar: (rol: Rol) => void;
   /** Entrar como staff real (rol, nombre y sucursal vienen del backend). */
   entrarStaff: (s: { rol: Rol; nombre: string; clientaId?: string; sucursal?: SucursalId }) => void;
   /** Entrar como una clienta concreta (tras registro o login con PIN). */
@@ -35,12 +33,5 @@ export function useSesion(): SesionValor {
 export function esStaff(s: Sesion | null): boolean {
   return s?.rol === "duena" || s?.rol === "cajera";
 }
-
-/** Usuarias de la demo (sin login real todavía). */
-export const USUARIAS_DEMO: Record<Rol, Sesion> = {
-  clienta: { rol: "clienta", nombre: "María", clientaId: "c-maria" },
-  duena: { rol: "duena", nombre: "Jesly" },
-  cajera: { rol: "cajera", nombre: "Caja Temixco", sucursal: "temixco" },
-};
 
 export const STORAGE_SESION = "domna.sesion";

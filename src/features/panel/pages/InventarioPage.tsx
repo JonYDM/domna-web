@@ -1,7 +1,8 @@
 import { useCallback, useRef, useState } from "react";
 import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { Plus } from "lucide-react";
-import { PrendaImagen } from "@/components/ilustraciones/PrendaImagen";
+import { FotoPrenda } from "@/components/FotoPrenda";
+import { fotoDeColor } from "@/lib/fotoPrenda";
 import { BarraBusqueda } from "@/components/molecules/BarraBusqueda";
 import { EmptyState } from "@/components/molecules/EmptyState";
 import { Badge, Chip, Skeleton } from "@/components/ui";
@@ -105,10 +106,9 @@ export default function InventarioPage() {
                 className="flex gap-3 rounded-2xl bg-surface-container-lowest p-3 shadow-soft transition-shadow hover:shadow-lift"
               >
                 <div className="relative shrink-0">
-                  <PrendaImagen
-                    silueta={p.silueta}
+                  <FotoPrenda
                     hex={p.colores[0].hex}
-                    url={p.imagenes.find((i) => i.colorId === p.colores[0].id)?.url ?? p.imagenes[0]?.url}
+                    url={fotoDeColor(p.imagenes, p.colores[0].id)}
                     alt=""
                     className={cn("w-20 rounded-xl", !p.activo && "opacity-50 grayscale")}
                   />

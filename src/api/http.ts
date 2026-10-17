@@ -5,9 +5,6 @@ import { CABECERA_MODO_APP, VALOR_APP_INSTALADA, detectarAppInstalada } from "@/
 /**
  * Cliente HTTP del backend real (domna-api).
  *
- * Interruptor: si `VITE_API_URL` está definida, la app usa la API real; si está vacía, el front
- * sigue con el mock (`src/mock/server.ts`). Así la demo con datos de ejemplo nunca se rompe.
- *
  * - Base URL desde `import.meta.env.VITE_API_URL`.
  * - Guarda/lee/limpia el token JWT en localStorage y lo manda como `Authorization: Bearer`.
  * - Traduce los errores del backend (`{ "mensaje": "..." }` + status) al `ApiError` del front.
@@ -16,9 +13,6 @@ import { CABECERA_MODO_APP, VALOR_APP_INSTALADA, detectarAppInstalada } from "@/
  */
 
 const BASE_URL = (import.meta.env.VITE_API_URL ?? "").replace(/\/$/, "");
-
-/** ¿Está activada la API real? (hay URL configurada). Si es false, los hooks usan el mock. */
-export const apiActiva = BASE_URL.length > 0;
 
 const STORAGE_TOKEN = "domna.token";
 

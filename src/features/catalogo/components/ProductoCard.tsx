@@ -1,7 +1,8 @@
 import { memo } from "react";
 import { Link } from "react-router-dom";
 import type { ProductoResumen } from "@/types/api";
-import { PrendaImagen } from "@/components/ilustraciones/PrendaImagen";
+import { FotoPrenda } from "@/components/FotoPrenda";
+import { fotoDeColor } from "@/lib/fotoPrenda";
 import { Swatches } from "@/components/molecules/SelectorColor";
 import { formatMXN } from "@/lib/format";
 import { STOCK_BAJO } from "@/lib/enums";
@@ -52,10 +53,10 @@ export const ProductoCard = memo(function ProductoCard({
     >
       {/* Foto: protagonista, marco de esquina sutil, zoom lento en hover. */}
       <div className="relative overflow-hidden rounded-[3px] bg-surface-container-low ring-1 ring-black/[0.03]">
-        <PrendaImagen
-          silueta={p.silueta}
+        <FotoPrenda
           hex={color.hex}
-          url={p.imagenes.find((i) => i.colorId === color.id)?.url ?? p.imagenes[0]?.url}
+          url={fotoDeColor(p.imagenes, color.id)}
+          sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
           alt={`${p.nombre} en color ${color.nombre}`}
           prioridad={prioridad}
           className={cn(

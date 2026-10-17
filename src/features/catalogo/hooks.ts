@@ -1,7 +1,8 @@
 import { keepPreviousData, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { FiltrosCatalogo } from "@/types/api";
 import { qk } from "@/lib/queryKeys";
-import * as api from "@/api/catalogoSelector";
+import * as api from "@/api/catalogo";
+import * as config from "@/api/config";
 
 /** Catálogo: cambia poco → staleTime 5 min, conserva la lista anterior al filtrar. */
 export function useProductos(filtros: FiltrosCatalogo) {
@@ -36,7 +37,7 @@ export function useColores() {
 }
 
 export function useConfig() {
-  return useQuery({ queryKey: qk.config(), queryFn: api.obtenerConfig, staleTime: 60_000 });
+  return useQuery({ queryKey: qk.config(), queryFn: config.obtenerConfig, staleTime: 60_000 });
 }
 
 /** Prefetch del detalle al tocar/pasar sobre la card. */

@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { AlertTriangle, ChevronRight, ClipboardList, Coins, PackageCheck, Plus, TrendingUp, Users, Wallet } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import type { SucursalId } from "@/types/api";
-import { PrendaImagen } from "@/components/ilustraciones/PrendaImagen";
+import { FotoPrenda } from "@/components/FotoPrenda";
 import { EmptyState } from "@/components/molecules/EmptyState";
 import { Button, ButtonLink, Chip, Skeleton } from "@/components/ui";
 import { cn } from "@/lib/cn";
@@ -157,7 +157,7 @@ export default function DashboardPage() {
                   <li key={t.productoId}>
                     <Link to={`/app/inventario/${t.productoId}`} className="flex items-center gap-3 rounded-xl hover:bg-surface-container-low">
                       <span className="tabular w-4 text-label-md text-on-surface-variant">{i + 1}</span>
-                      <PrendaImagen silueta={t.silueta} hex={t.colorHex} alt="" className="w-9 shrink-0 rounded-lg" />
+                      <FotoPrenda hex={t.colorHex} url={t.imagenUrl} alt="" className="w-9 shrink-0 rounded-lg" />
                       <span className="min-w-0 flex-1 truncate text-body-md">{t.nombre}</span>
                       <span className="tabular text-label-md text-on-surface-variant">{t.unidades} pzs</span>
                     </Link>

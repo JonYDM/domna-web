@@ -47,7 +47,7 @@ export function formatFechaHora(iso: string): string {
   return fechaHoraFmt.format(new Date(iso)).replace(".", "");
 }
 
-/** "Jueves, 1 de octubre" (fecha de la demo). */
+/** "Jueves, 1 de octubre". */
 export function fechaHoyLarga(): string {
   const t = fechaLargaFmt.format(ahora());
   return t.charAt(0).toUpperCase() + t.slice(1);

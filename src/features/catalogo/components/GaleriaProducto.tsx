@@ -1,30 +1,26 @@
 import { useRef, useState } from "react";
-import type { Silueta } from "@/types/api";
-import { PrendaImagen, type VistaPrenda } from "@/components/ilustraciones/PrendaImagen";
+import { FotoPrenda } from "@/components/FotoPrenda";
 import { VisorImagen } from "@/components/organisms/VisorImagen";
 import { cn } from "@/lib/cn";
 
-const VISTAS: { id: VistaPrenda; label: string }[] = [
-  { id: "frente", label: "Frente" },
-  { id: "espalda", label: "Espalda" },
-  { id: "detalle", label: "Detalle" },
-];
-
 interface GaleriaProps {
-  silueta: Silueta;
   hex: string;
   nombre: string;
   colorNombre: string;
   urls?: string[];
 }
 
-/** Galería con swipe (scroll-snap) en móvil y miniaturas en escritorio. Cambia con el color. */
-export function GaleriaProducto({ silueta, hex, nombre, colorNombre, urls = [] }: GaleriaProps) {
+/**
+ * Galería con swipe (scroll-snap) en móvil y miniaturas en escritorio. Cambia con el color.
+ * Solo la primera foto es prioritaria; las demás esperan a que se deslicen cerca, y las miniaturas
+ * de escritorio bajan la versión chica. La versión de alta resolución se pide al ampliar.
+ */
+export function GaleriaProducto({ hex, nombre, colorNombre, urls = [] }: GaleriaProps) {
   const [indice, setIndice] = useState(0);
   const [visorAbierto, setVisorAbierto] = useState(false);
   const pista = useRef<HTMLDivElement>(null);
-  const slides = urls.length ? urls.map((u, i) => ({ id: `${i}`, url: u, vista: "frente" as VistaPrenda, label: `Foto ${i + 1}` })) : VISTAS.map((v) => ({ ...v, url: undefined, vista: v.id }));
   const hayFotos = urls.length > 0;
+  const slides = hayFotos ? urls.map((u, i) => ({ id: `${i}`, url: u, label: `Foto ${i + 1}` })) : [{ id: "sin-foto", url: undefined, label: "Foto" }];
 
   function ir(i: number) {
     const el = pista.current;
@@ -54,54 +50,50 @@ export function GaleriaProducto({ silueta, hex, nombre, colorNombre, urls = [] }
                   aria-label={`Ampliar foto ${i + 1} de ${nombre}`}
                   className="block w-full cursor-zoom-in focus-visible:outline-none"
                 >
-                  <PrendaImagen
-                    silueta={silueta}
+                  <FotoPrenda
                     hex={hex}
-                    vista={s.vista}
                     url={s.url}
+                    tamano="completa"
                     alt={`${nombre} en ${colorNombre}, ${s.label.toLowerCase()}`}
                     prioridad={i === 0}
                   />
                 </button>
               ) : (
-                <PrendaImagen
-                  silueta={silueta}
-                  hex={hex}
-                  vista={s.vista}
-                  url={s.url}
-                  alt={`${nombre} en ${colorNombre}, ${s.label.toLowerCase()}`}
-                  prioridad={i === 0}
-                />
+                <FotoPrenda hex={hex} alt={`${nombre} en ${colorNombre}`} prioridad />
               )}
             </div>
           ))}
         </div>
-        <div className="absolute inset-x-0 bottom-3 flex justify-center gap-1.5 md:hidden" aria-hidden>
+        {slides.length > 1 && (
+          <div className="absolute inset-x-0 bottom-3 flex justify-center gap-1.5 md:hidden" aria-hidden>
+            {slides.map((s, i) => (
+              <span
+                key={s.id}
+                className={cn("h-1.5 rounded-full transition-all", i === indice ? "w-5 bg-tinta" : "w-1.5 bg-tinta/30")}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+      {slides.length > 1 && (
+        <div className="hidden flex-col gap-2 md:flex">
           {slides.map((s, i) => (
-            <span
+            <button
               key={s.id}
-              className={cn("h-1.5 rounded-full transition-all", i === indice ? "w-5 bg-tinta" : "w-1.5 bg-tinta/30")}
-            />
+              type="button"
+              onClick={() => ir(i)}
+              aria-label={`Ver ${s.label.toLowerCase()}`}
+              aria-current={i === indice}
+              className={cn(
+                "w-20 overflow-hidden rounded-xl ring-offset-2 ring-offset-surface transition",
+                i === indice ? "ring-2 ring-tinta" : "opacity-70 hover:opacity-100",
+              )}
+            >
+              <FotoPrenda hex={hex} url={s.url} alt="" />
+            </button>
           ))}
         </div>
-      </div>
-      <div className="hidden flex-col gap-2 md:flex">
-        {slides.map((s, i) => (
-          <button
-            key={s.id}
-            type="button"
-            onClick={() => ir(i)}
-            aria-label={`Ver ${s.label.toLowerCase()}`}
-            aria-current={i === indice}
-            className={cn(
-              "w-20 overflow-hidden rounded-xl ring-offset-2 ring-offset-surface transition",
-              i === indice ? "ring-2 ring-tinta" : "opacity-70 hover:opacity-100",
-            )}
-          >
-            <PrendaImagen silueta={silueta} hex={hex} vista={s.vista} url={s.url} alt="" />
-          </button>
-        ))}
-      </div>
+      )}
 
       {visorAbierto && hayFotos && (
         <VisorImagen

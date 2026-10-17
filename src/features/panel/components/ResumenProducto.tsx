@@ -1,18 +1,16 @@
 import { useState } from "react";
 import { MapPin, Package } from "lucide-react";
-import type { FamiliaColor, Silueta, SucursalId } from "@/types/api";
-import { PrendaImagen } from "@/components/ilustraciones/PrendaImagen";
+import type { FamiliaColor, SucursalId } from "@/types/api";
+import { FotoPrenda } from "@/components/FotoPrenda";
 import { PrecioTag } from "@/components/molecules/PrecioTag";
 import { Badge } from "@/components/ui";
 import { cn } from "@/lib/cn";
-import { SILUETAS } from "@/lib/enums";
 import { formatMXN } from "@/lib/format";
 
 interface ResumenProductoProps {
   nombre: string;
   descripcion: string;
   categoria: string;
-  silueta: Silueta;
   precio: number;
   colores: { nombre: string; hex: string; familia: FamiliaColor }[];
   tallas: string[];
@@ -21,7 +19,7 @@ interface ResumenProductoProps {
   totalPiezas: number;
   permiteApartado: boolean;
   anticipoPct: number;
-  /** Foto procesada (recortada/optimizada) para la vista previa; si falta, se usa la ilustración. */
+  /** Foto procesada (recortada/optimizada) para la vista previa; si falta, se muestra el color. */
   imagenPreview?: string;
   /** Fondo degradado generado del tono de la foto. */
   imagenFondo?: string;
@@ -42,7 +40,6 @@ export function ResumenProducto(p: ResumenProductoProps) {
   const piezasColor = (ci: number) => p.tallas.reduce((n, t) => n + piezas(t, ci), 0);
   const piezasSucursal = (s: SucursalId) =>
     p.tallas.reduce((n, t) => n + p.colores.reduce((m, _, i) => m + (p.stock[s][t]?.[i] ?? 0), 0), 0);
-  const tipo = SILUETAS.find((s) => s.id === p.silueta)?.nombre;
 
   return (
     <section aria-label="Vista previa" className="flex flex-col gap-3 rounded-2xl bg-surface-container-low p-3">
@@ -57,8 +54,7 @@ export function ResumenProducto(p: ResumenProductoProps) {
             <img src={p.imagenPreview} alt="Vista previa de la prenda" className="h-full w-full object-contain" />
           </div>
         ) : (
-          <PrendaImagen
-            silueta={p.silueta}
+          <FotoPrenda
             hex={color?.hex ?? "#D9C4A5"}
             alt={`Vista previa en ${color?.nombre ?? "color"}`}
             className="w-24 shrink-0 rounded-xl"
@@ -67,7 +63,6 @@ export function ResumenProducto(p: ResumenProductoProps) {
         <div className="flex min-w-0 flex-1 flex-col gap-1">
           <p className="text-body-sm text-on-surface-variant">
             {p.categoria}
-            {tipo && ` · ${tipo}`}
           </p>
           <p className="line-clamp-2 font-marca text-headline-sm">{p.nombre.trim() || "Sin nombre"}</p>
           {p.precio > 0 ? (

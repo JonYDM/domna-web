@@ -2,7 +2,8 @@ import { useMemo, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import { CheckCircle2, Minus, Plus, ScanLine, Search, ShoppingCart, Trash2, User, Users } from "lucide-react";
 import type { Apartado, MetodoPago, SucursalId } from "@/types/api";
-import { PrendaImagen } from "@/components/ilustraciones/PrendaImagen";
+import { FotoPrenda } from "@/components/FotoPrenda";
+import { fotoDeColor } from "@/lib/fotoPrenda";
 import { EmptyState } from "@/components/molecules/EmptyState";
 import { Badge, Button, ButtonLink, Chip, Drawer, Segmentos, Skeleton } from "@/components/ui";
 import { formatMXN } from "@/lib/format";
@@ -13,7 +14,7 @@ import { useCategorias, useProductos } from "@/features/catalogo/hooks";
 import { useClientas } from "@/features/panel/hooks";
 import { ElegirVarianteDrawer, type SeleccionVariante } from "../ElegirVarianteDrawer";
 import { EscanerCodigo } from "../EscanerCodigo";
-import { useBuscarPorCodigo, useCodigoDemo, useVenderFisico } from "../hooks";
+import { useBuscarPorCodigo, useVenderFisico } from "../hooks";
 
 interface LineaCarritoUI extends SeleccionVariante {
   cantidad: number;
@@ -27,7 +28,6 @@ export default function VenderPage() {
   const sucursal: SucursalId = sesion?.sucursal ?? "temixco";
   const vender = useVenderFisico();
   const buscarCodigo = useBuscarPorCodigo();
-  const codigoDemo = useCodigoDemo();
   const categorias = useCategorias();
 
   const [carrito, setCarrito] = useState<LineaCarritoUI[]>([]);
@@ -257,7 +257,7 @@ export default function VenderPage() {
                   disabled={p.disponibleTotal < 1}
                   className="flex h-full w-full flex-col rounded-2xl bg-surface-container-lowest p-2 text-left shadow-soft transition-shadow hover:shadow-lift disabled:opacity-50"
                 >
-                  <PrendaImagen silueta={p.silueta} hex={p.colores[0].hex} alt="" className="aspect-square w-full rounded-xl" />
+                  <FotoPrenda hex={p.colores[0].hex} url={fotoDeColor(p.imagenes, p.colores[0].id)} alt="" className="aspect-square w-full rounded-xl" />
                   <p className="mt-1.5 line-clamp-2 text-body-sm font-medium">{p.nombre}</p>
                   <div className="mt-auto flex items-center justify-between pt-1">
                     <span className="tabular text-label-md">{formatMXN(p.precio)}</span>
@@ -335,12 +335,6 @@ export default function VenderPage() {
         open={escaneando}
         onClose={() => setEscaneando(false)}
         onCodigo={onCodigo}
-        onSimular={() =>
-          codigoDemo.mutate(sucursal, {
-            onSuccess: (codigo) => onCodigo(codigo),
-            onError: (e) => toast.error(mensajeError(e)),
-          })
-        }
         titulo="Escanear prenda"
       />
     </div>

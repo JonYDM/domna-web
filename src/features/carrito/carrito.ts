@@ -11,6 +11,8 @@ export interface LineaCarritoClienta {
   talla: string;
   colorNombre: string;
   colorHex: string;
+  /** Foto de la prenda en ese color. Opcional: carritos guardados antes de este campo no la traen. */
+  imagenUrl?: string;
   /** Si la prenda NO se puede apartar (oferta): fuerza "comprar" en el carrito. */
   permiteApartado: boolean;
   cantidad: number;

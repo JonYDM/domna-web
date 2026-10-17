@@ -33,6 +33,7 @@ export interface ApartadoDto {
     costo: number;
     cantidad: number;
     sucursalOrigen: string;
+    imagenUrl?: string | null;
   }[];
   subtotal: number;
   penalizacion: number;
@@ -71,7 +72,12 @@ export function aApartado(dto: ApartadoDto): Apartado {
     clientaId: dto.clientaId,
     clientaNombre: dto.clientaNombre,
     clientaTelefono: dto.clientaTelefono,
-    lineas: dto.lineas.map((l) => ({ ...l, silueta: l.silueta as Apartado["lineas"][number]["silueta"], sucursalOrigen: l.sucursalOrigen as Apartado["entrega"] })),
+    lineas: dto.lineas.map((l) => ({
+      ...l,
+      silueta: l.silueta as Apartado["lineas"][number]["silueta"],
+      sucursalOrigen: l.sucursalOrigen as Apartado["entrega"],
+      imagenUrl: l.imagenUrl ?? undefined,
+    })),
     subtotal: dto.subtotal,
     penalizacion: dto.penalizacion,
     total: dto.total,

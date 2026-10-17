@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type { SucursalId } from "@/types/api";
-import { cerrarSesion, comprobarSesion, logout, usandoApi } from "@/api/authSelector";
+import { cerrarSesion, comprobarSesion, logout } from "@/api/auth";
 import { registrarSesionVencida } from "@/api/http";
 import { limpiarBorradoresDeSesion } from "@/features/panel/borradorProducto";
 import { debeComprobarSesion, mensajeSesionVencida } from "./sesionUnica";
-import { SesionContext, STORAGE_SESION, USUARIAS_DEMO, type Rol, type Sesion } from "./sesion";
+import { SesionContext, STORAGE_SESION, type Rol, type Sesion } from "./sesion";
 
 function leer(): Sesion | null {
   try {
@@ -15,7 +15,7 @@ function leer(): Sesion | null {
   }
 }
 
-/** Sesión de la demo. Value estable con useMemo. */
+/** Sesión de la persona que usa la app. Value estable con useMemo. */
 export function SesionProvider({ children }: { children: ReactNode }) {
   const [sesion, setSesion] = useState<Sesion | null>(leer);
 
@@ -24,7 +24,6 @@ export function SesionProvider({ children }: { children: ReactNode }) {
     setSesion(s);
   }, []);
 
-  const entrar = useCallback((rol: Rol) => guardar(USUARIAS_DEMO[rol]), [guardar]);
 
   const entrarStaff = useCallback(
     (s: { rol: Rol; nombre: string; clientaId?: string; sucursal?: SucursalId }) =>
@@ -66,14 +65,14 @@ export function SesionProvider({ children }: { children: ReactNode }) {
     return () => registrarSesionVencida(null);
   }, []);
 
-  // Detección temprana (solo API real + sesión iniciada): al volver la ventana/app al primer plano
+  // Detección temprana (con sesión iniciada): al volver la ventana/app al primer plano
   // comprueba la sesión con GET /api/auth/sesion, como máximo 1 vez cada 30 s, para enterarse pronto
   // si la reemplazaron sin esperar a la siguiente acción. Un 401 lo maneja el handler central; un
-  // error de red NO cierra la sesión (se ignora). En modo mock no corre nada.
+  // error de red NO cierra la sesión (se ignora).
   const ultimaComprobacion = useRef<number | null>(null);
   const haySesion = sesion !== null;
   useEffect(() => {
-    if (!usandoApi || !haySesion) return;
+    if (!haySesion) return;
     const alPrimerPlano = () => {
       if (document.visibilityState === "hidden") return;
       const ahora = Date.now();
@@ -91,8 +90,8 @@ export function SesionProvider({ children }: { children: ReactNode }) {
   }, [haySesion]);
 
   const valor = useMemo(
-    () => ({ sesion, entrar, entrarStaff, entrarComoClienta, salir }),
-    [sesion, entrar, entrarStaff, entrarComoClienta, salir],
+    () => ({ sesion, entrarStaff, entrarComoClienta, salir }),
+    [sesion, entrarStaff, entrarComoClienta, salir],
   );
   return <SesionContext.Provider value={valor}>{children}</SesionContext.Provider>;
 }

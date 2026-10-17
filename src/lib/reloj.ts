@@ -1,35 +1,13 @@
 /**
- * Reloj de la demo. Todo "hoy", "vence", "del mes" pasa por aquí.
- * - `ahora()` respeta un desfase en días para poder "adelantar el tiempo" en la demo
- *   (mostrar vencimientos y penalizaciones sin esperar).
- * - Los cortes de día y mes se calculan en hora de México (America/Mexico_City), igual que
- *   hará el helper HoraMexico del backend.
+ * Reloj de la app. Todo "hoy", "vence", "del mes" pasa por aquí. Los cortes de día y mes se calculan
+ * en hora de México (America/Mexico_City), igual que el helper HoraMexico del backend.
  */
 
-const KEY = "domna.demo.reloj";
 const DIA_MS = 86_400_000;
 const ZONA = "America/Mexico_City";
 
-function leerOffset(): number {
-  if (typeof localStorage === "undefined") return 0;
-  const n = Number(localStorage.getItem(KEY) ?? "0");
-  return Number.isFinite(n) ? n : 0;
-}
-
-export function offsetDias(): number {
-  return leerOffset();
-}
-
 export function ahora(): Date {
-  return new Date(Date.now() + leerOffset() * DIA_MS);
-}
-
-export function avanzarDias(n: number): void {
-  localStorage.setItem(KEY, String(leerOffset() + n));
-}
-
-export function reiniciarReloj(): void {
-  localStorage.removeItem(KEY);
+  return new Date();
 }
 
 export function sumarDias(d: Date, n: number): Date {

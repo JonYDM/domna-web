@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { RegistroClientaInput } from "@/types/api";
 import { qk } from "@/lib/queryKeys";
-import * as api from "@/api/authSelector";
+import * as api from "@/api/auth";
 
 /** Acceso de clientas. Toda mutación agrega/actualiza clientas → invalida el módulo de la dueña. */
 function useInvalidarClientas() {
@@ -28,7 +28,7 @@ export function useLoginConPin() {
   });
 }
 
-/** Olvidé mi PIN: pide el enlace de recuperación por correo (en la demo devuelve el token). */
+/** Olvidé mi PIN: pide el enlace de recuperación por correo. */
 export function useSolicitarRecuperacion() {
   return useMutation({ mutationFn: (email: string) => api.solicitarRecuperacion(email) });
 }

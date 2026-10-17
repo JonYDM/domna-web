@@ -1,21 +1,13 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { Apartado, LineaCarrito, MetodoPago, ResultadoCodigo, SucursalId } from "@/types/api";
 import { qk } from "@/lib/queryKeys";
-import * as mock from "@/mock/server";
-import * as cat from "@/api/catalogoSelector";
-import * as apartadosApi from "@/api/apartadosSelector";
+import * as cat from "@/api/catalogo";
+import * as apartadosApi from "@/api/apartados";
 
 /** Busca una variante por código de barras (POS/escáner). On-demand → mutation. */
 export function useBuscarPorCodigo() {
   return useMutation<ResultadoCodigo, Error, string>({
     mutationFn: (codigo: string) => cat.buscarPorCodigo(codigo),
-  });
-}
-
-/** Demo: obtiene un código de barras real del inventario para "simular" una lectura. Solo mock. */
-export function useCodigoDemo() {
-  return useMutation<string, Error, SucursalId | undefined>({
-    mutationFn: (sucursal) => mock.codigoDemo(sucursal),
   });
 }
 

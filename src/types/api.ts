@@ -1,6 +1,6 @@
 /**
  * Contratos de la API (los mismos que expondrá el backend .NET).
- * Hoy los implementa el mock (src/mock/server.ts). Dinero en MXN (pesos enteros en la demo).
+ * Dinero en MXN.
  * Fechas: ISO 8601 en UTC.
  */
 
@@ -251,6 +251,8 @@ export interface LineaApartado {
   costo: number;
   cantidad: number;
   sucursalOrigen: SucursalId;
+  /** Foto de la prenda en ese color (la de 800). El servidor la resuelve al momento. */
+  imagenUrl?: string;
 }
 
 export interface Abono {
@@ -261,7 +263,7 @@ export interface Abono {
   concepto: "anticipo" | "abono" | "liquidacion" | "compra";
   /**
    * Un pago declarado en línea nace "pendiente" y no cuenta como pagado hasta que la tienda lo
-   * confirma. Si falta (datos del mock), se asume confirmado.
+   * confirma. Si falta, se asume confirmado.
    */
   estado?: EstadoPago;
   /** El pago por transferencia trae un comprobante. El archivo es privado: solo el personal lo abre, con su PIN. */
@@ -475,7 +477,7 @@ export interface Metricas {
   comprasMes: number;
   penalizacionesMes: number;
   stockBajo: StockBajoItem[];
-  topProductos: { productoId: string; nombre: string; silueta: Silueta; colorHex: string; unidades: number }[];
+  topProductos: { productoId: string; nombre: string; silueta: Silueta; colorHex: string; unidades: number; imagenUrl?: string }[];
   ventasUltimos7: { dia: string; total: number }[];
 }
 

@@ -20,6 +20,7 @@ import {
   ButtonLink,
   Skeleton,
 } from "@/components/ui";
+import { fotoDeColor } from "@/lib/fotoPrenda";
 import { formatMXN } from "@/lib/format";
 import { mensajeError } from "@/lib/errores";
 import { useSuperadoArriba } from "@/lib/useSuperadoArriba";
@@ -110,6 +111,7 @@ export default function ProductoPage() {
       talla: variante.talla,
       colorNombre: color.nombre,
       colorHex: color.hex,
+      imagenUrl: fotoDeColor(p.imagenes, color.id),
       permiteApartado: p.permiteApartado,
     });
     toast.success(`${p.nombre} (${color.nombre} · ${variante.talla}) va en tu carrito`);
@@ -143,7 +145,6 @@ export default function ProductoPage() {
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 md:gap-10">
         <GaleriaProducto
           key={colorId}
-          silueta={p.silueta}
           hex={color.hex}
           nombre={p.nombre}
           colorNombre={color.nombre}

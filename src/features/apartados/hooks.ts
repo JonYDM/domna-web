@@ -8,9 +8,9 @@ import type {
 } from "@/types/api";
 import { qk } from "@/lib/queryKeys";
 import { useLlaveIdempotencia } from "@/lib/idempotencia";
-import * as api from "@/api/apartadosSelector";
+import * as api from "@/api/apartados";
 import * as comprobantes from "@/api/comprobantes";
-import * as clientasApi from "@/api/clientasSelector";
+import * as clientasApi from "@/api/clientas";
 import { comprimirComprobante } from "@/lib/imagen";
 
 /**

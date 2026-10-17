@@ -2,7 +2,6 @@ import { useRef } from "react";
 import toast from "react-hot-toast";
 import { CheckCircle2, Copy, ImagePlus, Landmark } from "lucide-react";
 import type { Apartado } from "@/types/api";
-import { apiActiva } from "@/api/http";
 import { Button, Skeleton } from "@/components/ui";
 import { mensajeError } from "@/lib/errores";
 import { formatMXN } from "@/lib/format";
@@ -33,7 +32,7 @@ export function PagoTransferencia({ apartado: a }: { apartado: Apartado }) {
     ? [...a.abonos].reverse().find((x) => x.estado === "rechazado" && x.metodo === "transferencia")
     : undefined;
   const espera = pendiente ?? rechazado;
-  const visible = apiActiva && a.estado === "activo" && !!espera;
+  const visible = a.estado === "activo" && !!espera;
 
   const datos = useDatosBancarios(visible);
   const subir = useSubirComprobante(a.id);

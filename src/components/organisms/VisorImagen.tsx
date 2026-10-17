@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { cn } from "@/lib/cn";
+import { urlGrande } from "@/lib/fotoPrenda";
 
 interface VisorImagenProps {
   /** URLs de las imágenes a mostrar en grande. */
@@ -104,7 +105,12 @@ export function VisorImagen({ imagenes, indice, alt = "", onClose }: VisorImagen
         onTouchEnd={onTouchEnd}
       >
         <img
-          src={imagenes[i]}
+          key={imagenes[i]}
+          src={urlGrande(imagenes[i])}
+          onError={(e) => {
+            // Si la versión grande no existe, se queda con la guardada.
+            if (e.currentTarget.src !== imagenes[i]) e.currentTarget.src = imagenes[i];
+          }}
           alt={alt}
           className="max-h-[90dvh] max-w-[92vw] rounded-[3px] object-contain shadow-float"
           draggable={false}

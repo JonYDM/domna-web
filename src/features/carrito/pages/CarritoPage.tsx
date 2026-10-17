@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { AlertTriangle, Minus, Plus, ShoppingBag, Trash2, Truck } from "lucide-react";
 import type { MetodoPago, ModalidadApartado, SucursalId } from "@/types/api";
-import { PrendaImagen } from "@/components/ilustraciones/PrendaImagen";
+import { FotoPrenda } from "@/components/FotoPrenda";
 import { EmptyState } from "@/components/molecules/EmptyState";
 import { Badge, Button, ButtonLink, Chip, Skeleton } from "@/components/ui";
 import { cn } from "@/lib/cn";
@@ -82,7 +82,7 @@ export default function CarritoPage() {
           {lineas.map((l) => (
             <li key={l.varianteId} className="flex flex-col gap-3 rounded-2xl bg-surface-container-lowest p-3 shadow-soft sm:flex-row sm:items-center">
               <div className="flex gap-3">
-                <PrendaImagen silueta={l.silueta} hex={l.colorHex} alt="" className="w-16 shrink-0 rounded-xl" />
+                <FotoPrenda hex={l.colorHex} url={l.imagenUrl} alt="" className="w-16 shrink-0 rounded-xl" />
                 <div className="min-w-0 flex-1">
                   <p className="line-clamp-2 text-label-lg leading-snug">{l.nombre}</p>
                   <p className="text-body-sm text-on-surface-variant">

@@ -9,7 +9,7 @@ import { mensajeError } from "@/lib/errores";
 import { formatTelefonoInput } from "@/lib/format";
 import { useSesion } from "../sesion";
 import { useConfirmarRecuperacion, useRegistrar, useSolicitarRecuperacion } from "../hooks";
-import { usandoApi, existeTelefono, loginUnificado } from "@/api/authSelector";
+import { existeTelefono, loginStaff } from "@/api/auth";
 import { nombreConocido, recordarNombre } from "../conocidas";
 import { datosSesionActiva, esConflictoDeSesion, type SesionActiva } from "../sesionUnica";
 import { SesionAbiertaDrawer } from "../components/SesionAbiertaDrawer";
@@ -73,7 +73,7 @@ function CampoTelefono({
  * Acceso de la clienta con cuenta propia de Domna:
  * - Iniciar sesión con teléfono + PIN de 6 dígitos.
  * - Registrarse (nombre, apellidos, teléfono +52, correo y PIN).
- * - Recuperar el PIN por correo (en la demo el enlace se muestra en pantalla).
+ * - Recuperar el PIN por correo (llega un código al correo).
  */
 export default function EntrarPage() {
   const [params] = useSearchParams();
@@ -161,7 +161,7 @@ export default function EntrarPage() {
     else setEntrando(true);
     setErrorReemplazo(null);
     try {
-      const s = await loginUnificado(tel, pinValor, reemplazarSesion);
+      const s = await loginStaff(tel, pinValor, reemplazarSesion);
       setConflicto(null);
       recordarNombre(tel, s.nombre); // saludo por nombre la próxima vez en este equipo
       if (s.rol === "duena" || s.rol === "cajera") {
@@ -219,20 +219,11 @@ export default function EntrarPage() {
 
   function pedirEnlace() {
     solicitar.mutate(email.trim(), {
-      onSuccess: ({ token }) => {
-        if (usandoApi) {
-          // Con backend real: el código llega por correo; pasamos a pegarlo (no lo revelamos aquí).
-          setTokenRec("");
-          setFase("recuperar-pin");
-          toast.success("Si ese correo tiene cuenta, te enviamos un código para restablecer tu PIN.");
-        } else if (token) {
-          // Mock: mostramos el enlace/código en pantalla.
-          setTokenRec(token);
-          setFase("recuperar-pin");
-          toast.success("Te enviamos un enlace a tu correo (demo: ya lo cargamos).");
-        } else {
-          toast.success("Si ese correo tiene cuenta, te enviamos un enlace para restablecer tu PIN.");
-        }
+      onSuccess: () => {
+        // El código llega por correo; pasamos a pegarlo (no revelamos aquí si el correo existe).
+        setTokenRec("");
+        setFase("recuperar-pin");
+        toast.success("Si ese correo tiene cuenta, te enviamos un código para restablecer tu PIN.");
       },
       onError: (e) => toast.error(mensajeError(e)),
     });
@@ -486,24 +477,16 @@ export default function EntrarPage() {
                 if (pinNuevo.length === 6) fijarPin();
               }}
             >
-              {usandoApi ? (
-                <p className="rounded-xl bg-primary-soft px-3 py-2 text-body-sm text-primary-on-soft">
-                  Te enviamos un código a tu correo. Pégalo aquí y elige tu PIN nuevo.
-                </p>
-              ) : (
-                <p className="rounded-xl bg-primary-soft px-3 py-2 text-body-sm text-primary-on-soft">
-                  Tu enlace es <code className="font-medium">{tokenRec}</code>. En la app real llega a tu correo.
-                </p>
-              )}
-              {usandoApi && (
-                <Input
-                  label="Código de recuperación"
-                  value={tokenRec}
-                  onChange={(e) => setTokenRec(e.target.value)}
-                  placeholder="rec-..."
-                  autoFocus
-                />
-              )}
+              <p className="rounded-xl bg-primary-soft px-3 py-2 text-body-sm text-primary-on-soft">
+                Te enviamos un código a tu correo. Pégalo aquí y elige tu PIN nuevo.
+              </p>
+              <Input
+                label="Código de recuperación"
+                value={tokenRec}
+                onChange={(e) => setTokenRec(e.target.value)}
+                placeholder="rec-..."
+                autoFocus
+              />
               <Input
                 label="Nuevo PIN (6 dígitos)"
                 type="password"
@@ -514,7 +497,6 @@ export default function EntrarPage() {
                 maxLength={6}
                 placeholder="••••••"
                 icono={<KeyRound className="h-5 w-5" />}
-                autoFocus={!usandoApi}
               />
               <Button type="submit" size="lg" fullWidth disabled={pinNuevo.length !== 6 || !tokenRec.trim()} loading={confirmar.isPending}>
                 Guardar y entrar
