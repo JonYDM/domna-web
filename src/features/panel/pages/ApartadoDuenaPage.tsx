@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import toast from "react-hot-toast";
-import { Banknote, Bell, ChevronLeft, MessageCircle, PackageCheck, Phone, Wallet } from "lucide-react";
+import { Banknote, ChevronLeft, MessageCircle, PackageCheck, Phone, Wallet } from "lucide-react";
 import type { Apartado, EstadoEntrega, MetodoPago } from "@/types/api";
 import { EmptyState } from "@/components/molecules/EmptyState";
 import { Button, ButtonLink, Chip, Drawer, Input, Skeleton } from "@/components/ui";
@@ -10,7 +10,6 @@ import { METODO_PAGO } from "@/lib/enums";
 import { formatFecha, formatMXN } from "@/lib/format";
 import { mensajeError } from "@/lib/errores";
 import { accionPrincipal, siguienteEntrega, type AccionPrincipal } from "@/lib/accionPrincipalPedido";
-import { diasHasta } from "@/lib/reloj";
 import { useConfig } from "@/features/catalogo/hooks";
 import { useApartado, useAvanzarEntrega, useCancelarApartado, useRegistrarAbono } from "@/features/apartados/hooks";
 import { DetalleApartado } from "@/features/apartados/components/DetalleApartado";
@@ -88,8 +87,8 @@ export default function ApartadoDuenaPage() {
           <h1 className="tabular font-marca text-headline-lg">
             {a.modalidad === "compra" ? "Compra" : "Apartado"} {a.folio}
           </h1>
-          {/* Quién es la clienta, a la vista y con el teléfono a un toque (en pantallas anchas va en el panel lateral). */}
-          <div className="mt-0.5 flex flex-wrap items-center gap-x-3 lg:hidden">
+          {/* Quién es la clienta, con el teléfono a un toque y, si todavía debe, el recordatorio por WhatsApp. */}
+          <div className="mt-0.5 flex flex-wrap items-center gap-x-4">
             <span className="text-label-lg">{a.clientaNombre}</span>
             <a
               href={`tel:+52${telefono}`}
@@ -98,40 +97,23 @@ export default function ApartadoDuenaPage() {
               <Phone className="h-3.5 w-3.5" aria-hidden />
               {a.clientaTelefono}
             </a>
+            {activo && (
+              <a
+                href={`https://wa.me/52${telefono}?text=${mensaje}`}
+                target="_blank"
+                rel="noreferrer noopener"
+                className="inline-flex h-11 items-center gap-1.5 text-body-sm text-success hover:underline"
+              >
+                <MessageCircle className="h-3.5 w-3.5" aria-hidden />
+                WhatsApp
+              </a>
+            )}
           </div>
         </div>
         <DetalleApartado apartado={a} config={config.data} vista="duena" />
       </div>
 
-      <aside className="flex flex-col gap-4 lg:pt-[76px]">
-        <section className="rounded-2xl bg-surface-container-lowest p-4 shadow-soft">
-          <p className="text-label-sm uppercase text-on-surface-variant">Clienta</p>
-          <p className="mt-1 text-label-lg">{a.clientaNombre}</p>
-          <p className="flex items-center gap-1.5 text-body-sm text-on-surface-variant">
-            <Phone className="h-3.5 w-3.5" aria-hidden />
-            {a.clientaTelefono}
-          </p>
-          {activo && (
-            <>
-              <p className="mt-3 flex items-start gap-2 rounded-xl bg-surface-container-low px-3 py-2.5 text-body-sm text-on-surface-variant">
-                <Bell className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden />
-                {diasHasta(a.venceEl) <= 3
-                  ? "La clienta ya ve el aviso de vencimiento en su app."
-                  : `Le avisaremos en su app 3 días antes de que venza (${formatFecha(a.venceEl)}).`}
-              </p>
-              <a
-                href={`https://wa.me/52${telefono}?text=${mensaje}`}
-                target="_blank"
-                rel="noreferrer noopener"
-                className="mt-2 inline-flex h-10 items-center gap-2 rounded-xl px-1 text-label-lg text-success hover:underline"
-              >
-                <MessageCircle className="h-4 w-4" aria-hidden />
-                Escribirle por WhatsApp (opcional)
-              </a>
-            </>
-          )}
-        </section>
-
+      <aside className="flex flex-col gap-4 lg:pt-[122px]">
         <div className="flex flex-col gap-2">
           {activo && (a.porConfirmar ?? 0) > 0 && (
             <ButtonLink to="/app/pagos" size="lg" className={cn(esPrincipal("confirmar-pago") && "max-md:hidden")}>
