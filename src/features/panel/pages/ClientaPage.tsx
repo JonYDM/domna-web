@@ -1,5 +1,6 @@
 import { Link, useParams } from "react-router-dom";
-import { Mail, MessageCircle, Phone } from "lucide-react";
+import { Mail, Phone } from "lucide-react";
+import { BotonWhatsApp } from "@/components/molecules/BotonWhatsApp";
 import { EmptyState } from "@/components/molecules/EmptyState";
 import {
   Avatar,
@@ -38,8 +39,6 @@ export default function ClientaPage() {
   }
 
   const c = clienta.data;
-  const tel = c.telefono.replace(/\D/g, "");
-
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-4">
       <Breadcrumb>
@@ -80,17 +79,9 @@ export default function ClientaPage() {
             {c.ultimoAcceso ? `Último acceso a la app: ${formatHace(c.ultimoAcceso).toLowerCase()}` : "Nunca ha entrado a la app"}
           </li>
         </ul>
-        {tel && (
-          <a
-            href={`https://wa.me/52${tel}`}
-            target="_blank"
-            rel="noreferrer noopener"
-            className="inline-flex h-10 w-fit items-center gap-2 rounded-xl bg-success-container px-3.5 text-label-lg text-success hover:brightness-95"
-          >
-            <MessageCircle className="h-4 w-4" aria-hidden />
-            Escribirle por WhatsApp
-          </a>
-        )}
+        <BotonWhatsApp telefono={c.telefono} variante="relleno">
+          Escribirle por WhatsApp
+        </BotonWhatsApp>
       </section>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">

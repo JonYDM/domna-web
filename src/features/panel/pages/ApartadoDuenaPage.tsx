@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import toast from "react-hot-toast";
-import { Banknote, ChevronLeft, MessageCircle, PackageCheck, Phone, Wallet } from "lucide-react";
+import { Banknote, ChevronLeft, PackageCheck, Phone, Wallet } from "lucide-react";
 import type { Apartado, EstadoEntrega, MetodoPago } from "@/types/api";
+import { BotonWhatsApp } from "@/components/molecules/BotonWhatsApp";
 import { EmptyState } from "@/components/molecules/EmptyState";
 import { Button, ButtonLink, Chip, Drawer, Input, Skeleton } from "@/components/ui";
 import { cn } from "@/lib/cn";
@@ -69,9 +70,8 @@ export default function ApartadoDuenaPage() {
   const esPrincipal = (tipo: AccionPrincipal["tipo"]) => principal?.tipo === tipo;
   const nombreSucursal = (id: string) => config.data?.sucursales.find((s) => s.id === id)?.nombre ?? id;
   const telefono = a.clientaTelefono.replace(/\D/g, "");
-  const mensaje = encodeURIComponent(
-    `¡Hola ${a.clientaNombre.split(" ")[0]}! Te escribimos de ${config.data?.nombre ?? "la boutique"}. Tu apartado ${a.folio} (${a.lineas[0].nombre}) tiene un saldo de ${formatMXN(a.saldo)} y vence el ${formatFecha(a.venceEl)}. 💕`,
-  );
+  const mensaje =
+    `¡Hola ${a.clientaNombre.split(" ")[0]}! Te escribimos de ${config.data?.nombre ?? "la boutique"}. Tu apartado ${a.folio} (${a.lineas[0].nombre}) tiene un saldo de ${formatMXN(a.saldo)} y vence el ${formatFecha(a.venceEl)}. 💕`;
 
   return (
     <div className="mx-auto grid max-w-5xl gap-5 lg:grid-cols-[1fr_320px]">
@@ -97,17 +97,7 @@ export default function ApartadoDuenaPage() {
               <Phone className="h-3.5 w-3.5" aria-hidden />
               {a.clientaTelefono}
             </a>
-            {activo && (
-              <a
-                href={`https://wa.me/52${telefono}?text=${mensaje}`}
-                target="_blank"
-                rel="noreferrer noopener"
-                className="inline-flex h-11 items-center gap-1.5 text-body-sm text-success hover:underline"
-              >
-                <MessageCircle className="h-3.5 w-3.5" aria-hidden />
-                WhatsApp
-              </a>
-            )}
+            {activo && <BotonWhatsApp telefono={a.clientaTelefono} mensaje={mensaje} />}
           </div>
         </div>
         <DetalleApartado apartado={a} config={config.data} vista="duena" />
