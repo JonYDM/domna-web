@@ -1,5 +1,6 @@
 import type {
   Apartado,
+  ConteosPedidos,
   CorteDia,
   CotizacionApartado,
   CrearApartadoInput,
@@ -8,10 +9,12 @@ import type {
   FiltroEstadoApartado,
   FiltroMetricas,
   Metricas,
+  PaginaApartados,
   RegistrarAbonoInput,
   SucursalId,
   TipoPedido,
 } from "@/types/api";
+import { TAMANO_PAGINA_PEDIDOS } from "@/lib/paginasPedidos";
 import { http } from "./http";
 
 /** DTO de apartado tal como lo devuelve el backend. */
@@ -143,19 +146,28 @@ export async function obtenerApartado(id: string): Promise<Apartado> {
   return aApartado(dto);
 }
 
-export async function listarApartados(
+/** Pedidos de a poco. El filtro, la búsqueda y el total los resuelve el servidor. */
+export async function paginaApartados(
   filtro?: FiltroEstadoApartado,
   texto?: string,
   tipo?: TipoPedido,
-): Promise<Apartado[]> {
-  const params = new URLSearchParams();
+  pagina = 1,
+  tamano = TAMANO_PAGINA_PEDIDOS,
+): Promise<PaginaApartados> {
+  const params = new URLSearchParams({ pagina: String(pagina), tamano: String(tamano) });
   if (filtro) params.set("estado", filtro);
   if (texto) params.set("texto", texto);
   if (tipo) params.set("tipo", tipo);
-  const lista = await http.get<ApartadoDto[]>(`/api/apartados?${params}`);
-  return lista.map(aApartado);
+  const dto = await http.get<{ items: ApartadoDto[]; total: number; pagina: number; tamano: number; hayMas: boolean }>(
+    `/api/apartados/pagina?${params}`,
+  );
+  return { ...dto, items: dto.items.map(aApartado) };
 }
 
+/** Los números de las pestañas (apartados activos y compras por entregar), sin traer los pedidos. */
+export function conteosPedidos(): Promise<ConteosPedidos> {
+  return http.get<ConteosPedidos>("/api/apartados/conteos");
+}
 export async function registrarAbono(input: RegistrarAbonoInput, idempotencyKey?: string): Promise<Apartado> {
   const dto = await http.post<ApartadoDto>("/api/apartados/abonos", input, { idempotencyKey });
   return aApartado(dto);

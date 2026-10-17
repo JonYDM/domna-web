@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
 import type {
   CrearApartadoInput,
   EstadoEntrega,
@@ -12,6 +12,7 @@ import * as api from "@/api/apartados";
 import * as comprobantes from "@/api/comprobantes";
 import * as clientasApi from "@/api/clientas";
 import { comprimirComprobante } from "@/lib/imagen";
+import { siguientePagina } from "@/lib/paginasPedidos";
 
 /**
  * Mapa de invalidación (regla de oro): al mutar, invalidar TODAS las vistas que muestran el dato.
@@ -84,13 +85,21 @@ export function useApartado(id: string) {
 
 // ── Dueña ──
 
-export function useApartados(estado?: FiltroEstadoApartado, texto?: string, tipo?: TipoPedido) {
-  return useQuery({
+/** Pedidos de a poco: la primera página al abrir y las demás con `fetchNextPage` (botón "Ver más"). */
+export function useApartadosPaginados(estado?: FiltroEstadoApartado, texto?: string, tipo?: TipoPedido) {
+  return useInfiniteQuery({
     queryKey: qk.apartados(estado, texto, tipo),
-    queryFn: () => api.listarApartados(estado, texto, tipo),
+    queryFn: ({ pageParam }) => api.paginaApartados(estado, texto, tipo, pageParam),
+    initialPageParam: 1,
+    getNextPageParam: siguientePagina,
     staleTime: 15_000,
     placeholderData: (prev) => prev,
   });
+}
+
+/** Los números de las pestañas de Pedidos, sin traer los pedidos. */
+export function useConteosPedidos() {
+  return useQuery({ queryKey: qk.conteosPedidos(), queryFn: api.conteosPedidos, staleTime: 15_000 });
 }
 
 export function useRegistrarAbono() {

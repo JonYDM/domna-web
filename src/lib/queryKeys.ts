@@ -12,6 +12,8 @@ export const qk = {
   productoTodos: () => ["producto"] as const,
   apartados: (estado?: FiltroEstadoApartado, texto?: string, tipo?: TipoPedido) =>
     ["apartados", tipo ?? "todo", estado ?? "todos", texto ?? ""] as const,
+  /** Los números de las pestañas de Pedidos. Cuelga de "apartados", así que se invalida con los pedidos. */
+  conteosPedidos: () => ["apartados", "conteos"] as const,
   apartadosTodos: () => ["apartados"] as const,
   apartado: (id: string) => ["apartado", id] as const,
   apartadoTodos: () => ["apartado"] as const,

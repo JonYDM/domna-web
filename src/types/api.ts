@@ -451,6 +451,22 @@ export type FiltroEstadoApartado = EstadoApartado | "por_vencer" | "por_entregar
 /** Tipo de pedido: apartados (con o sin anticipo) o compras de contado. */
 export type TipoPedido = "apartados" | "compras";
 
+/** Una página de la lista de pedidos de la dueña/cajera. `pagina` empieza en 1. */
+export interface PaginaApartados {
+  items: Apartado[];
+  /** Cuántos pedidos cumplen el filtro en total (no solo los de esta página). */
+  total: number;
+  pagina: number;
+  tamano: number;
+  hayMas: boolean;
+}
+
+/** Los números de las pestañas de Pedidos. */
+export interface ConteosPedidos {
+  apartadosActivos: number;
+  comprasPorEntregar: number;
+}
+
 // ── Panel de la dueña ──
 
 export interface StockBajoItem {

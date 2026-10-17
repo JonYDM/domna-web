@@ -6,7 +6,8 @@ import { BarraBusqueda } from "@/components/molecules/BarraBusqueda";
 import { EmptyState } from "@/components/molecules/EmptyState";
 import { Button, Chip, Segmentos } from "@/components/ui";
 import { mensajeError } from "@/lib/errores";
-import { useApartados } from "@/features/apartados/hooks";
+import { textoAvance, unirPaginas } from "@/lib/paginasPedidos";
+import { useApartadosPaginados, useConteosPedidos } from "@/features/apartados/hooks";
 import { ApartadoCard } from "@/features/apartados/components/ApartadoCard";
 import { ApartadoCardSkeleton } from "@/features/apartados/components/ApartadoCardSkeleton";
 
@@ -49,14 +50,13 @@ export default function ApartadosPage() {
   const [busqueda, setBusqueda] = useState(texto);
   const timer = useRef<number>();
 
-  const apartados = useApartados(
+  const apartados = useApartadosPaginados(
     estado === "todos" ? undefined : estado,
     busqueda || undefined,
     vista === "todo" ? undefined : vista,
   );
-  // Contadores de pendientes en las pestañas (en el backend sería un endpoint de conteos).
-  const activos = useApartados("activo", undefined, "apartados");
-  const porEntregar = useApartados("por_entregar", undefined, "compras");
+  // Los números de las pestañas vienen aparte: no dependen de cuántas páginas se hayan cargado.
+  const conteos = useConteosPedidos();
 
   function cambiar(cambios: Record<string, string | undefined>) {
     setParams(
@@ -78,7 +78,8 @@ export default function ApartadosPage() {
     timer.current = window.setTimeout(() => setBusqueda(v.trim()), 300);
   }
 
-  const lista = apartados.data ?? [];
+  const { pedidos: lista, total } = unirPaginas(apartados.data?.pages);
+  const avance = textoAvance(lista.length, total);
   const nombreVista = vista === "apartados" ? "apartados" : vista === "compras" ? "compras" : "pedidos";
 
   return (
@@ -90,8 +91,8 @@ export default function ApartadosPage() {
         activo={vista}
         onChange={(v) => cambiar({ tipo: v, estado: undefined })}
         segmentos={[
-          { id: "apartados", label: "Apartados", icono: ClipboardList, contador: activos.data?.length },
-          { id: "compras", label: "Compras", icono: ShoppingBag, contador: porEntregar.data?.length },
+          { id: "apartados", label: "Apartados", icono: ClipboardList, contador: conteos.data?.apartadosActivos },
+          { id: "compras", label: "Compras", icono: ShoppingBag, contador: conteos.data?.comprasPorEntregar },
           { id: "todo", label: "Todo", icono: Layers },
         ]}
       />
@@ -105,7 +106,7 @@ export default function ApartadosPage() {
         ))}
       </div>
 
-      {apartados.isError ? (
+      {apartados.isError && !apartados.data ? (
         <EmptyState
           expresion="triste"
           titulo="Algo salió mal"
@@ -129,14 +130,27 @@ export default function ApartadosPage() {
           }
         />
       ) : (
-        <div
-          className="grid gap-3 transition-opacity md:grid-cols-2 lg:grid-cols-3"
-          style={{ opacity: apartados.isPlaceholderData ? 0.6 : 1 }}
-        >
-          {lista.map((a) => (
-            <ApartadoCard key={a.id} apartado={a} to={`/app/apartados/${a.id}`} mostrarClienta />
-          ))}
-        </div>
+        <>
+          <div
+            className="grid gap-3 transition-opacity md:grid-cols-2 lg:grid-cols-3"
+            style={{ opacity: apartados.isPlaceholderData ? 0.6 : 1 }}
+          >
+            {lista.map((a) => (
+              <ApartadoCard key={a.id} apartado={a} to={`/app/apartados/${a.id}`} mostrarClienta />
+            ))}
+          </div>
+          <div className="flex flex-col items-center gap-2 pb-2" aria-live="polite">
+            {avance && <p className="tabular text-body-sm text-on-surface-variant">{avance}</p>}
+            {apartados.isError && (
+              <p className="text-body-sm text-error">No se pudieron cargar más: {mensajeError(apartados.error)}</p>
+            )}
+            {apartados.hasNextPage && (
+              <Button variant="soft" loading={apartados.isFetchingNextPage} onClick={() => apartados.fetchNextPage()}>
+                {apartados.isError ? "Reintentar" : "Ver más"}
+              </Button>
+            )}
+          </div>
+        </>
       )}
     </div>
   );
