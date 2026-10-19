@@ -1,20 +1,31 @@
-import { keepPreviousData, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { FiltrosCatalogo } from "@/types/api";
+import { useCallback } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import type { FiltrosCatalogo, ProductoResumen } from "@/types/api";
+import { aplicarFiltros } from "@/lib/filtrosCatalogo";
 import { qk } from "@/lib/queryKeys";
 import * as api from "@/api/catalogo";
 import * as config from "@/api/config";
 
-/** Catálogo: cambia poco → staleTime 5 min, conserva la lista anterior al filtrar. */
-export function useProductos(filtros: FiltrosCatalogo) {
+/**
+ * Catálogo filtrado. Todas las pantallas que lo usan comparten UNA sola consulta (la lista completa) y cada una
+ * filtra a su manera: la portada pide el catálogo una vez aunque muestre tres listas, y cambiar un filtro no
+ * espera a la red.
+ */
+export function useProductos(filtros: FiltrosCatalogo = {}) {
+  const { incluirInactivos = false, texto, categoria, talla, color, precioMax, orden, seccion } = filtros;
+  const select = useCallback(
+    (lista: ProductoResumen[]) => aplicarFiltros(lista, { texto, categoria, talla, color, precioMax, orden, seccion }),
+    [texto, categoria, talla, color, precioMax, orden, seccion],
+  );
   return useQuery({
-    queryKey: qk.productos(filtros),
-    queryFn: () => api.listarProductos(filtros),
+    queryKey: qk.productos(incluirInactivos),
+    queryFn: () => api.listarProductos(incluirInactivos),
+    select,
     // Se publican prendas con frecuencia: al volver a la app o cada 2 min (con la ventana visible)
     // se revalida. Cuesta poco: el servidor responde 304 si nada cambió.
     staleTime: 60_000,
     refetchOnWindowFocus: true,
     refetchInterval: 2 * 60_000,
-    placeholderData: keepPreviousData,
   });
 }
 

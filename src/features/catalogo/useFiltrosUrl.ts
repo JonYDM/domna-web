@@ -1,6 +1,6 @@
 import { useCallback, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
-import type { FamiliaColor, FiltrosCatalogo, OrdenCatalogo, SeccionCatalogo } from "@/types/api";
+import { leerFiltros } from "@/lib/filtrosCatalogo";
 
 type Clave = "q" | "categoria" | "talla" | "color" | "precioMax" | "orden" | "seccion";
 
@@ -11,18 +11,7 @@ type Clave = "q" | "categoria" | "talla" | "color" | "precioMax" | "orden" | "se
 export function useFiltrosUrl() {
   const [params, setParams] = useSearchParams();
 
-  const filtros = useMemo<FiltrosCatalogo>(
-    () => ({
-      texto: params.get("q") ?? undefined,
-      categoria: params.get("categoria") ?? undefined,
-      talla: params.get("talla") ?? undefined,
-      color: (params.get("color") as FamiliaColor | null) ?? undefined,
-      precioMax: params.get("precioMax") ? Number(params.get("precioMax")) : undefined,
-      orden: (params.get("orden") as OrdenCatalogo | null) ?? undefined,
-      seccion: (params.get("seccion") as SeccionCatalogo | null) ?? undefined,
-    }),
-    [params],
-  );
+  const filtros = useMemo(() => leerFiltros(params), [params]);
 
   const cambiar = useCallback(
     (cambios: Partial<Record<Clave, string | number | undefined>>) => {

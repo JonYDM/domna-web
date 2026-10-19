@@ -6,7 +6,6 @@ import type {
   ColorGuardado,
   ColorInput,
   EditarProductoInput,
-  FiltrosCatalogo,
   NuevoProductoInput,
   Producto,
   ProductoDetalle,
@@ -189,22 +188,14 @@ export async function eliminarColor(id: string): Promise<void> {
 
 // ── Productos ──
 
-export async function listarProductos(f: FiltrosCatalogo): Promise<ProductoResumen[]> {
-  const dtos = await http.get<ProductoDto[]>(`/api/productos?incluirInactivos=${f.incluirInactivos ? "true" : "false"}`, REVALIDAR);
+/**
+ * Todo el catálogo, el más reciente primero. Los filtros (color, talla, precio, sección…) se aplican después en
+ * el cliente con `aplicarFiltros`: la lista es chica y así cambiar un filtro no vuelve a pedir nada.
+ */
+export async function listarProductos(incluirInactivos = false): Promise<ProductoResumen[]> {
+  const dtos = await http.get<ProductoDto[]>(`/api/productos?incluirInactivos=${incluirInactivos ? "true" : "false"}`, REVALIDAR);
   const ahora = Date.now();
-  let lista = dtos.map((p) => aProductoResumen(p, ahora));
-
-  // Filtros del lado del cliente (el backend aún no los aplica).
-  if (f.texto) {
-    const t = f.texto.toLowerCase();
-    lista = lista.filter((p) => p.nombre.toLowerCase().includes(t));
-  }
-  if (f.categoria) lista = lista.filter((p) => p.categoriaId === f.categoria);
-  if (f.talla) lista = lista.filter((p) => p.tallas.includes(f.talla!));
-  if (f.precioMax) lista = lista.filter((p) => p.precio <= f.precioMax!);
-  if (f.orden === "precio-asc") lista.sort((a, b) => a.precio - b.precio);
-  else if (f.orden === "precio-desc") lista.sort((a, b) => b.precio - a.precio);
-  return lista;
+  return dtos.map((p) => aProductoResumen(p, ahora));
 }
 
 export async function obtenerProducto(

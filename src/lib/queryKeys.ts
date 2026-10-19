@@ -1,4 +1,4 @@
-import type { FiltroEstadoApartado, FiltrosCatalogo, TipoPedido } from "@/types/api";
+import type { FiltroEstadoApartado, TipoPedido } from "@/types/api";
 
 /** Fábrica única de query keys (evita keys inestables y facilita invalidar). */
 export const qk = {
@@ -6,7 +6,8 @@ export const qk = {
   datosBancarios: () => ["config", "datos-bancarios"] as const,
   categorias: () => ["categorias"] as const,
   colores: () => ["colores"] as const,
-  productos: (f: FiltrosCatalogo) => ["productos", f] as const,
+  /** El catálogo completo (con o sin inactivas); los filtros se aplican encima, no cambian la llave. */
+  productos: (incluirInactivos = false) => ["productos", { incluirInactivos }] as const,
   productosTodos: () => ["productos"] as const,
   producto: (id: string) => ["producto", id] as const,
   productoTodos: () => ["producto"] as const,
