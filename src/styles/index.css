@@ -64,6 +64,52 @@
   }
 }
 
+@layer components {
+  /*
+   * Rejilla escalonada de la tienda: las columnas alternas bajan un poco, así cada prenda se lee sola y el
+   * catálogo se siente como un lookbook y no como una tabla. El desfase es un transform (no cambia el orden
+   * de lectura ni el de tabulación) y el relleno inferior evita que la última fila invada lo que sigue.
+   * 2 columnas: baja la segunda · 3 columnas: baja la central · 4 columnas: bajan la 2.ª y la 4.ª.
+   */
+  .rejilla-escalonada {
+    --desfase: 2.5rem;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 0.75rem;
+    row-gap: 1.5rem;
+    padding-bottom: var(--desfase);
+  }
+  .rejilla-escalonada > :nth-child(even) {
+    transform: translateY(var(--desfase));
+  }
+  @media (min-width: 768px) {
+    .rejilla-escalonada {
+      --desfase: 3rem;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      column-gap: 1.25rem;
+      row-gap: 2rem;
+    }
+    .rejilla-escalonada > :nth-child(even) {
+      transform: none;
+    }
+    .rejilla-escalonada > :nth-child(3n + 2) {
+      transform: translateY(var(--desfase));
+    }
+  }
+  @media (min-width: 1024px) {
+    .rejilla-escalonada {
+      --desfase: 3.5rem;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+    .rejilla-escalonada > :nth-child(3n + 2) {
+      transform: none;
+    }
+    .rejilla-escalonada > :nth-child(even) {
+      transform: translateY(var(--desfase));
+    }
+  }
+}
+
 @layer utilities {
   .tabular {
     font-variant-numeric: tabular-nums;

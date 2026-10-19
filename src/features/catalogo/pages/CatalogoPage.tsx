@@ -157,7 +157,7 @@ export default function CatalogoPage() {
           accion={<Button onClick={() => productos.refetch()}>Reintentar</Button>}
         />
       ) : productos.isPending ? (
-        <div className="grid grid-cols-2 gap-x-3 gap-y-6 md:grid-cols-3 lg:grid-cols-4">
+        <div className="rejilla-escalonada">
           {Array.from({ length: 8 }, (_, i) => (
             <ProductoCardSkeleton key={i} />
           ))}
@@ -181,8 +181,7 @@ export default function CatalogoPage() {
         />
       ) : (
         <div
-          className="grid grid-cols-2 gap-x-3 gap-y-6 transition-opacity md:grid-cols-3 md:gap-x-5 lg:grid-cols-4"
-          style={{ opacity: productos.isPlaceholderData ? 0.6 : 1 }}
+          className="rejilla-escalonada"
         >
           {lista.map((p, i) => (
             <ProductoCard
