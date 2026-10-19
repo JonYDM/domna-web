@@ -4,6 +4,8 @@ import { Toaster } from "react-hot-toast";
 import { SesionProvider } from "@/features/auth/SesionProvider";
 import { debeReintentar, esperaReintento } from "@/lib/reintento";
 import { MARCA } from "@/lib/marca";
+import { urlApi } from "@/api/http";
+import { conectarCatalogoEnVivo, refrescarPorCambio } from "@/lib/catalogoEnVivo";
 import { sincronizarCatalogoEntreVentanas } from "@/lib/sincronizacionCatalogo";
 import { purgarFotosHuerfanas } from "@/features/panel/borradorProducto";
 
@@ -27,6 +29,17 @@ export function Providers({ children }: { children: ReactNode }) {
 
   // Lo que se publica o edita en una ventana de la app se refleja en las demás sin recargar.
   useEffect(() => sincronizarCatalogoEntreVentanas(queryClient), [queryClient]);
+
+  // Cambios en vivo: lo que se publica o se edita (o un pedido nuevo) aparece en todas las pantallas abiertas, de
+  // cualquier rol, sin recargar. Si el canal falla queda el refresco periódico de cada pantalla.
+  useEffect(
+    () =>
+      conectarCatalogoEnVivo({
+        url: urlApi("/api/catalogo/eventos"),
+        alCambiar: () => refrescarPorCambio(queryClient),
+      }),
+    [queryClient],
+  );
 
   // Al abrir la app, si no quedó borrador de texto en la sesión, limpia las fotos huérfanas en
   // IndexedDB (la app se cerró y sessionStorage murió, pero las fotos no). No bloquea ni lanza.

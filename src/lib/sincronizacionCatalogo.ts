@@ -10,6 +10,20 @@ import type { QueryClient } from "@tanstack/react-query";
  * Entre dispositivos distintos no hay aviso inmediato: ahí manda el refresco al volver a la app.
  */
 
+/** Mientras es true, las invalidaciones no se difunden a las demás ventanas (ya llegó el aviso a todas). */
+let silenciado = false;
+
+/** Ejecuta `fn` sin que lo que invalide se repita en las demás ventanas. */
+export function sinDifundir(fn: () => void): void {
+  const antes = silenciado;
+  silenciado = true;
+  try {
+    fn();
+  } finally {
+    silenciado = antes;
+  }
+}
+
 const CANAL = "domna-catalogo";
 const CLAVES_DEL_CATALOGO = new Set(["productos", "producto", "categorias", "colores", "config"]);
 
@@ -27,7 +41,7 @@ export function sincronizarCatalogoEntreVentanas(qc: QueryClient): () => void {
 
   qc.invalidateQueries = ((filtros, opciones) => {
     const clave = filtros?.queryKey?.[0];
-    if (!recibiendo && esClaveDelCatalogo(clave)) canal.postMessage({ clave });
+    if (!recibiendo && !silenciado && esClaveDelCatalogo(clave)) canal.postMessage({ clave });
     return original(filtros, opciones);
   }) as QueryClient["invalidateQueries"];
 

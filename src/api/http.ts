@@ -14,6 +14,9 @@ import { CABECERA_MODO_APP, VALOR_APP_INSTALADA, detectarAppInstalada } from "@/
 
 const BASE_URL = (import.meta.env.VITE_API_URL ?? "").replace(/\/$/, "");
 
+/** La dirección completa de una ruta de la API (para quien no usa `fetch` de este módulo, como el canal de eventos). */
+export const urlApi = (ruta: string): string => `${BASE_URL}${ruta}`;
+
 const STORAGE_TOKEN = "domna.token";
 
 /** Tiempo límite por defecto de una petición (ms). Las subidas de archivos pueden pedir más. */
