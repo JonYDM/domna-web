@@ -12,13 +12,13 @@
 - **Front**: React + Vite + Tailwind en **Netlify** (`appdomna.netlify.app`).
   Interruptor `VITE_API_URL`: si apunta a Railway usa la API real; si vacío, usa el mock.
 - **Imágenes**: **Cloudflare R2** (bucket `domna-fotos`), subida vía presigned URL firmada por el
-  backend; URL pública `https://pub-825df9c1da8c4995abe723b1c758bc26.r2.dev`.
+  backend; la URL pública de R2 vive en variables de entorno (ver SECRETOS-LOCALES.md, fuera de git).
 
 ## Qué funciona hoy (integrado con la API real)
 
 - **Auth unificada** (una pantalla `/` que rutea por rol):
   - Clientas: registro (sign up), login teléfono+PIN, recuperación por correo (SMTP Gmail real).
-  - Staff: Jessica (dueña) `777 460 2303` / PIN `010101`; cajera `777 100 4050` / PIN `135790`.
+  - Staff: dueña y cajera sembradas por variables de entorno (ver SECRETOS-LOCALES.md, fuera de git).
   - Login inteligente: si el teléfono no existe no avanza (invita a registrarse); si ya entró en el
     dispositivo saluda por su nombre (guardado local, sin exponer datos). Endpoint `existe` solo bool.
   - PIN con BCrypt, JWT con rol; keypad glass; prefijo +52 fijo.
@@ -40,9 +40,9 @@
   - Feedback premium al publicar: overlay "Generando los códigos de tu producto".
 
 ## Credenciales / cuentas sembradas (seed)
-- Dueña: Jessica — `777 460 2303` / PIN `010101`
-- Cajera: Caja Temixco — `777 100 4050` / PIN `135790`
-- Clienta demo: María — `777 123 4567` / PIN `123456`
+Los teléfonos y PINs reales ya **no viven en el repo** (es público). Se inyectan por variables de
+entorno (`Seed__DuenaPin`, `Seed__CajeraPin`, etc.) y están documentados en `SECRETOS-LOCALES.md`
+(ignorado por git, solo en la máquina local). Sin `Seed__DuenaPin` el seed no crea cuentas de staff.
 
 ## Lo que se corrigió hoy (importante)
 

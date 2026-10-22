@@ -49,7 +49,7 @@ export function ResetPinDrawer({ cajera, onClose }: { cajera: Personal; onClose:
           inputMode="numeric"
           value={pin}
           onChange={(e) => setPin(e.target.value.replace(/\D/g, "").slice(0, 6))}
-          placeholder="135790"
+          placeholder="••••••"
           autoFocus
           error={pin && !pinOk ? "Debe ser de 6 dígitos" : undefined}
         />

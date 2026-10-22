@@ -21,7 +21,7 @@ npm run dev        # http://localhost:5173
 ## Qué incluye la demo
 - **Acceso** (`/entrar`): cuenta propia de Domna. **Registro** con nombre, apellidos, teléfono (+52) y **PIN de
   6 dígitos**; **inicio de sesión** con teléfono + PIN; **recuperación** del PIN por correo (en la demo el enlace
-  se muestra en pantalla). Clientas de ejemplo: `777 123 4567` / PIN `123456` (María).
+  se muestra en pantalla). Las credenciales de ejemplo están en `SECRETOS-LOCALES.md` del backend (fuera de git).
 - **Clienta** (`/tienda`): catálogo con búsqueda y filtros en la URL, detalle con galería, color, talla y stock
   por sucursal. En cada prenda elige **comprar de contado** (paga el total, se descuenta el stock al momento) o
   **apartar** (50% → 15 días, o sin anticipo → 2 días); las prendas marcadas "solo de contado" (las ofertas) no se
